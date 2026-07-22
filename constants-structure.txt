@@ -1,0 +1,18 @@
+Folder PATH listing
+Volume serial number is 00000148 A0F0:A54A
+C:\USERS\KRISH\FINCLEARS-V2\APPS\WEB\CONSTANTS
+    api.ts
+    auth.ts
+    colors.ts
+    faq.ts
+    footer.ts
+    metadata.ts
+    navigation.ts
+    pricing.ts
+    roles.ts
+    routes.ts
+    services.ts
+    stats.ts
+    
+No subfolders exist 
+

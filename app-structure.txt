@@ -1,0 +1,154 @@
+Folder PATH listing
+Volume serial number is 000001BC A0F0:A54A
+C:\USERS\KRISH\FINCLEARS-V2\APPS\WEB\APP
+¦   favicon.ico
+¦   globals.css
+¦   layout.tsx
+¦   page.tsx
+¦   robots.ts
+¦   sitemap.ts
+¦   
++---(auth)
+¦   ¦   layout.tsx
+¦   ¦   
+¦   +---forgot-password
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---login
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---register
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---reset-password
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---verify-otp
+¦           page.tsx
+¦           
++---about
+¦       page.tsx
+¦       
++---api
+¦   +---chat
+¦   ¦       route.ts
+¦   ¦       
+¦   +---contact
+¦   ¦       route.ts
+¦   ¦       
+¦   +---health
+¦   ¦       route.ts
+¦   ¦       
+¦   +---lead
+¦   ¦       route.ts
+¦   ¦       
+¦   +---newsletter
+¦   ¦       route.ts
+¦   ¦       
+¦   +---upload
+¦           route.ts
+¦           
++---blog
+¦   ¦   page.tsx
+¦   ¦   
+¦   +---[slug]
+¦           loading.tsx
+¦           not-found.tsx
+¦           page.tsx
+¦           
++---careers
+¦       page.tsx
+¦       
++---contact
+¦       page.tsx
+¦       
++---dashboard
+¦   ¦   layout.tsx
+¦   ¦   page.tsx
+¦   ¦   
+¦   +---companies
+¦   ¦   ¦   page.tsx
+¦   ¦   ¦   
+¦   ¦   +---create
+¦   ¦           page.tsx
+¦   ¦           
+¦   +---documents
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---gst
+¦   +---itr
+¦   +---notifications
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---orders
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---overview
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---payments
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---profile
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---roc
+¦   +---settings
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---trademark
+¦   +---users
+¦       ¦   page.tsx
+¦       ¦   
+¦       +---create
+¦       ¦       page.tsx
+¦       ¦       
+¦       +---[id]
+¦           ¦   page.tsx
+¦           ¦   
+¦           +---edit
+¦                   page.tsx
+¦                   
++---otp
+¦       page.tsx
+¦       
++---pricing
+¦       page.tsx
+¦       
++---privacy-policy
+¦       page.tsx
+¦       
++---refund-policy
+¦       page.tsx
+¦       
++---services
+¦   ¦   page.tsx
+¦   ¦   
+¦   +---company-registration
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---compliance
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---gst
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---income-tax
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---roc
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---trademark
+¦   ¦       page.tsx
+¦   ¦       
+¦   +---[category]
+¦       +---[slug]
+¦               page.tsx
+¦               
++---terms-and-conditions
+¦       page.tsx
+¦       
++---verify-email
+        page.tsx
+        

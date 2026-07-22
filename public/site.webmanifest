@@ -1,0 +1,16 @@
+{
+  "name": "FinClears",
+  "short_name": "FinClears",
+  "description": "Company Registration, GST, Trademark & Tax Filing Services",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -1,0 +1,387 @@
+Folder PATH listing
+Volume serial number is 00000236 A0F0:A54A
+C:\USERS\KRISH\FINCLEARS-V2\APPS\WEB\COMPONENTS
++---about
+¦       AboutHero.tsx
+¦       Achievements.tsx
+¦       CompanyStory.tsx
+¦       CTA.tsx
+¦       Hero.tsx
+¦       MissionVision.tsx
+¦       Story.tsx
+¦       Team.tsx
+¦       Timeline.tsx
+¦       Values.tsx
+¦       WhyChoose.tsx
+¦       
++---admin
+¦       DashboardStats.tsx
+¦       QuickActions.tsx
+¦       RecentActivities.tsx
+¦       RevenueChart.tsx
+¦       SystemOverview.tsx
+¦       
++---animations
++---auth
+¦       AuthBanner.tsx
+¦       AuthCard.tsx
+¦       AuthGuard.tsx
+¦       AuthLayout.tsx
+¦       ForgotPasswordForm.tsx
+¦       GuestGuard.tsx
+¦       LoginForm.tsx
+¦       OTPForm.tsx
+¦       OTPVerification.tsx
+¦       PasswordInput.tsx
+¦       PasswordStrength.tsx
+¦       Permission.tsx
+¦       RegisterForm.tsx
+¦       ResetPasswordForm.tsx
+¦       SocialLogin.tsx
+¦       VerifyEmail.tsx
+¦       VerifyEmailForm.tsx
+¦       
++---blog
+¦       ArticleContent.tsx
+¦       ArticleCTA.tsx
+¦       ArticleHero.tsx
+¦       AuthorCard.tsx
+¦       BlogCard.tsx
+¦       BlogGrid.tsx
+¦       CategoryFilter.tsx
+¦       Comments.tsx
+¦       CTA.tsx
+¦       FeaturedPost.tsx
+¦       Hero.tsx
+¦       Newsletter.tsx
+¦       RelatedPosts.tsx
+¦       SearchBar.tsx
+¦       ShareButtons.tsx
+¦       TableOfContents.tsx
+¦       
++---career
++---common
+¦       ApiError.tsx
+¦       Badge.tsx
+¦       Breadcrumb.tsx
+¦       CardLoader.tsx
+¦       CTA.tsx
+¦       EmptyDocuments.tsx
+¦       EmptyOrders.tsx
+¦       EmptyPayments.tsx
+¦       EmptyState.tsx
+¦       ErrorBoundary.tsx
+¦       ErrorCard.tsx
+¦       FAQ.tsx
+¦       FeatureCard.tsx
+¦       Loading.tsx
+¦       LoadingScreen.tsx
+¦       LogoCloud.tsx
+¦       Newsletter.tsx
+¦       NotAuthorized.tsx
+¦       NotFound.tsx
+¦       PageBanner.tsx
+¦       PageLoader.tsx
+¦       SectionHeader.tsx
+¦       SectionSubtitle.tsx
+¦       SectionTitle.tsx
+¦       ServerError.tsx
+¦       Skeleton.tsx
+¦       StatCard.tsx
+¦       Stats.tsx
+¦       TableLoader.tsx
+¦       Testimonials.tsx
+¦       WhyChoose.tsx
+¦       
++---company
+¦   ¦   BusinessDetailsStep.tsx
+¦   ¦   CompanyDeleteDialog.tsx
+¦   ¦   CompanyFilters.tsx
+¦   ¦   CompanyStatus.tsx
+¦   ¦   CompanyStepper.tsx
+¦   ¦   CompanyTable.tsx
+¦   ¦   CompanyWizard.tsx
+¦   ¦   DirectorsStep.tsx
+¦   ¦   DocumentsStep.tsx
+¦   ¦   DocumentUploader.tsx
+¦   ¦   PaymentStep.tsx
+¦   ¦   ReviewStep.tsx
+¦   ¦   ShareholdersStep.tsx
+¦   ¦   
+¦   +---forms
+¦           BusinessForm.tsx
+¦           DirectorForm.tsx
+¦           ShareholderForm.tsx
+¦           
++---contact
+¦       BusinessHours.tsx
+¦       ContactForm.tsx
+¦       ContactInfo.tsx
+¦       CTA.tsx
+¦       FAQ.tsx
+¦       GoogleMap.tsx
+¦       Hero.tsx
+¦       OfficeLocations.tsx
+¦       
++---dashboard
+¦   ¦   ActivityFeed.tsx
+¦   ¦   Breadcrumb.tsx
+¦   ¦   ComplianceCalendar.tsx
+¦   ¦   DashboardLayout.tsx
+¦   ¦   Footer.tsx
+¦   ¦   Header.tsx
+¦   ¦   InvoiceTable.tsx
+¦   ¦   MobileSidebar.tsx
+¦   ¦   NotificationBell.tsx
+¦   ¦   NotificationCard.tsx
+¦   ¦   OverviewCards.tsx
+¦   ¦   QuickActions.tsx
+¦   ¦   Sidebar.tsx
+¦   ¦   Topbar.tsx
+¦   ¦   UserMenu.tsx
+¦   ¦   
+¦   +---cards
+¦   ¦       ActivityCard.tsx
+¦   ¦       ComplianceCard.tsx
+¦   ¦       OrderCard.tsx
+¦   ¦       OverviewCard.tsx
+¦   ¦       QuickActionCard.tsx
+¦   ¦       RevenueCard.tsx
+¦   ¦       StatsCard.tsx
+¦   ¦       
+¦   +---charts
+¦   ¦       ComplianceChart.tsx
+¦   ¦       OrderChart.tsx
+¦   ¦       RevenueChart.tsx
+¦   ¦       
+¦   +---documents
+¦   ¦       DocumentActions.tsx
+¦   ¦       DocumentCard.tsx
+¦   ¦       DocumentGrid.tsx
+¦   ¦       DocumentStatus.tsx
+¦   ¦       DocumentUpload.tsx
+¦   ¦       DocumentViewer.tsx
+¦   ¦       RecentDocuments.tsx
+¦   ¦       UploadZone.tsx
+¦   ¦       
+¦   +---layout
+¦   ¦       Header.tsx
+¦   ¦       MobileSidebar.tsx
+¦   ¦       SearchBar.tsx
+¦   ¦       Sidebar.tsx
+¦   ¦       UserMenu.tsx
+¦   ¦       
+¦   +---notifications
+¦   ¦       NotificationActions.tsx
+¦   ¦       NotificationBadge.tsx
+¦   ¦       NotificationCard.tsx
+¦   ¦       NotificationEmpty.tsx
+¦   ¦       NotificationFilter.tsx
+¦   ¦       NotificationHeader.tsx
+¦   ¦       NotificationItem.tsx
+¦   ¦       NotificationList.tsx
+¦   ¦       
+¦   +---orders
+¦   ¦       EmptyOrders.tsx
+¦   ¦       OrderCard.tsx
+¦   ¦       OrderFilters.tsx
+¦   ¦       OrderPriorityBadge.tsx
+¦   ¦       OrderSearch.tsx
+¦   ¦       OrdersTable.tsx
+¦   ¦       OrderStatus.tsx
+¦   ¦       OrderStatusBadge.tsx
+¦   ¦       
+¦   +---payments
+¦   ¦       BillingSummary.tsx
+¦   ¦       InvoiceCard.tsx
+¦   ¦       InvoiceList.tsx
+¦   ¦       PaymentCard.tsx
+¦   ¦       PaymentHistory.tsx
+¦   ¦       PaymentMethod.tsx
+¦   ¦       PaymentStatus.tsx
+¦   ¦       SubscriptionCard.tsx
+¦   ¦       
+¦   +---profile
+¦   ¦       AddressCard.tsx
+¦   ¦       CompanyInfo.tsx
+¦   ¦       KYCStatus.tsx
+¦   ¦       PersonalInfo.tsx
+¦   ¦       ProfileActions.tsx
+¦   ¦       ProfileAvatar.tsx
+¦   ¦       ProfileCard.tsx
+¦   ¦       ProfileCompletion.tsx
+¦   ¦       
+¦   +---settings
+¦   ¦       AccountSettings.tsx
+¦   ¦       DangerZone.tsx
+¦   ¦       LanguageSettings.tsx
+¦   ¦       NotificationSettings.tsx
+¦   ¦       PreferenceSettings.tsx
+¦   ¦       SecuritySettings.tsx
+¦   ¦       SettingsLayout.tsx
+¦   ¦       ThemeSettings.tsx
+¦   ¦       
+¦   +---tables
+¦   ¦       RecentDocumentsTable.tsx
+¦   ¦       RecentOrdersTable.tsx
+¦   ¦       
+¦   +---widgets
+¦           AIWidget.tsx
+¦           CalendarWidget.tsx
+¦           NotificationWidget.tsx
+¦           PendingTasks.tsx
+¦           QuickActions.tsx
+¦           RecentActivity.tsx
+¦           
++---documents
+¦       DocumentActions.tsx
+¦       DocumentFilters.tsx
+¦       DocumentList.tsx
+¦       DocumentViewer.tsx
+¦       
++---forms
+¦       ContactForm.tsx
+¦       LeadForm.tsx
+¦       LoginForm.tsx
+¦       NewsletterForm.tsx
+¦       OTPForm.tsx
+¦       
++---home
+¦       AIChatWidget.tsx
+¦       AnimatedCounter.tsx
+¦       Announcement.tsx
+¦       BackToTop.tsx
+¦       CaseStudies.tsx
+¦       CTA.tsx
+¦       CursorGlow.tsx
+¦       FAQ.tsx
+¦       FeaturedServices.tsx
+¦       Features.tsx
+¦       FloatingWhatsApp.tsx
+¦       Footer.tsx
+¦       Hero.tsx
+¦       IndustryCards.tsx
+¦       LatestBlogs.tsx
+¦       LogoCloud.tsx
+¦       MegaMenu.tsx
+¦       Navbar.tsx
+¦       Newsletter.tsx
+¦       Pricing.tsx
+¦       Process.tsx
+¦       ScrollProgress.tsx
+¦       SearchDialog.tsx
+¦       Services.tsx
+¦       Stats.tsx
+¦       StickyMobileCTA.tsx
+¦       Testimonials.tsx
+¦       ThemeToggle.tsx
+¦       Trust.tsx
+¦       TrustedCompanies.tsx
+¦       WhyChoose.tsx
+¦       WhyChooseUs.tsx
+¦       
++---icons
+¦       Company.tsx
+¦       Compliance.tsx
+¦       Document.tsx
+¦       GST.tsx
+¦       ITR.tsx
+¦       Logo.tsx
+¦       LogoIcon.tsx
+¦       MSME.tsx
+¦       Startup.tsx
+¦       Trademark.tsx
+¦       
++---layout
+¦       Breadcrumb.tsx
+¦       Container.tsx
+¦       Footer.tsx
+¦       Navbar.tsx
+¦       PageHeader.tsx
+¦       Section.tsx
+¦       
++---marketing
++---orders
+¦       OrderActions.tsx
+¦       OrderDetails.tsx
+¦       OrderFilters.tsx
+¦       OrdersTable.tsx
+¦       OrderTimeline.tsx
+¦       
++---payments
+¦       PaymentFilters.tsx
+¦       PaymentHistory.tsx
+¦       PaymentSummary.tsx
+¦       
++---pricing
+¦       ComparisonTable.tsx
+¦       CTA.tsx
+¦       FAQ.tsx
+¦       Hero.tsx
+¦       IncludedServices.tsx
+¦       PricingPlans.tsx
+¦       
++---sections
++---seo
+¦       StructuredData.tsx
+¦       
++---services
+¦       Breadcrumb.tsx
+¦       RelatedServices.tsx
+¦       ServiceBenefits.tsx
+¦       ServiceCard.tsx
+¦       ServiceCTA.tsx
+¦       ServiceDocuments.tsx
+¦       ServiceFAQ.tsx
+¦       ServiceGrid.tsx
+¦       ServiceHero.tsx
+¦       ServiceOverview.tsx
+¦       ServicePricing.tsx
+¦       ServiceProcess.tsx
+¦       
++---ui
+¦       Badge.tsx
+¦       BlurCircle.tsx
+¦       BrowserMockup.tsx
+¦       button.tsx
+¦       Card.tsx
+¦       Checkbox.tsx
+¦       DashboardCard.tsx
+¦       Divider.tsx
+¦       ErrorMessage.tsx
+¦       FeatureCard.tsx
+¦       FloatingCard.tsx
+¦       FormCard.tsx
+¦       GlassButton.tsx
+¦       GlassCard.tsx
+¦       GlowBorder.tsx
+¦       GradientCard.tsx
+¦       GradientText.tsx
+¦       GridPattern.tsx
+¦       Heading.tsx
+¦       HeroBackground.tsx
+¦       HeroGrid.tsx
+¦       Input.tsx
+¦       Label.tsx
+¦       MetricCard.tsx
+¦       Noise.tsx
+¦       PasswordInput.tsx
+¦       PricingCard.tsx
+¦       SectionHeading.tsx
+¦       Spotlight.tsx
+¦       
++---users
+        CreateUserButton.tsx
+        DeleteUserDialog.tsx
+        EmptyUsers.tsx
+        UserActions.tsx
+        UserCard.tsx
+        UserDeleteDialog.tsx
+        UserFilters.tsx
+        UserForm.tsx
+        UserRoleBadge.tsx
+        UserStats.tsx
+        UserStatus.tsx
+        UserStatusBadge.tsx
+        UserTable.tsx
+        

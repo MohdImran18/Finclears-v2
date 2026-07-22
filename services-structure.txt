@@ -1,0 +1,65 @@
+Folder PATH listing
+Volume serial number is 00000217 A0F0:A54A
+C:\USERS\KRISH\FINCLEARS-V2\APPS\WEB\SERVICES
+¦   auth.ts
+¦   blogs.ts
+¦   company.ts
+¦   dashboard.ts
+¦   documents.ts
+¦   faq.ts
+¦   notifications.ts
+¦   orders.ts
+¦   payments.ts
+¦   pricing.ts
+¦   services.ts
+¦   testimonial.ts
+¦   users.ts
+¦   
++---api
+¦   ¦   .env
+¦   ¦   .env.example
+¦   ¦   .env.production
+¦   ¦   .env.testing
+¦   ¦   auth.ts
+¦   ¦   blogs.ts
+¦   ¦   dashboard.ts
+¦   ¦   documents.ts
+¦   ¦   notifications.ts
+¦   ¦   orders.ts
+¦   ¦   payments.ts
+¦   ¦   services.ts
+¦   ¦   users.ts
+¦   ¦   
+¦   +---auth
+¦           forgotPassword.ts
+¦           login.ts
+¦           logout.ts
+¦           refreshToken.ts
+¦           register.ts
+¦           resetPassword.ts
+¦           verifyOtp.ts
+¦           
++---auth
+¦       auth.service.ts
+¦       
++---company
+¦       company.service.ts
+¦       
++---documents
+¦       document.service.ts
+¦       
++---orders
+¦       order.service.ts
+¦       
++---payments
+¦       payment.service.ts
+¦       
++---service
+¦       services.service.ts
+¦       
++---user
+¦       user.service.ts
+¦       
++---users
+        users.service.ts
+        

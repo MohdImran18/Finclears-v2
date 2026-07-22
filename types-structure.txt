@@ -1,0 +1,26 @@
+Folder PATH listing
+Volume serial number is 000001C6 A0F0:A54A
+C:\USERS\KRISH\FINCLEARS-V2\APPS\WEB\TYPES
+¦   api.ts
+¦   auth.ts
+¦   blog.ts
+¦   blogCategory.ts
+¦   common.ts
+¦   company.ts
+¦   contact.ts
+¦   dashboard.ts
+¦   document.ts
+¦   invoice.ts
+¦   newsletter.ts
+¦   notification.ts
+¦   order.ts
+¦   payment.ts
+¦   service.ts
+¦   user.ts
+¦   
++---auth
+        auth.ts
+        permissions.ts
+        session.ts
+        user.ts
+        

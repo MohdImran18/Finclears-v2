@@ -1,0 +1,11 @@
+Folder PATH listing
+Volume serial number is 000001CF A0F0:A54A
+C:\USERS\KRISH\FINCLEARS-V2\APPS\WEB\PROVIDERS
+    AuthProvider.tsx
+    QueryProvider.tsx
+    ReactQueryProvider.tsx
+    ThemeProvider.tsx
+    ToastProvider.tsx
+    
+No subfolders exist 
+
