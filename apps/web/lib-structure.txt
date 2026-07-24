@@ -1,0 +1,74 @@
+Folder PATH listing
+Volume serial number is 00000191 A0F0:A54A
+C:\USERS\KRISH\FINCLEARS-V2\APPS\WEB\LIB
+¦   auth.ts
+¦   axios.ts
+¦   cn.ts
+¦   cookies.ts
+¦   queryClient.ts
+¦   request.ts
+¦   seo.ts
+¦   storage.ts
+¦   utils.ts
+¦   validators.ts
+¦   
++---api
+¦       ai.ts
+¦       auth.ts
+¦       blog.ts
+¦       blogs.ts
+¦       client.ts
+¦       contact.ts
+¦       dashboard.ts
+¦       documents.ts
+¦       endpoints.ts
+¦       index.ts
+¦       interceptors.ts
+¦       newsletter.ts
+¦       notifications.ts
+¦       orders.ts
+¦       payments.ts
+¦       services.ts
+¦       
++---auth
+¦       auth.ts
+¦       guards.ts
+¦       permissions.ts
+¦       session.ts
+¦       token.ts
+¦       
++---hooks
+¦       useAuth.ts
+¦       useDashboard.ts
+¦       useDocuments.ts
+¦       useNotifications.ts
+¦       useOrders.ts
+¦       usePayments.ts
+¦       
++---seo
+¦       articleSchema.ts
+¦       breadcrumbSchema.ts
+¦       faqSchema.ts
+¦       organization.ts
+¦       serviceSchema.ts
+¦       website.ts
+¦       
++---store
+¦       auth.store.ts
+¦       dashboard.store.ts
+¦       document.store.ts
+¦       notification.store.ts
+¦       order.store.ts
+¦       payment.store.ts
+¦       ui.store.ts
+¦       
++---validations
+¦       auth.ts
+¦       
++---validators
+        forgot-password.ts
+        login.ts
+        otp.ts
+        register.ts
+        reset-password.ts
+        

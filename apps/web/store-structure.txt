@@ -1,0 +1,13 @@
+Folder PATH listing
+Volume serial number is 0000021A A0F0:A54A
+C:\USERS\KRISH\FINCLEARS-V2\APPS\WEB\STORE
+    auth.ts
+    companyWizard.ts
+    document.ts
+    notification.ts
+    order.ts
+    payment.ts
+    ui.ts
+    
+No subfolders exist 
+
