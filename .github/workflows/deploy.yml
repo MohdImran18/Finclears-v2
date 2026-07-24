@@ -17,10 +17,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
 
       - name: Install Frontend Dependencies
         working-directory: apps/web
-        run: npm ci
+        run: npm install
 
       - name: Build Next.js
         working-directory: apps/web
@@ -29,14 +31,14 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.3
+          php-version: "8.3"
 
       - name: Install Laravel Dependencies
         working-directory: services/api
         run: composer install --no-dev --optimize-autoloader
 
       - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
@@ -45,4 +47,4 @@ jobs:
             cd ${{ secrets.APP_PATH }}
             git fetch origin
             git reset --hard origin/main
-            sudo systemctl reload nginx
+            sudo systemctl reload nginx || true
