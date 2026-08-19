@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  AlertTriangle,
-  Loader2,
-} from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -17,6 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import { getApiError } from "@/lib/getApiError";
 import { useDeleteDocument } from "@/hooks/useDocuments";
 
 interface DeleteDocumentDialogProps {
@@ -34,38 +32,30 @@ export default function DeleteDocumentDialog({
 }: DeleteDocumentDialogProps) {
   const deleteMutation = useDeleteDocument();
 
-  if (!open) {
-    return null;
-  }
-
   async function handleDelete() {
     try {
       await deleteMutation.mutateAsync(documentId);
 
-      toast.success(
-        "Document deleted successfully."
-      );
+      toast.success("Document deleted successfully.");
 
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(
-        error?.response?.data?.message ??
+        getApiError(
+          error,
           "Unable to delete document."
+        )
       );
     }
   }
 
   return (
-    <AlertDialog>
-
+    <AlertDialog
+    >
       <AlertDialogContent className="max-w-md">
-
         <AlertDialogHeader>
-
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-
             <AlertTriangle className="h-8 w-8 text-red-600" />
-
           </div>
 
           <AlertDialogTitle className="text-center text-2xl">
@@ -73,12 +63,11 @@ export default function DeleteDocumentDialog({
           </AlertDialogTitle>
 
           <AlertDialogDescription className="text-center text-base">
-
             {documentTitle ? (
               <>
                 Are you sure you want to delete{" "}
                 <span className="font-semibold">
-                  "{documentTitle}"
+                  &quot;{documentTitle}&quot;
                 </span>
                 ?
                 <br />
@@ -86,33 +75,30 @@ export default function DeleteDocumentDialog({
               </>
             ) : (
               <>
-                Are you sure you want to delete this
-                document?
+                Are you sure you want to delete this document?
                 <br />
                 This action cannot be undone.
               </>
             )}
-
           </AlertDialogDescription>
-
         </AlertDialogHeader>
 
         <AlertDialogFooter>
-
-         <AlertDialogCancel
-  isDisabled={deleteMutation.isPending}
-  onClick={() =>
-    onOpenChange(false)
-  }
->
+          <AlertDialogCancel
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </AlertDialogCancel>
 
-         <AlertDialogAction
-  isDisabled={deleteMutation.isPending}
-  className="bg-red-600 hover:bg-red-700"
-  onClick={async (e) => {
-              e.preventDefault();
+          <AlertDialogAction
+            className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
+            onClick={async (event) => {
+              event.preventDefault();
+
+              if (deleteMutation.isPending) {
+                return;
+              }
+
               await handleDelete();
             }}
           >
@@ -125,11 +111,9 @@ export default function DeleteDocumentDialog({
               "Delete Document"
             )}
           </AlertDialogAction>
-
         </AlertDialogFooter>
-
       </AlertDialogContent>
-
     </AlertDialog>
   );
 }
+

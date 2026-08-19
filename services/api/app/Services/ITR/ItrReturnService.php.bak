@@ -1,0 +1,194 @@
+<?php
+
+namespace App\Services\ITR;
+
+use App\Contracts\Repositories\ItrReturnRepositoryInterface;
+use App\Models\AssessmentYear;
+use App\Models\FinancialYear;
+use App\Models\ItrReturn;
+use App\Models\ItrType;
+use App\Models\ReturnStatus;
+use App\Models\TaxRegime;
+use App\Services\Pdf\PdfService;
+use App\Services\Tax\TaxCalculationService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+
+class ItrReturnService
+{
+    public function __construct(
+        protected ItrReturnRepositoryInterface $repository,
+        protected TaxCalculationService $taxCalculationService,
+        protected PdfService $pdfService
+    ) {
+    }
+
+    /**
+     * Get All Returns
+     */
+    public function getAll(
+        int $perPage = 15
+    ): LengthAwarePaginator {
+
+        return $this->repository->paginate($perPage);
+
+    }
+
+    /**
+     * Find Return by UUID
+     */
+    public function findByUuid(
+        string $uuid
+    ): ?ItrReturn {
+
+        return $this->repository->findByUuid($uuid);
+
+    }
+
+    /**
+     * Create Draft Return
+     */
+    public function createReturn(
+        array $data
+    ): ItrReturn {
+
+        Log::info('========== ITR REQUEST DATA ==========');
+        Log::info($data);
+
+        return DB::transaction(function () use ($data) {
+
+            $financialYear = FinancialYear::where(
+                'name',
+                $data['financial_year']
+            )->firstOrFail();
+
+            $assessmentYear = AssessmentYear::where(
+                'name',
+                $data['assessment_year']
+            )->firstOrFail();
+
+            $itrType = ItrType::where(
+                'code',
+                $data['return_type']
+            )->firstOrFail();
+
+            $taxRegime = TaxRegime::where(
+                'code',
+                $data['tax_regime']
+            )->firstOrFail();
+
+            $draftStatus = ReturnStatus::where(
+                'code',
+                'draft'
+            )->firstOrFail();
+
+            $insertData = [
+
+                'user_id' => auth()->id() ?: 1,
+
+                'company_id' => $data['company_id'] ?? null,
+
+                'financial_year_id' => $financialYear->id,
+
+                'assessment_year_id' => $assessmentYear->id,
+
+                'itr_type_id' => $itrType->id,
+
+                'tax_regime_id' => $taxRegime->id,
+
+                'return_status_id' => $draftStatus->id,
+
+                // Required Unique Return Number
+                'return_number' => sprintf(
+                    'ITR-%s-%04d',
+                    now()->format('YmdHis'),
+                    random_int(1000, 9999)
+                ),
+
+                'pan' => strtoupper($data['pan']),
+
+                'aadhaar' => $data['aadhaar'],
+
+                'mobile' => $data['mobile'],
+
+                'email' => strtolower($data['email']),
+
+            ];
+
+            Log::info('========== INSERT DATA ==========');
+            Log::info($insertData);
+
+            return $this->repository->create($insertData);
+
+        });
+
+    }
+
+    /**
+     * Update Return
+     */
+    public function updateReturn(
+        int $id,
+        array $data
+    ): bool {
+
+        return $this->repository->update(
+            $id,
+            $data
+        );
+
+    }
+
+    /**
+     * Delete Return
+     */
+    public function deleteReturn(
+        int $id
+    ): bool {
+
+        return $this->repository->delete($id);
+
+    }
+
+    /**
+     * Calculate Tax
+     */
+    public function calculateTax(
+        ItrReturn $return
+    ) {
+
+        return $this->taxCalculationService->calculate($return);
+
+    }
+
+    /**
+     * Download PDF
+     */
+    public function downloadPdf(
+        ItrReturn $return
+    ): BinaryFileResponse {
+
+        return $this->pdfService->generate($return);
+
+    }
+
+    /**
+     * Submit Return
+     */
+    public function submitReturn(
+        ItrReturn $return
+    ): bool {
+
+        return $return->update([
+
+            'return_status_id' => ReturnStatus::where(
+                'code',
+                'submitted'
+            )->value('id'),
+
+        ]);
+
+    }
+}

@@ -1,29 +1,28 @@
-import ProfileCard from "@/components/dashboard/profile/ProfileCard";
-import PersonalInfo from "@/components/dashboard/profile/PersonalInfo";
-import CompanyInfo from "@/components/dashboard/profile/CompanyInfo";
 import AddressCard from "@/components/dashboard/profile/AddressCard";
+import CompanyInfo from "@/components/dashboard/profile/CompanyInfo";
 import KYCStatus from "@/components/dashboard/profile/KYCStatus";
-import ProfileCompletion from "@/components/dashboard/profile/ProfileCompletion";
+import PersonalInfo from "@/components/dashboard/profile/PersonalInfo";
 import ProfileActions from "@/components/dashboard/profile/ProfileActions";
+import ProfileCard from "@/components/dashboard/profile/ProfileCard";
+import ProfileCompletion from "@/components/dashboard/profile/ProfileCompletion";
 
 export default function ProfilePage() {
-  return (
-    <div className="space-y-8">
+	return (
+		<div className="space-y-8">
+			<ProfileCard />
 
-      <ProfileCard />
+			<ProfileCompletion progress={75} />
 
-      <ProfileCompletion progress={75} />
+			<PersonalInfo />
 
-      <PersonalInfo />
+			<CompanyInfo />
 
-      <CompanyInfo />
+			<AddressCard />
 
-      <AddressCard />
+			<KYCStatus />
 
-      <KYCStatus />
-
-      <ProfileActions />
-
-    </div>
-  );
+			<ProfileActions />
+		</div>
+	);
 }
+

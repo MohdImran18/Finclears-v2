@@ -2,125 +2,303 @@ import type { Service } from "@/types/service";
 
 export const services: Service[] = [
   {
-    id: 1,
-    title: "Private Limited Company",
-    slug: "private-limited-company",
-    category: {
-  id: 1,
-  name: "Start Business",
-  slug: "start-business",
-},
-    short_description:
-      "Register your Private Limited Company quickly and compliantly.",
-    description:
-      "Complete Private Limited Company registration with expert CA support.",
-    starting_price: 6999,
-    price_label: "Starting at ₹6,999",
-    featured_image: "/images/services/private-limited-company.webp",
-    icon: "/icons/private-company.svg",
-    is_featured: true,
-    is_popular: true,
-    seo_title: "Private Limited Company Registration",
-    seo_description:
-      "Register your Private Limited Company online with FinClears.",
+	  id: 1,
+	  name: "Private Limited Company",
+	  title: "Private Limited Company",
+	  slug: "private-limited-company",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
   },
 
   {
-    id: 2,
-    title: "LLP Registration",
-    slug: "llp-registration",
-    category: {
-  id: 1,
-  name: "Start Business",
-  slug: "start-business",
-},
-    short_description:
-      "Limited Liability Partnership Registration.",
-    description:
-      "Fast LLP registration with MCA filing.",
-    starting_price: 4999,
-    price_label: "Starting at ₹4,999",
-    featured_image: "/images/services/llp.webp",
-    icon: "/icons/llp.svg",
-    is_featured: true,
-    is_popular: false,
-    seo_title: "LLP Registration",
-    seo_description:
-      "Register LLP online with FinClears.",
+	  id: 2,
+	  name: "LLP Registration",
+	  title: "LLP Registration",
+	  slug: "llp-registration",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
   },
 
   {
-    id: 3,
-    title: "GST Registration",
-    slug: "gst-registration",
-    category: {
-  id: 2,
-  name: "Tax Compliance",
-  slug: "tax-compliance",
-},
-    short_description:
-      "Online GST Registration.",
-    description:
-      "GST registration with expert guidance.",
-    starting_price: 999,
-    price_label: "Starting at ₹999",
-    featured_image: "/images/services/gst.webp",
-    icon: "/icons/gst.svg",
-    is_featured: true,
-    is_popular: true,
-    seo_title: "GST Registration",
-    seo_description:
-      "Apply for GST Registration online.",
+	  id: 3,
+	  name: "GST Registration",
+	  title: "GST Registration",
+	  slug: "gst-registration",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
   },
 
   {
-    id: 4,
-    title: "Trademark Registration",
-    slug: "trademark-registration",
-    category: {
-  id: 3,
-  name: "Trademark & IP",
-  slug: "trademark-ip",
-},
-    short_description:
-      "Protect your brand.",
-    description:
-      "Trademark registration with legal experts.",
-    starting_price: 1499,
-    price_label: "Starting at ₹1,499",
-    featured_image: "/images/services/trademark.webp",
-    icon: "/icons/trademark.svg",
-    is_featured: true,
-    is_popular: true,
-    seo_title: "Trademark Registration",
-    seo_description:
-      "Trademark registration in India.",
+	  id: 4,
+	  name: "Trademark Registration",
+	  title: "Trademark Registration",
+	  slug: "trademark-registration",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
   },
 
   {
-    id: 5,
-    title: "Payroll Management",
-    slug: "payroll-management",
-    category: {
-  id: 4,
-  name: "Payroll",
-  slug: "payroll",
-},
-    short_description:
-      "Complete payroll management.",
-    description:
-      "Payroll processing for startups and companies.",
-    starting_price: 1999,
-    price_label: "Starting at ₹1,999",
-    featured_image: "/images/services/payroll.webp",
-    icon: "/icons/payroll.svg",
-    is_featured: false,
-    is_popular: false,
-    seo_title: "Payroll Services",
-    seo_description:
-      "Payroll outsourcing and compliance.",
+	  id: 5,
+	  name: "Payroll Management",
+	  title: "Payroll Management",
+	  slug: "payroll-management",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 6,
+	  name: "One Person Company",
+	  title: "One Person Company Registration",
+	  slug: "one-person-company-registration",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 7,
+	  name: "Partnership Firm",
+	  title: "Partnership Firm Registration",
+	  slug: "partnership-firm-registration",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 8,
+	  name: "Sole Proprietorship",
+	  title: "Sole Proprietorship Registration",
+	  slug: "sole-proprietorship-registration",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 9,
+	  name: "Section 8 Company",
+	  title: "Section 8 Company Registration",
+	  slug: "section-8-company-registration",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 10,
+	  name: "MSME Registration",
+	  title: "MSME Registration",
+	  slug: "msme-registration",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 11,
+	  name: "FSSAI License",
+	  title: "FSSAI License Registration",
+	  slug: "fssai-license",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 12,
+	  name: "Import Export Code",
+	  title: "Import Export Code",
+	  slug: "import-export-code",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 13,
+	  name: "ISO Certification",
+	  title: "ISO Certification",
+	  slug: "iso-certification",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 14,
+	  name: "Digital Signature",
+	  title: "Digital Signature Certificate",
+	  slug: "digital-signature-certificate",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 15,
+	  name: "Professional Tax",
+	  title: "Professional Tax Registration",
+	  slug: "professional-tax-registration",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 16,
+	  name: "TDS Return Filing",
+	  title: "TDS Return Filing",
+	  slug: "tds-return-filing",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 17,
+	  name: "ITR Filing",
+	  title: "Income Tax Return Filing",
+	  slug: "itr-filing",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 18,
+	  name: "Accounting",
+	  title: "Accounting & Bookkeeping",
+	  slug: "accounting-bookkeeping",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 19,
+	  name: "ROC Compliance",
+	  title: "ROC Annual Compliance",
+	  slug: "roc-annual-compliance",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 20,
+	  name: "Annual Filing",
+	  title: "Annual Company Filing",
+	  slug: "annual-company-filing",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 21,
+	  name: "Startup India",
+	  title: "Startup India Registration",
+	  slug: "startup-india-registration",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 22,
+	  name: "Shop & Establishment",
+	  title: "Shop & Establishment License",
+	  slug: "shop-establishment-license",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 23,
+	  name: "PF Registration",
+	  title: "PF Registration",
+	  slug: "pf-registration",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 24,
+	  name: "ESI Registration",
+	  title: "ESI Registration",
+	  slug: "esi-registration",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
+  },
+
+  {
+	  id: 25,
+	  name: "Business Plan",
+	  title: "Business Plan Preparation",
+	  slug: "business-plan",
+	  short_description: "",
+	  description: "",
+	  starting_price: 0,
+	  is_featured: false,
+	  is_popular: false
   },
 ];
-
-export default services;
 

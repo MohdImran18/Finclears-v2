@@ -3,218 +3,157 @@
 import Link from "next/link";
 
 const plans = [
-  {
-    name: "Starter",
-    price: "₹999",
-    period: "/starting",
+	{
+		name: "Starter",
+		price: "₹999",
+		period: "/starting",
 
-    description:
-      "Perfect for individuals and small businesses.",
+		description: "Perfect for individuals and small businesses.",
 
-    features: [
-      "Business Consultation",
-      "GST Registration",
-      "Basic Documentation",
-      "Email Support",
-      "Government Filing",
-    ],
+		features: [
+			"Business Consultation",
+			"GST Registration",
+			"Basic Documentation",
+			"Email Support",
+			"Government Filing",
+		],
 
-    button: "Choose Starter",
+		button: "Choose Starter",
 
-    popular: false,
-  },
+		popular: false,
+	},
 
-  {
-    name: "Professional",
+	{
+		name: "Professional",
 
-    price: "₹4,999",
+		price: "₹4,999",
 
-    period: "/starting",
+		period: "/starting",
 
-    description:
-      "Best for startups and growing businesses.",
+		description: "Best for startups and growing businesses.",
 
-    features: [
-      "Private Limited / LLP",
-      "GST Registration",
-      "Trademark Filing",
-      "ROC Compliance",
-      "Dedicated CA",
-      "Priority Support",
-      "Document Assistance",
-    ],
+		features: [
+			"Private Limited / LLP",
+			"GST Registration",
+			"Trademark Filing",
+			"ROC Compliance",
+			"Dedicated CA",
+			"Priority Support",
+			"Document Assistance",
+		],
 
-    button: "Get Started",
+		button: "Get Started",
 
-    popular: true,
-  },
+		popular: true,
+	},
 
-  {
-    name: "Enterprise",
+	{
+		name: "Enterprise",
 
-    price: "Custom",
+		price: "Custom",
 
-    period: "",
+		period: "",
 
-    description:
-      "Tailored solutions for large organizations.",
+		description: "Tailored solutions for large organizations.",
 
-    features: [
-      "Everything in Professional",
-      "Accounting Services",
-      "Payroll",
-      "Annual Compliance",
-      "Dedicated Account Manager",
-      "Priority Processing",
-      "Premium Support",
-    ],
+		features: [
+			"Everything in Professional",
+			"Accounting Services",
+			"Payroll",
+			"Annual Compliance",
+			"Dedicated Account Manager",
+			"Priority Processing",
+			"Premium Support",
+		],
 
-    button: "Contact Sales",
+		button: "Contact Sales",
 
-    popular: false,
-  },
+		popular: false,
+	},
 ];
 
 export default function PricingPlans() {
-  return (
-    <section className="bg-white py-24">
+	return (
+		<section className="bg-white py-24">
+			<div className="container mx-auto px-6">
+				<div className="mx-auto mb-16 max-w-3xl text-center">
+					<span className="text-sm font-semibold uppercase tracking-widest text-blue-600">
+						Pricing Plans
+					</span>
 
-      <div className="container mx-auto px-6">
+					<h2 className="mt-4 text-5xl font-bold text-gray-900">
+						Choose The Perfect Plan
+					</h2>
 
-        <div className="mx-auto mb-16 max-w-3xl text-center">
+					<p className="mt-6 text-lg leading-8 text-gray-600">
+						Transparent pricing with no hidden charges. Upgrade anytime as your
+						business grows.
+					</p>
+				</div>
 
-          <span className="text-sm font-semibold uppercase tracking-widest text-blue-600">
+				<div className="grid gap-10 lg:grid-cols-3">
+					{plans.map((plan) => (
+						<div
+							key={plan.name}
+							className={`relative rounded-[36px] border p-10 shadow-lg transition duration-300 hover:-translate-y-2 hover:shadow-2xl ${
+								plan.popular
+									? "border-blue-600 bg-blue-600 text-white"
+									: "border-gray-200 bg-white"
+							}`}
+						>
+							{plan.popular && (
+								<div className="absolute -top-5 left-1/2 -translate-x-1/2 rounded-full bg-yellow-400 px-5 py-2 text-sm font-bold text-gray-900">
+									⭐ Most Popular
+								</div>
+							)}
 
-            Pricing Plans
+							<h3 className="text-3xl font-bold">{plan.name}</h3>
 
-          </span>
+							<p
+								className={`mt-4 ${
+									plan.popular ? "text-blue-100" : "text-gray-600"
+								}`}
+							>
+								{plan.description}
+							</p>
 
-          <h2 className="mt-4 text-5xl font-bold text-gray-900">
+							<div className="mt-8">
+								<span className="text-5xl font-bold">{plan.price}</span>
 
-            Choose The Perfect Plan
+								<span
+									className={`ml-2 ${
+										plan.popular ? "text-blue-100" : "text-gray-500"
+									}`}
+								>
+									{plan.period}
+								</span>
+							</div>
 
-          </h2>
+							<ul className="mt-10 space-y-4">
+								{plan.features.map((feature) => (
+									<li key={feature} className="flex items-center gap-3">
+										<span>✅</span>
 
-          <p className="mt-6 text-lg leading-8 text-gray-600">
+										<span>{feature}</span>
+									</li>
+								))}
+							</ul>
 
-            Transparent pricing with no hidden charges.
-            Upgrade anytime as your business grows.
-
-          </p>
-
-        </div>
-
-        <div className="grid gap-10 lg:grid-cols-3">
-
-          {plans.map((plan) => (
-
-            <div
-              key={plan.name}
-              className={`relative rounded-[36px] border p-10 shadow-lg transition duration-300 hover:-translate-y-2 hover:shadow-2xl ${
-                plan.popular
-                  ? "border-blue-600 bg-blue-600 text-white"
-                  : "border-gray-200 bg-white"
-              }`}
-            >
-
-              {plan.popular && (
-
-                <div className="absolute -top-5 left-1/2 -translate-x-1/2 rounded-full bg-yellow-400 px-5 py-2 text-sm font-bold text-gray-900">
-
-                  ⭐ Most Popular
-
-                </div>
-
-              )}
-
-              <h3 className="text-3xl font-bold">
-
-                {plan.name}
-
-              </h3>
-
-              <p
-                className={`mt-4 ${
-                  plan.popular
-                    ? "text-blue-100"
-                    : "text-gray-600"
-                }`}
-              >
-
-                {plan.description}
-
-              </p>
-
-              <div className="mt-8">
-
-                <span className="text-5xl font-bold">
-
-                  {plan.price}
-
-                </span>
-
-                <span
-                  className={`ml-2 ${
-                    plan.popular
-                      ? "text-blue-100"
-                      : "text-gray-500"
-                  }`}
-                >
-
-                  {plan.period}
-
-                </span>
-
-              </div>
-
-              <ul className="mt-10 space-y-4">
-
-                {plan.features.map((feature) => (
-
-                  <li
-                    key={feature}
-                    className="flex items-center gap-3"
-                  >
-
-                    <span>
-
-                      ✅
-
-                    </span>
-
-                    <span>
-
-                      {feature}
-
-                    </span>
-
-                  </li>
-
-                ))}
-
-              </ul>
-
-              <Link
-                href="/contact"
-                className={`mt-10 inline-flex w-full items-center justify-center rounded-xl px-6 py-4 font-semibold transition ${
-                  plan.popular
-                    ? "bg-white text-blue-600 hover:bg-gray-100"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
-              >
-
-                {plan.button}
-
-              </Link>
-
-            </div>
-
-          ))}
-
-        </div>
-
-      </div>
-
-    </section>
-  );
+							<Link
+								href="/contact"
+								className={`mt-10 inline-flex w-full items-center justify-center rounded-xl px-6 py-4 font-semibold transition ${
+									plan.popular
+										? "bg-white text-blue-600 hover:bg-gray-100"
+										: "bg-blue-600 text-white hover:bg-blue-700"
+								}`}
+							>
+								{plan.button}
+							</Link>
+						</div>
+					))}
+				</div>
+			</div>
+		</section>
+	);
 }
+

@@ -1,24 +1,18 @@
 interface Props {
-  status: string;
+	status: string;
 }
 
-export default function UserStatus({
-  status,
-}: Props) {
-  const active =
-    status === "active";
+export default function UserStatus({ status }: Props) {
+	const active = status === "active";
 
-  return (
-    <span
-      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-        active
-          ? "bg-green-100 text-green-700"
-          : "bg-red-100 text-red-700"
-      }`}
-    >
-      {active
-        ? "Active"
-        : "Inactive"}
-    </span>
-  );
+	return (
+		<span
+			className={`rounded-full px-3 py-1 text-xs font-semibold ${
+				active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+			}`}
+		>
+			{active ? "Active" : "Inactive"}
+		</span>
+	);
 }
+

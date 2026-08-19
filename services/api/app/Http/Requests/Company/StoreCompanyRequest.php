@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Company;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreCompanyRequest extends FormRequest
 {
@@ -14,29 +15,66 @@ class StoreCompanyRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'service_type' => ['required', 'string', 'max:100'],
+            'company_name' => ['required', 'string', 'max:255'],
+            'company_type' => ['required', 'string', 'max:100'],
 
-            'user_id'=>['required','exists:users,id'],
+            'business_activity' => ['nullable', 'string'],
+            'authorized_capital' => ['nullable', 'numeric', 'min:0'],
+            'paid_up_capital' => ['nullable', 'numeric', 'min:0'],
 
-            'service_type'=>['required','string','max:100'],
+            'state' => ['required', 'string', 'max:100'],
+            'city' => ['required', 'string', 'max:100'],
+            'address' => ['required', 'string'],
+            'pin_code' => ['required', 'string', 'max:10'],
 
-            'company_name'=>['required','string','max:255'],
+            'cin' => ['nullable', 'string', 'max:255'],
+            'llpin' => ['nullable', 'string', 'max:255'],
+            'pan_number' => ['nullable', 'string', 'max:255'],
+            'tan_number' => ['nullable', 'string', 'max:255'],
+            'gst_number' => ['nullable', 'string', 'max:255'],
 
-            'company_type'=>['required','string','max:100'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'website' => ['nullable', 'url', 'max:255'],
 
-            'business_activity'=>['nullable','string'],
+            'status' => [
+                'nullable',
+                Rule::in(['draft', 'pending']),
+            ],
 
-            'authorized_capital'=>['required','numeric'],
+            'payment_status' => [
+                'nullable',
+                Rule::in(['pending', 'paid', 'failed', 'refunded']),
+            ],
 
-            'paid_up_capital'=>['required','numeric'],
+            'incorporation_date' => ['nullable', 'date'],
+            'remarks' => ['nullable', 'string'],
 
-            'state'=>['required'],
+            /*
+             * Directors / Promoters
+             */
+            'promoters' => ['nullable', 'array'],
 
-            'city'=>['required'],
+            'promoters.*.name' => ['required', 'string', 'max:255'],
+            'promoters.*.email' => ['nullable', 'email', 'max:255'],
+            'promoters.*.phone' => ['nullable', 'string', 'max:20'],
+            'promoters.*.pan' => ['nullable', 'string', 'max:20'],
+            'promoters.*.aadhaar' => ['nullable', 'string', 'max:20'],
+            'promoters.*.din' => ['nullable', 'string', 'max:50'],
+            'promoters.*.designation' => ['nullable', 'string', 'max:100'],
 
-            'address'=>['required'],
+            /*
+             * Shareholders
+             */
+            'shareholders' => ['nullable', 'array'],
 
-            'pin_code'=>['required']
-
+            'shareholders.*.name' => ['required', 'string', 'max:255'],
+            'shareholders.*.email' => ['nullable', 'email', 'max:255'],
+            'shareholders.*.phone' => ['nullable', 'string', 'max:20'],
+            'shareholders.*.pan' => ['nullable', 'string', 'max:20'],
+            'shareholders.*.shares' => ['required', 'numeric', 'min:0'],
+            'shareholders.*.percentage' => ['required', 'numeric', 'min:0', 'max:100'],
         ];
     }
 }

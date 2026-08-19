@@ -1,0 +1,544 @@
+Schema::create('itr_notices', function (Blueprint $table) {
+            /*
+        |--------------------------------------------------------------------------
+        | Primary Key
+        |--------------------------------------------------------------------------
+        */
+
+        $table->id();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Relationships
+        |--------------------------------------------------------------------------
+        */
+
+        $table->foreignId('itr_return_id')
+            ->nullable()
+            ->constrained('itr_returns')
+            ->nullOnDelete();
+
+        $table->foreignId('user_id')
+            ->constrained('users')
+            ->cascadeOnDelete();
+
+        $table->foreignId('company_id')
+            ->nullable()
+            ->constrained('companies')
+            ->nullOnDelete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Notice Identification
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('notice_number', 100)
+            ->unique();
+
+        $table->string('document_identification_number', 100)
+            ->nullable();
+
+        $table->string('assessment_year', 20);
+
+        $table->string('financial_year', 20);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Notice Classification
+        |--------------------------------------------------------------------------
+        */
+
+        $table->enum('notice_type', [
+            '143_1',
+            '143_2',
+            '142_1',
+            '148',
+            '139_9',
+            '156',
+            '245',
+            'tds_mismatch',
+            'ais_mismatch',
+            'compliance',
+            'refund_adjustment',
+            'other'
+        ]);
+
+        $table->string('section', 50)
+            ->nullable();
+
+        $table->enum('priority', [
+            'low',
+            'medium',
+            'high',
+            'critical'
+        ])->default('medium');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Notice Status
+        |--------------------------------------------------------------------------
+        */
+
+        $table->enum('status', [
+            'pending',
+            'under_review',
+            'responded',
+            'closed',
+            'escalated',
+            'reopened',
+            'appeal_filed'
+        ])->default('pending');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Notice Dates
+        |--------------------------------------------------------------------------
+        */
+
+        $table->date('issue_date')
+            ->nullable();
+
+        $table->date('received_date')
+            ->nullable();
+
+        $table->date('due_date')
+            ->nullable();
+
+        $table->date('response_date')
+            ->nullable();
+
+        $table->date('closed_date')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Notice Details
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('subject', 500)
+            ->nullable();
+
+        $table->longText('notice_summary')
+            ->nullable();
+
+        $table->longText('department_remarks')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Flags
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('response_required')
+            ->default(true);
+
+        $table->boolean('is_overdue')
+            ->default(false);
+
+        $table->boolean('is_closed')
+            ->default(false);
+
+        $table->text('remarks')
+            ->nullable();
+                    /*
+        |--------------------------------------------------------------------------
+        | Financial Impact
+        |--------------------------------------------------------------------------
+        */
+
+        $table->decimal('tax_demand', 15, 2)
+            ->default(0);
+
+        $table->decimal('interest_amount', 15, 2)
+            ->default(0);
+
+        $table->decimal('penalty_amount', 15, 2)
+            ->default(0);
+
+        $table->decimal('refund_adjustment_amount', 15, 2)
+            ->default(0);
+
+        $table->decimal('total_demand', 15, 2)
+            ->default(0);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Government API
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('government_verified')
+            ->default(false);
+
+        $table->timestamp('government_verified_at')
+            ->nullable();
+
+        $table->string('api_provider', 100)
+            ->nullable();
+
+        $table->integer('api_status_code')
+            ->nullable();
+
+        $table->integer('api_response_time')
+            ->nullable()
+            ->comment('Response time in milliseconds');
+
+        $table->json('api_request')
+            ->nullable();
+
+        $table->json('api_response')
+            ->nullable();
+
+        $table->string('api_reference_number', 100)
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | AI Notice Analysis
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('ai_analyzed')
+            ->default(false);
+
+        $table->timestamp('ai_analyzed_at')
+            ->nullable();
+
+        $table->decimal('ai_confidence_score', 5, 2)
+            ->nullable();
+
+        $table->enum('risk_level', [
+            'low',
+            'medium',
+            'high',
+            'critical'
+        ])->default('medium');
+
+        $table->json('required_documents')
+            ->nullable();
+
+        $table->json('compliance_checklist')
+            ->nullable();
+
+        $table->json('recommended_actions')
+            ->nullable();
+
+        $table->longText('ai_summary')
+            ->nullable();
+
+        $table->json('validation_errors')
+            ->nullable();
+
+        $table->json('warnings')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Attachments
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('notice_file_name', 255)
+            ->nullable();
+
+        $table->string('notice_file_path')
+            ->nullable();
+
+        $table->string('response_file_name', 255)
+            ->nullable();
+
+        $table->string('response_file_path')
+            ->nullable();
+
+        $table->json('supporting_documents')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Metadata
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('ip_address', 45)
+            ->nullable();
+
+        $table->string('device_type', 100)
+            ->nullable();
+
+        $table->string('browser', 150)
+            ->nullable();
+
+        $table->string('operating_system', 150)
+            ->nullable();
+
+        $table->uuid('notice_session')
+            ->nullable();
+                    /*
+        |--------------------------------------------------------------------------
+        | Enterprise Metadata
+        |--------------------------------------------------------------------------
+        */
+
+        $table->uuid('uuid')->unique();
+
+        $table->unsignedInteger('version')
+            ->default(1);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Trail
+        |--------------------------------------------------------------------------
+        */
+
+        $table->foreignId('created_by')
+            ->nullable()
+            ->constrained('users')
+            ->nullOnDelete();
+
+        $table->foreignId('updated_by')
+            ->nullable()
+            ->constrained('users')
+            ->nullOnDelete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Timestamps
+        |--------------------------------------------------------------------------
+        */
+
+        $table->timestamps();
+
+        $table->softDeletes();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Performance Indexes
+        |--------------------------------------------------------------------------
+        */
+
+        $table->index('itr_return_id');
+        $table->index('user_id');
+        $table->index('company_id');
+
+        $table->index('notice_number');
+        $table->index('document_identification_number');
+
+        $table->index('assessment_year');
+        $table->index('financial_year');
+
+        $table->index('notice_type');
+        $table->index('section');
+
+        $table->index('priority');
+        $table->index('status');
+
+        $table->index('government_verified');
+        $table->index('ai_analyzed');
+
+        $table->index('risk_level');
+
+        $table->index('response_required');
+        $table->index('is_overdue');
+        $table->index('is_closed');
+
+        $table->index('issue_date');
+        $table->index('received_date');
+        $table->index('due_date');
+        $table->index('response_date');
+        $table->index('closed_date');
+
+        $table->index('api_reference_number');
+
+        $table->index('notice_session');
+
+        $table->index('uuid');
+
+        $table->index('created_at');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Composite Indexes
+        |--------------------------------------------------------------------------
+        */
+
+        $table->index([
+            'user_id',
+            'status'
+        ]);
+
+        $table->index([
+            'company_id',
+            'status'
+        ]);
+
+        $table->index([
+            'itr_return_id',
+            'status'
+        ]);
+
+        $table->index([
+            'notice_type',
+            'status'
+        ]);
+
+        $table->index([
+            'priority',
+            'status'
+        ]);
+
+        $table->index([
+            'risk_level',
+            'status'
+        ]);
+
+        $table->index([
+            'government_verified',
+            'status'
+        ]);
+
+        $table->index([
+            'ai_analyzed',
+            'status'
+        ]);
+
+        $table->index([
+            'status',
+            'due_date'
+        ]);
+
+        $table->index([
+            'status',
+            'issue_date'
+        ]);
+
+        $table->index([
+            'assessment_year',
+            'financial_year'
+        ]);
+
+        $table->index([
+            'notice_type',
+            'assessment_year'
+        ]);
+
+        $table->index([
+            'notice_number',
+            'assessment_year'
+        ]);
+                /*
+        |--------------------------------------------------------------------------
+        | Business Rule Constraints
+        |--------------------------------------------------------------------------
+        */
+
+        DB::statement("
+            ALTER TABLE itr_notices
+            ADD CONSTRAINT chk_itr_notices_type
+            CHECK (
+                notice_type IN (
+                    '143_1',
+                    '143_2',
+                    '142_1',
+                    '148',
+                    '139_9',
+                    '156',
+                    '245',
+                    'tds_mismatch',
+                    'ais_mismatch',
+                    'compliance',
+                    'refund_adjustment',
+                    'other'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_notices
+            ADD CONSTRAINT chk_itr_notices_status
+            CHECK (
+                status IN (
+                    'pending',
+                    'under_review',
+                    'responded',
+                    'closed',
+                    'escalated',
+                    'reopened',
+                    'appeal_filed'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_notices
+            ADD CONSTRAINT chk_itr_notices_priority
+            CHECK (
+                priority IN (
+                    'low',
+                    'medium',
+                    'high',
+                    'critical'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_notices
+            ADD CONSTRAINT chk_itr_notices_risk
+            CHECK (
+                risk_level IN (
+                    'low',
+                    'medium',
+                    'high',
+                    'critical'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_notices
+            ADD CONSTRAINT chk_itr_notices_amounts
+            CHECK (
+                tax_demand >= 0
+                AND interest_amount >= 0
+                AND penalty_amount >= 0
+                AND refund_adjustment_amount >= 0
+                AND total_demand >= 0
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_notices
+            ADD CONSTRAINT chk_itr_notices_ai_confidence
+            CHECK (
+                ai_confidence_score IS NULL
+                OR (
+                    ai_confidence_score >= 0
+                    AND ai_confidence_score <= 100
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_notices
+            ADD CONSTRAINT chk_itr_notices_version
+            CHECK (
+                version >= 1
+            )
+        ");
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::disableForeignKeyConstraints();
+
+        Schema::dropIfExists('itr_notices');
+
+        Schema::enableForeignKeyConstraints();
+    }
+};

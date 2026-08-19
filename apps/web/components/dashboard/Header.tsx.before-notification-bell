@@ -1,0 +1,50 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/auth";
+
+export default function Header() {
+        const router = useRouter();
+
+        const user = useAuthStore((state) => state.user);
+        const logout = useAuthStore((state) => state.logout);
+
+        const handleLogout = () => {
+                logout();
+                router.replace("/auth/login");
+        };
+
+        return (
+                <header className="flex h-16 items-center justify-between border-b bg-white px-8">
+                        <div>
+                                <h1 className="text-xl font-semibold">
+                                        Customer Dashboard
+                                </h1>
+
+                                <p className="text-sm text-gray-500">
+                                        Welcome back
+                                </p>
+                        </div>
+
+                        <div className="flex items-center gap-5">
+                                <div className="text-right">
+                                        <p className="font-semibold">
+                                                {user?.name}
+                                        </p>
+
+                                        <p className="text-sm text-gray-500">
+                                                {user?.email}
+                                        </p>
+                                </div>
+
+                                <button
+                                        type="button"
+                                        onClick={handleLogout}
+                                        className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                                >
+                                        Logout
+                                </button>
+                        </div>
+                </header>
+        );
+}

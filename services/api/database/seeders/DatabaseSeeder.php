@@ -13,6 +13,30 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
 
+            /*
+            |--------------------------------------------------------------------------
+            | ITR Master Data
+            |--------------------------------------------------------------------------
+            */
+
+            FinancialYearSeeder::class,
+
+            AssessmentYearSeeder::class,
+
+            ItrTypeSeeder::class,
+
+            TaxRegimeSeeder::class,
+
+            ReturnStatusSeeder::class,
+
+            IncomeTypeSeeder::class,
+
+            /*
+            |--------------------------------------------------------------------------
+            | Services
+            |--------------------------------------------------------------------------
+            */
+
             ServiceCategorySeeder::class,
 
             ServiceSeeder::class,
@@ -27,10 +51,25 @@ class DatabaseSeeder extends Seeder
 
             ServiceFaqSeeder::class,
 
+            /*
+            |--------------------------------------------------------------------------
+            | Blog
+            |--------------------------------------------------------------------------
+            */
+
             BlogCategorySeeder::class,
 
             BlogSeeder::class,
 
+            /*
+            |--------------------------------------------------------------------------
+            | Optional
+            |--------------------------------------------------------------------------
+            */
+
+            // UserSeeder::class,
+            // ContactSeeder::class,
+            // NewsletterSeeder::class,
 
         ]);
     }

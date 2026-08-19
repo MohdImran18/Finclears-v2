@@ -18,8 +18,21 @@ use App\Contracts\BlogRepositoryInterface;
 use App\Contracts\BlogServiceInterface;
 use App\Contracts\ContactServiceInterface;
 use App\Contracts\NewsletterServiceInterface;
-use App\Contracts\CompanyRepositoryInterface;
-use App\Repositories\CompanyRepository;
+
+/*
+|--------------------------------------------------------------------------
+| Repository Contracts
+|--------------------------------------------------------------------------
+*/
+
+use App\Contracts\Repositories\CompanyRepositoryInterface;
+use App\Contracts\Repositories\ItrReturnRepositoryInterface;
+
+use App\Contracts\Repositories\AssessmentYearRepositoryInterface;
+use App\Contracts\Repositories\FinancialYearRepositoryInterface;
+use App\Contracts\Repositories\ItrTypeRepositoryInterface;
+use App\Contracts\Repositories\TaxRegimeRepositoryInterface;
+use App\Contracts\Repositories\ReturnStatusRepositoryInterface;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +55,14 @@ use App\Services\NewsletterService;
 use App\Repositories\UserRepository;
 use App\Repositories\ServiceRepository;
 use App\Repositories\BlogRepository;
+use App\Repositories\CompanyRepository;
+use App\Repositories\ItrReturnRepository;
+
+use App\Repositories\AssessmentYearRepository;
+use App\Repositories\FinancialYearRepository;
+use App\Repositories\ItrTypeRepository;
+use App\Repositories\TaxRegimeRepository;
+use App\Repositories\ReturnStatusRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -51,7 +72,6 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->registerRepositories();
-
         $this->registerServices();
     }
 
@@ -67,28 +87,57 @@ class AppServiceProvider extends ServiceProvider
      * Repository Bindings
      */
     private function registerRepositories(): void
-    {
-        $this->app->bind(
-            CompanyRepositoryInterface::class,
-            CompanyRepository::class
-        );
+{
+    $this->app->bind(
+        UserRepositoryInterface::class,
+        UserRepository::class
+    );
 
+    $this->app->bind(
+        CompanyRepositoryInterface::class,
+        CompanyRepository::class
+    );
 
-        $this->app->bind(
-            UserRepositoryInterface::class,
-            UserRepository::class
-        );
+    $this->app->bind(
+        ItrReturnRepositoryInterface::class,
+        ItrReturnRepository::class
+    );
 
-        $this->app->bind(
-            ServiceRepositoryInterface::class,
-            ServiceRepository::class
-        );
+    $this->app->bind(
+        AssessmentYearRepositoryInterface::class,
+        AssessmentYearRepository::class
+    );
 
-        $this->app->bind(
-            BlogRepositoryInterface::class,
-            BlogRepository::class
-        );
-    }
+    $this->app->bind(
+        FinancialYearRepositoryInterface::class,
+        FinancialYearRepository::class
+    );
+
+    $this->app->bind(
+        ItrTypeRepositoryInterface::class,
+        ItrTypeRepository::class
+    );
+
+    $this->app->bind(
+        TaxRegimeRepositoryInterface::class,
+        TaxRegimeRepository::class
+    );
+
+    $this->app->bind(
+        ReturnStatusRepositoryInterface::class,
+        ReturnStatusRepository::class
+    );
+
+    $this->app->bind(
+        ServiceRepositoryInterface::class,
+        ServiceRepository::class
+    );
+
+    $this->app->bind(
+        BlogRepositoryInterface::class,
+        BlogRepository::class
+    );
+}
 
     /**
      * Service Bindings

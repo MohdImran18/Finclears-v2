@@ -1,43 +1,39 @@
-export function articleSchema(data:{
-title:string;
-description:string;
-image?:string;
-url:string;
-author:string;
-publishedAt:string;
-updatedAt?:string;
-}){
+export function articleSchema(data: {
+	title: string;
+	description: string;
+	image?: string;
+	url: string;
+	author: string;
+	publishedAt: string;
+	updatedAt?: string;
+}) {
+	return {
+		"@context": "https://schema.org",
 
-return {
+		"@type": "Article",
 
-"@context":"https://schema.org",
+		headline: data.title,
 
-"@type":"Article",
+		description: data.description,
 
-headline:data.title,
+		image: data.image,
 
-description:data.description,
+		url: data.url,
 
-image:data.image,
+		author: {
+			"@type": "Person",
+			name: data.author,
+		},
 
-url:data.url,
+		publisher: {
+			"@type": "Organization",
+			name: "FinClears",
+			url: "https://finclears.com",
+		},
 
-author:{
-"@type":"Person",
-name:data.author
-},
+		datePublished: data.publishedAt,
 
-publisher:{
-"@type":"Organization",
-name:"FinClears",
-url:"https://finclears.com"
-},
-
-datePublished:data.publishedAt,
-
-dateModified:
-data.updatedAt ?? data.publishedAt
-
-};
-
+		dateModified: data.updatedAt ?? data.publishedAt,
+	};
 }
+

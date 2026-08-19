@@ -1,0 +1,504 @@
+Schema::create('itr_refunds', function (Blueprint $table) {
+            /*
+        |--------------------------------------------------------------------------
+        | Primary Key
+        |--------------------------------------------------------------------------
+        */
+
+        $table->id();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Relationships
+        |--------------------------------------------------------------------------
+        */
+
+        $table->foreignId('itr_return_id')
+            ->constrained('itr_returns')
+            ->cascadeOnDelete();
+
+        $table->foreignId('itr_verification_id')
+            ->nullable()
+            ->constrained('itr_verifications')
+            ->nullOnDelete();
+
+        $table->foreignId('itr_bank_account_id')
+            ->nullable()
+            ->constrained('itr_bank_accounts')
+            ->nullOnDelete();
+
+        $table->foreignId('user_id')
+            ->constrained('users')
+            ->cascadeOnDelete();
+
+        $table->foreignId('company_id')
+            ->nullable()
+            ->constrained('companies')
+            ->nullOnDelete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Refund Information
+        |--------------------------------------------------------------------------
+        */
+
+        $table->decimal('refund_amount', 15, 2)
+            ->default(0);
+
+        $table->decimal('interest_amount', 15, 2)
+            ->default(0);
+
+        $table->decimal('total_refund_amount', 15, 2)
+            ->default(0);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Refund Status
+        |--------------------------------------------------------------------------
+        */
+
+        $table->enum('refund_status', [
+            'pending',
+            'processing',
+            'approved',
+            'initiated',
+            'processed',
+            'credited',
+            'failed',
+            'rejected',
+            'cancelled'
+        ])->default('pending');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Refund Mode
+        |--------------------------------------------------------------------------
+        */
+
+        $table->enum('refund_mode', [
+            'neft',
+            'rtgs',
+            'imps',
+            'upi',
+            'cheque',
+            'ecs'
+        ])->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Refund Reference
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('refund_reference_number', 100)
+            ->nullable();
+
+        $table->string('refund_transaction_id', 100)
+            ->nullable();
+
+        $table->string('cpc_reference_number', 100)
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Refund Timeline
+        |--------------------------------------------------------------------------
+        */
+
+        $table->timestamp('refund_processed_at')
+            ->nullable();
+
+        $table->timestamp('refund_initiated_at')
+            ->nullable();
+
+        $table->timestamp('refund_credited_at')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Result
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('is_refunded')
+            ->default(false);
+
+        $table->boolean('interest_paid')
+            ->default(false);
+
+        $table->text('remarks')
+            ->nullable();
+                    /*
+        |--------------------------------------------------------------------------
+        | Refund Bank Snapshot
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('account_holder_name', 255)
+            ->nullable();
+
+        $table->string('bank_name', 255)
+            ->nullable();
+
+        $table->string('branch_name', 255)
+            ->nullable();
+
+        $table->string('account_number', 50)
+            ->nullable();
+
+        $table->string('masked_account_number', 50)
+            ->nullable();
+
+        $table->string('ifsc_code', 20)
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | CPC Processing
+        |--------------------------------------------------------------------------
+        */
+
+        $table->enum('cpc_status', [
+            'pending',
+            'processing',
+            'approved',
+            'processed',
+            'credited',
+            'failed',
+            'rejected'
+        ])->default('pending');
+
+        $table->timestamp('cpc_processed_at')
+            ->nullable();
+
+        $table->string('cpc_acknowledgement_number', 100)
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Government API
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('government_verified')
+            ->default(false);
+
+        $table->timestamp('government_verified_at')
+            ->nullable();
+
+        $table->string('api_provider', 100)
+            ->nullable();
+
+        $table->integer('api_status_code')
+            ->nullable();
+
+        $table->integer('api_response_time')
+            ->nullable()
+            ->comment('Response time in milliseconds');
+
+        $table->json('api_request')
+            ->nullable();
+
+        $table->json('api_response')
+            ->nullable();
+
+        $table->string('api_reference_number', 100)
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Refund Failure & Reprocessing
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('refund_failed')
+            ->default(false);
+
+        $table->unsignedTinyInteger('retry_count')
+            ->default(0);
+
+        $table->timestamp('last_retry_at')
+            ->nullable();
+
+        $table->string('failure_code', 100)
+            ->nullable();
+
+        $table->text('failure_reason')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | AI Reconciliation
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('ai_reconciled')
+            ->default(false);
+
+        $table->timestamp('ai_reconciled_at')
+            ->nullable();
+
+        $table->decimal('ai_confidence_score', 5, 2)
+            ->nullable();
+
+        $table->json('ai_observations')
+            ->nullable();
+
+        $table->json('validation_errors')
+            ->nullable();
+
+        $table->json('warnings')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Metadata
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('ip_address', 45)
+            ->nullable();
+
+        $table->string('device_type', 100)
+            ->nullable();
+
+        $table->string('browser', 150)
+            ->nullable();
+
+        $table->string('operating_system', 150)
+            ->nullable();
+
+        $table->uuid('refund_session')
+            ->nullable();
+                    /*
+        |--------------------------------------------------------------------------
+        | Enterprise Metadata
+        |--------------------------------------------------------------------------
+        */
+
+        $table->uuid('uuid')->unique();
+
+        $table->unsignedInteger('version')
+            ->default(1);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Trail
+        |--------------------------------------------------------------------------
+        */
+
+        $table->foreignId('created_by')
+            ->nullable()
+            ->constrained('users')
+            ->nullOnDelete();
+
+        $table->foreignId('updated_by')
+            ->nullable()
+            ->constrained('users')
+            ->nullOnDelete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Timestamps
+        |--------------------------------------------------------------------------
+        */
+
+        $table->timestamps();
+
+        $table->softDeletes();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Performance Indexes
+        |--------------------------------------------------------------------------
+        */
+
+        $table->index('itr_return_id');
+        $table->index('itr_verification_id');
+        $table->index('itr_bank_account_id');
+
+        $table->index('user_id');
+        $table->index('company_id');
+
+        $table->index('refund_status');
+        $table->index('refund_mode');
+
+        $table->index('is_refunded');
+        $table->index('interest_paid');
+
+        $table->index('government_verified');
+        $table->index('ai_reconciled');
+
+        $table->index('refund_failed');
+
+        $table->index('refund_reference_number');
+        $table->index('refund_transaction_id');
+
+        $table->index('cpc_reference_number');
+        $table->index('cpc_acknowledgement_number');
+
+        $table->index('refund_session');
+
+        $table->index('uuid');
+
+        $table->index('created_at');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Composite Indexes
+        |--------------------------------------------------------------------------
+        */
+
+        $table->index([
+            'user_id',
+            'refund_status'
+        ]);
+
+        $table->index([
+            'company_id',
+            'refund_status'
+        ]);
+
+        $table->index([
+            'itr_return_id',
+            'refund_status'
+        ]);
+
+        $table->index([
+            'itr_bank_account_id',
+            'refund_status'
+        ]);
+
+        $table->index([
+            'refund_status',
+            'refund_mode'
+        ]);
+
+        $table->index([
+            'government_verified',
+            'refund_status'
+        ]);
+
+        $table->index([
+            'ai_reconciled',
+            'refund_status'
+        ]);
+
+        $table->index([
+            'refund_failed',
+            'refund_status'
+        ]);
+
+        $table->index([
+            'refund_status',
+            'refund_processed_at'
+        ]);
+
+        $table->index([
+            'refund_status',
+            'refund_credited_at'
+        ]);
+
+        $table->index([
+            'cpc_status',
+            'refund_status'
+        ]);
+                /*
+        |--------------------------------------------------------------------------
+        | Business Rule Constraints
+        |--------------------------------------------------------------------------
+        */
+
+        DB::statement("
+            ALTER TABLE itr_refunds
+            ADD CONSTRAINT chk_itr_refunds_status
+            CHECK (
+                refund_status IN (
+                    'pending',
+                    'processing',
+                    'approved',
+                    'initiated',
+                    'processed',
+                    'credited',
+                    'failed',
+                    'rejected',
+                    'cancelled'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_refunds
+            ADD CONSTRAINT chk_itr_refunds_mode
+            CHECK (
+                refund_mode IS NULL
+                OR refund_mode IN (
+                    'neft',
+                    'rtgs',
+                    'imps',
+                    'upi',
+                    'cheque',
+                    'ecs'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_refunds
+            ADD CONSTRAINT chk_itr_refunds_cpc_status
+            CHECK (
+                cpc_status IN (
+                    'pending',
+                    'processing',
+                    'approved',
+                    'processed',
+                    'credited',
+                    'failed',
+                    'rejected'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_refunds
+            ADD CONSTRAINT chk_itr_refunds_amount
+            CHECK (
+                refund_amount >= 0
+                AND interest_amount >= 0
+                AND total_refund_amount >= 0
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_refunds
+            ADD CONSTRAINT chk_itr_refunds_ai_confidence
+            CHECK (
+                ai_confidence_score IS NULL
+                OR (
+                    ai_confidence_score >= 0
+                    AND ai_confidence_score <= 100
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_refunds
+            ADD CONSTRAINT chk_itr_refunds_version
+            CHECK (
+                version >= 1
+            )
+        ");
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::disableForeignKeyConstraints();
+
+        Schema::dropIfExists('itr_refunds');
+
+        Schema::enableForeignKeyConstraints();
+    }
+};

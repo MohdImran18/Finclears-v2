@@ -15,53 +15,67 @@ class BlogService implements BlogServiceInterface
     ) {
     }
 
-    /**
-     * Paginated blogs.
-     */
-    public function paginate(
-        int $perPage = 10
-    ): LengthAwarePaginator
+    public function paginate(int $perPage = 10): LengthAwarePaginator
     {
         return $this->blogs->paginate($perPage);
     }
 
-    /**
-     * Featured blogs.
-     */
     public function featured(): Collection
     {
         return $this->blogs->featured();
     }
 
-    /**
-     * Blog categories.
-     */
     public function categories(): Collection
     {
         return $this->blogs->categories();
     }
 
-    /**
-     * Search blogs.
-     */
     public function search(
         string $keyword,
         int $perPage = 10
-    ): LengthAwarePaginator
-    {
+    ): LengthAwarePaginator {
         return $this->blogs->search(
             $keyword,
             $perPage
         );
     }
 
-    /**
-     * Find blog by slug.
-     */
-    public function findBySlug(
-        string $slug
-    ): ?Blog
+    public function findBySlug(string $slug): ?Blog
     {
         return $this->blogs->findBySlug($slug);
+    }
+
+    public function find(int $id): ?Blog
+    {
+        return $this->blogs->findById($id);
+    }
+
+    public function adminPaginate(
+        int $perPage = 15,
+        ?string $search = null,
+        ?bool $status = null,
+        ?bool $featured = null
+    ): LengthAwarePaginator {
+        return $this->blogs->adminPaginate(
+            $perPage,
+            $search,
+            $status,
+            $featured
+        );
+    }
+
+    public function create(array $data): Blog
+    {
+        return $this->blogs->create($data);
+    }
+
+    public function update(int $id, array $data): Blog
+    {
+        return $this->blogs->update($id, $data);
+    }
+
+    public function delete(int $id): bool
+    {
+        return $this->blogs->delete($id);
     }
 }

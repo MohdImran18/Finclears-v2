@@ -15,4 +15,4 @@ interface AuthServiceInterface
     public function me(Request $request): mixed;
 
     public function logout(Request $request): void;
-}app/Services/Auth/AuthService.php
+}

@@ -1,0 +1,349 @@
+<?php
+
+namespace App\Services\Sandbox;
+
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use RuntimeException;
+
+class SandboxService
+{
+    /**
+     * Get Sandbox API access token.
+     */
+    public function getAccessToken(): string
+    {
+        return Cache::remember(
+            'sandbox.access_token',
+            now()->addHours(23),
+            function () {
+                return $this->authenticate();
+            }
+        );
+    }
+
+    /**
+     * Authenticate with Sandbox.
+     */
+    protected function authenticate(): string
+    {
+        $baseUrl = rtrim(
+            config('services.sandbox.base_url'),
+            '/'
+        );
+
+        $apiKey = config('services.sandbox.api_key');
+        $apiSecret = config('services.sandbox.api_secret');
+        $apiVersion = config(
+            'services.sandbox.api_version',
+            '1.0'
+        );
+
+        if (!$apiKey || !$apiSecret) {
+            throw new RuntimeException(
+                'Sandbox API credentials are not configured.'
+            );
+        }
+
+        $response = Http::timeout(30)
+            ->acceptJson()
+            ->withHeaders([
+                'x-api-key' => $apiKey,
+                'x-api-secret' => $apiSecret,
+                'x-api-version' => $apiVersion,
+            ])
+            ->post($baseUrl . '/authenticate');
+
+    
+    if ($response->failed()) {
+            throw new RuntimeException(
+                'Sandbox authentication failed: '
+                . $response->body()
+            );
+        }
+
+        $token = $response->json('data.access_token');
+
+        if (!$token) {
+            throw new RuntimeException(
+                'Sandbox authentication succeeded but no access token was returned.'
+            );
+        }
+
+        return $token;
+    }
+
+    /**
+     * Verify PAN details.
+     */
+    public function verifyPan(
+    string $pan,
+    string $name,
+    string $dateOfBirth,
+    string $reason = 'For onboarding customers'
+): array {
+    $baseUrl = config(
+        'services.sandbox.base_url',
+        'https://test-api.sandbox.co.in'
+    );
+
+    $apiKey = config('services.sandbox.api_key');
+    $apiVersion = config(
+        'services.sandbox.api_version',
+        '1.0'
+    );
+
+    $token = $this->getAccessToken();
+
+    $payload = [
+        '@entity' => 'in.co.sandbox.kyc.pan_verification.request',
+        'pan' => strtoupper(trim($pan)),
+        'name_as_per_pan' => trim($name),
+        'date_of_birth' => $dateOfBirth,
+        'consent' => 'y',
+        'reason' => $reason,
+    ];
+
+    $response = Http::timeout(30)
+        ->acceptJson()
+        ->withHeaders([
+            'Authorization' => $token,
+            'Content-Type' => 'application/json',
+            'x-api-key' => $apiKey,
+            'x-api-version' => $apiVersion,
+        ])
+        ->post(
+            $baseUrl . '/kyc/pan/verify',
+            $payload
+        );
+
+    \Log::info('Sandbox PAN debug', [
+        'status' => $response->status(),
+        'body' => $response->body(),
+        'request_pan' => $payload['pan'],
+        'request_name' => $payload['name_as_per_pan'],
+        'request_dob' => $payload['date_of_birth'],
+    ]);
+
+    /*
+     * If token expired or authentication is rejected,
+     * clear cached token and retry once.
+     */
+    if ($response->status() === 401) {
+        $this->clearToken();
+
+        $token = $this->getAccessToken();
+
+        $response = Http::timeout(30)
+            ->acceptJson()
+            ->withHeaders([
+                'Authorization' => $token,
+                'Content-Type' => 'application/json',
+                'x-api-key' => $apiKey,
+                'x-api-version' => $apiVersion,
+            ])
+            ->post(
+                $baseUrl . '/kyc/pan/verify',
+                $payload
+            );
+    }
+
+    \Log::info('Sandbox PAN final response', [
+        'status' => $response->status(),
+        'body' => $response->body(),
+    ]);
+
+    if ($response->failed()) {
+        throw new \RuntimeException(
+            'Sandbox PAN verification failed: '
+            . $response->body()
+        );
+    }
+
+    $rawBody = $response->body();
+
+    try {
+        return json_decode(
+            $rawBody,
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+    } catch (\JsonException $e) {
+        return [
+            'success' => false,
+            'code' => null,
+            'message' => 'Sandbox returned invalid JSON.',
+            'raw_response' => $rawBody,
+            'transaction_id' => null,
+        ];
+    }
+}
+
+
+    /**
+     * Clear cached access token.
+     */
+    /**
+     * Generate Aadhaar OTP.
+     */
+    public function generateAadhaarOtp(
+        string $aadhaar,
+        string $reason = 'For ITR KYC verification'
+    ): array {
+        $baseUrl = rtrim(
+            config(
+                'services.sandbox.base_url',
+                'https://test-api.sandbox.co.in'
+            ),
+            '/'
+        );
+
+        $apiKey = config('services.sandbox.api_key');
+
+        $apiVersion = config(
+            'services.sandbox.api_version',
+            '1.0'
+        );
+
+        $token = $this->getAccessToken();
+
+        $payload = [
+            '@entity' => 'in.co.sandbox.kyc.aadhaar.okyc.otp.request',
+            'aadhaar_number' => preg_replace(
+                '/\D/',
+                '',
+                $aadhaar
+            ),
+            'consent' => 'y',
+            'reason' => $reason,
+        ];
+
+        $response = Http::timeout(30)
+            ->acceptJson()
+            ->withHeaders([
+                'Authorization' => $token,
+                'Content-Type' => 'application/json',
+                'x-api-key' => $apiKey,
+                'x-api-version' => $apiVersion,
+            ])
+            ->post(
+                $baseUrl . '/kyc/aadhaar/okyc/otp',
+                $payload
+            );
+
+        \Log::info('Sandbox Aadhaar OTP response', [
+            'status' => $response->status(),
+            'body' => $response->body(),
+        ]);
+
+        if ($response->status() === 401) {
+            $this->clearToken();
+
+            $token = $this->getAccessToken();
+
+            $response = Http::timeout(30)
+                ->acceptJson()
+                ->withHeaders([
+                    'Authorization' => $token,
+                    'Content-Type' => 'application/json',
+                    'x-api-key' => $apiKey,
+                    'x-api-version' => $apiVersion,
+                ])
+                ->post(
+                    $baseUrl . '/kyc/aadhaar/okyc/otp',
+                    $payload
+                );
+        }
+
+        if ($response->failed()) {
+            throw new RuntimeException(
+                'Sandbox Aadhaar OTP generation failed: '
+                . $response->body()
+            );
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Verify Aadhaar OTP.
+     */
+    public function verifyAadhaarOtp(
+        string $referenceId,
+        string $otp
+    ): array {
+        $baseUrl = rtrim(
+            config(
+                'services.sandbox.base_url',
+                'https://test-api.sandbox.co.in'
+            ),
+            '/'
+        );
+
+        $apiKey = config('services.sandbox.api_key');
+
+        $apiVersion = config(
+            'services.sandbox.api_version',
+            '1.0'
+        );
+
+        $token = $this->getAccessToken();
+
+        $payload = [
+            '@entity' => 'in.co.sandbox.kyc.aadhaar.okyc.request',
+            'reference_id' => $referenceId,
+            'otp' => $otp,
+        ];
+
+        $response = Http::timeout(30)
+            ->acceptJson()
+            ->withHeaders([
+                'Authorization' => $token,
+                'Content-Type' => 'application/json',
+                'x-api-key' => $apiKey,
+                'x-api-version' => $apiVersion,
+            ])
+            ->post(
+                $baseUrl . '/kyc/aadhaar/okyc/otp/verify',
+                $payload
+            );
+
+        \Log::info('Sandbox Aadhaar OTP verification response', [
+            'status' => $response->status(),
+            'body' => $response->body(),
+        ]);
+
+        if ($response->status() === 401) {
+            $this->clearToken();
+
+            $token = $this->getAccessToken();
+
+            $response = Http::timeout(30)
+                ->acceptJson()
+                ->withHeaders([
+                    'Authorization' => $token,
+                    'Content-Type' => 'application/json',
+                    'x-api-key' => $apiKey,
+                    'x-api-version' => $apiVersion,
+                ])
+                ->post(
+                    $baseUrl . '/kyc/aadhaar/okyc/otp/verify',
+                    $payload
+                );
+        }
+
+        if ($response->failed()) {
+            throw new RuntimeException(
+                'Sandbox Aadhaar OTP verification failed: '
+                . $response->body()
+            );
+        }
+
+        return $response->json();
+    }
+    public function clearToken(): void
+    {
+        Cache::forget('sandbox.access_token');
+    }
+}

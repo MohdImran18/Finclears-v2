@@ -1,38 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
+export async function POST(request: NextRequest) {
+	try {
+		const body = await request.json();
 
-export async function POST(
-  request: NextRequest
-) {
+		const { email } = body;
 
-  try {
+		if (!email) {
+			return NextResponse.json(
+				{
+					success: false,
+					message: "Email is required",
+				},
+				{
+					status: 400,
+				},
+			);
+		}
 
-    const body = await request.json();
-
-
-    const {
-      email,
-    } = body;
-
-
-
-    if (!email) {
-
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Email is required"
-        },
-        {
-          status: 400
-        }
-      );
-
-    }
-
-
-
-    /*
+		/*
       TODO:
       Connect Laravel API
 
@@ -41,42 +27,31 @@ export async function POST(
 
     */
 
+		return NextResponse.json(
+			{
+				success: true,
 
+				message: "Subscribed successfully",
 
-    return NextResponse.json(
-      {
-        success: true,
+				data: {
+					email,
+				},
+			},
+			{
+				status: 200,
+			},
+		);
+	} catch (error) {
+		return NextResponse.json(
+			{
+				success: false,
 
-        message:
-          "Subscribed successfully",
-
-        data: {
-          email
-        }
-
-      },
-      {
-        status: 200
-      }
-    );
-
-
-  } catch (error) {
-
-
-    return NextResponse.json(
-      {
-        success: false,
-
-        message:
-          "Unable to subscribe"
-      },
-      {
-        status: 500
-      }
-    );
-
-
-  }
-
+				message: "Unable to subscribe",
+			},
+			{
+				status: 500,
+			},
+		);
+	}
 }
+

@@ -1,0 +1,248 @@
+"use client";
+
+import type { OrderPayment } from "@/types/order";
+
+interface OrderPaymentsProps {
+        payments?: OrderPayment[];
+}
+
+type PaymentGatewayResponse = {
+        order_id?: string;
+        failure_reason?: string | null;
+        payment_message?: string | null;
+        error_details?: {
+                error_code?: string;
+                error_description?: string;
+                error_reason?: string;
+                error_message?: string;
+                message?: string;
+        } | null;
+        payments?: {
+                payment_status?: string;
+                payment_message?: string;
+                error_details?: {
+                        error_code?: string;
+                        error_description?: string;
+                        error_reason?: string;
+                        error_message?: string;
+                        message?: string;
+                } | null;
+                cf_payment_id?: string;
+        }[];
+};
+
+function getPaymentReason(payment: OrderPayment): string | null {
+        const gatewayResponse = (payment.gateway_response ?? {}) as PaymentGatewayResponse;
+
+        const directReason =
+                gatewayResponse.failure_reason ??
+                gatewayResponse.payment_message ??
+                null;
+
+        if (typeof directReason === "string" && directReason.trim()) {
+                return directReason;
+        }
+
+        const errorDetails = gatewayResponse.error_details;
+
+        if (errorDetails && typeof errorDetails === "object") {
+                const reason =
+                        errorDetails.error_description ??
+                        errorDetails.error_reason ??
+                        errorDetails.error_message ??
+                        errorDetails.message ??
+                        errorDetails.error_code ??
+                        null;
+
+                if (typeof reason === "string" && reason.trim()) {
+                        return reason;
+                }
+        }
+
+        const gatewayPayments = gatewayResponse.payments ?? [];
+        const gatewayPayment = gatewayPayments[0];
+
+        if (gatewayPayment?.error_details) {
+                return (
+                        gatewayPayment.error_details.error_description ??
+                        gatewayPayment.error_details.error_reason ??
+                        gatewayPayment.error_details.error_message ??
+                        gatewayPayment.error_details.message ??
+                        gatewayPayment.error_details.error_code ??
+                        gatewayPayment.payment_message ??
+                        "Payment was declined by the payment gateway."
+                );
+        }
+
+        if (gatewayPayment?.payment_message) {
+                return gatewayPayment.payment_message;
+        }
+
+        if (
+                payment.payment_status?.toLowerCase() === "failed" ||
+                payment.payment_status?.toLowerCase() === "failure"
+        ) {
+                if (gatewayPayments.length === 0) {
+                        return "Cashfree did not return transaction or error details for this payment attempt.";
+                }
+
+                return "Payment was declined or could not be completed.";
+        }
+
+        return null;
+}
+
+export default function OrderPayments({
+        payments = [],
+}: OrderPaymentsProps) {
+        return (
+                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div className="mb-5 flex items-center justify-between">
+                                <div>
+                                        <h2 className="text-xl font-semibold">
+                                                Payments
+                                        </h2>
+
+                                        <p className="mt-1 text-sm text-slate-500">
+                                                Payment history linked to this order.
+                                        </p>
+                                </div>
+
+                                <span className="text-sm text-slate-500">
+                                        {payments.length} payment(s)
+                                </span>
+                        </div>
+
+                        {payments.length === 0 ? (
+                                <div className="rounded-lg bg-slate-50 p-5 text-center text-sm text-slate-500">
+                                        No payment recorded for this order.
+                                </div>
+                        ) : (
+                                <div className="space-y-4">
+                                        {payments.map((payment) => {
+                                                const status =
+                                                        payment.payment_status?.toLowerCase();
+
+                                                const isSuccess =
+                                                        status === "success";
+
+                                                const isFailed =
+                                                        status === "failed" ||
+                                                        status === "failure";
+
+                                                const isPending =
+                                                        status === "pending";
+
+                                                const reason =
+                                                        getPaymentReason(payment);
+
+                                                const cardClass = isFailed
+                                                        ? "border-red-200 bg-red-50"
+                                                        : isSuccess
+                                                          ? "border-green-200 bg-green-50"
+                                                          : isPending
+                                                            ? "border-yellow-200 bg-yellow-50"
+                                                            : "border-slate-200 bg-white";
+
+                                                const statusClass = isFailed
+                                                        ? "bg-red-100 text-red-700"
+                                                        : isSuccess
+                                                          ? "bg-green-100 text-green-700"
+                                                          : isPending
+                                                            ? "bg-yellow-100 text-yellow-700"
+                                                            : "bg-slate-100 text-slate-700";
+
+                                                return (
+                                                        <div
+                                                                key={payment.id}
+                                                                className={`rounded-lg border p-4 ${cardClass}`}
+                                                        >
+                                                                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                                                                        <div>
+                                                                                <p className="font-semibold text-slate-900">
+                                                                                        Payment #{payment.id}
+                                                                                </p>
+
+                                                                                <p className="mt-1 text-sm text-slate-500">
+                                                                                        {payment.payment_gateway ??
+                                                                                                "-"}
+                                                                                        {payment.created_at
+                                                                                                ? ` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ ${new Date(
+                                                                                                          payment.created_at,
+                                                                                                  ).toLocaleString(
+                                                                                                          "en-IN",
+                                                                                                  )}`
+                                                                                                : ""}
+                                                                                </p>
+
+                                                                                {payment.gateway_transaction_id && (
+                                                                                        <p className="mt-2 text-xs text-slate-500">
+                                                                                                Transaction ID:{" "}
+                                                                                                <span className="font-medium">
+                                                                                                        {
+                                                                                                                payment.gateway_transaction_id
+                                                                                                        }
+                                                                                                </span>
+                                                                                        </p>
+                                                                                )}
+                                                                        </div>
+
+                                                                        <div className="text-right">
+                                                                                <p className="font-semibold text-slate-900">
+                                                                                        ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¹
+                                                                                        {Number(
+                                                                                                payment.amount,
+                                                                                        ).toLocaleString(
+                                                                                                "en-IN",
+                                                                                        )}
+                                                                                </p>
+
+                                                                                <span
+                                                                                        className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass}`}
+                                                                                >
+                                                                                        {isSuccess
+                                                                                                ? "Success"
+                                                                                                : isFailed
+                                                                                                  ? "Failed"
+                                                                                                  : isPending
+                                                                                                    ? "Pending"
+                                                                                                    : payment.payment_status}
+                                                                                </span>
+                                                                        </div>
+                                                                </div>
+
+                                                                {isFailed && (
+                                                                        <div className="mt-4 rounded-lg border border-red-200 bg-white/70 p-3">
+                                                                                <p className="text-xs font-semibold uppercase tracking-wide text-red-600">
+                                                                                        Payment Failed
+                                                                                </p>
+
+                                                                                <p className="mt-1 text-sm text-red-800">
+                                                                                        Reason:{" "}
+                                                                                        {reason ??
+                                                                                                "Payment was declined or could not be completed."}
+                                                                                </p>
+                                                                        </div>
+                                                                )}
+
+                                                                {payment.gateway_order_id && (
+                                                                        <div className="mt-4 border-t border-slate-200 pt-3">
+                                                                                <p className="text-xs text-slate-500">
+                                                                                        Cashfree Order ID
+                                                                                </p>
+
+                                                                                <p className="mt-1 break-all text-sm text-slate-700">
+                                                                                        {
+                                                                                                payment.gateway_order_id
+                                                                                        }
+                                                                                </p>
+                                                                        </div>
+                                                                )}
+                                                        </div>
+                                                );
+                                        })}
+                                </div>
+                        )}
+                </div>
+        );
+}

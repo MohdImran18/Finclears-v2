@@ -6,27 +6,27 @@
  */
 
 export interface BlogCategory {
-  id: number;
+	id: number;
 
-  name: string;
+	name: string;
 
-  slug: string;
+	slug: string;
 
-  description?: string | null;
+	description?: string | null;
 
-  icon?: string | null;
+	icon?: string | null;
 
-  image?: string | null;
+	image?: string | null;
 
-  meta_title?: string | null;
+	meta_title?: string | null;
 
-  meta_description?: string | null;
+	meta_description?: string | null;
 
-  sort_order?: number;
+	sort_order?: number;
 
-  status?: boolean;
+	status?: boolean;
 
-  created_at?: string;
+	created_at?: string;
 
-  updated_at?: string;
+	updated_at?: string;
 }

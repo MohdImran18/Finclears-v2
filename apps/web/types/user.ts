@@ -1,78 +1,71 @@
-import type {
-  BaseFilters,
-  PaginatedResponse,
-} from "./common";
+import type { BaseFilters, PaginatedResponse } from "./common";
 
 /* ==========================================================
  | User Enums
  * ========================================================= */
 
 export type UserRole =
-  | "super-admin"
-  | "admin"
-  | "manager"
-  | "accountant"
-  | "employee"
-  | "client";
+	| "super-admin"
+	| "admin"
+	| "manager"
+	| "accountant"
+	| "employee"
+	| "client";
 
-export type UserStatus =
-  | "active"
-  | "inactive"
-  | "blocked";
+export type UserStatus = "active" | "inactive" | "blocked";
 
 /* ==========================================================
  | User
  * ========================================================= */
 
 export interface User {
-  id: number;
+	id: number;
 
-  name: string;
+	name: string;
 
-  email: string;
+	email: string;
 
-  phone?: string | null;
+	phone?: string | null;
 
-  avatar?: string | null;
+	avatar?: string | null;
 
-  role: UserRole;
+	role: UserRole;
 
-  status: UserStatus;
+	status: UserStatus;
 
-  email_verified_at?: string | null;
+	email_verified_at?: string | null;
 
-  last_login_at?: string | null;
+	last_login_at?: string | null;
 
-  created_at: string;
+	created_at: string;
 
-  updated_at: string;
+	updated_at: string;
 }
 
 /* ==========================================================
  | API Responses
  * ========================================================= */
 
-export type UserListResponse =
-  PaginatedResponse<User>;
+export type UserListResponse = PaginatedResponse<User>;
 
 /* ==========================================================
  | Create User
  * ========================================================= */
 
 export interface CreateUserRequest {
-  name: string;
+	name: string;
 
-  email: string;
+	email: string;
 
-  phone?: string;
+	phone?: string;
 
-  password: string;
+	password: string;
 
-  password_confirmation: string;
+	password_confirmation: string;
 
-  role: UserRole;
+	role: UserRole;
 
-  status: UserStatus;
+	status: UserStatus;
 }
 
 /* ==========================================================
@@ -80,29 +73,27 @@ export interface CreateUserRequest {
  * ========================================================= */
 
 export interface UpdateUserRequest {
-  name: string;
+	name: string;
 
-  email: string;
+	email: string;
 
-  phone?: string;
+	phone?: string;
 
-  password?: string;
+	password?: string;
 
-  password_confirmation?: string;
+	password_confirmation?: string;
 
-  role: UserRole;
+	role: UserRole;
 
-  status: UserStatus;
+	status: UserStatus;
 }
 
 /* ==========================================================
  | Filters
  * ========================================================= */
 
-export interface UserFilters
-  extends BaseFilters {
+export interface UserFilters extends BaseFilters {
+	role?: UserRole;
 
-  role?: UserRole;
-
-  status?: UserStatus;
+	status?: UserStatus;
 }

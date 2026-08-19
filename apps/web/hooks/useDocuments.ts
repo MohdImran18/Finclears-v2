@@ -1,61 +1,49 @@
 "use client";
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import * as DocumentService from "@/services/documents/document.service";
 
 import type {
-  Document,
-  DocumentFilters,
-  UploadDocumentRequest,
+	Document,
+	DocumentFilters,
+	UploadDocumentRequest,
 } from "@/types/document";
 
 const documentKeys = {
-  all: ["documents"] as const,
+	all: ["documents"] as const,
 
-  lists: () => [...documentKeys.all] as const,
+	lists: () => [...documentKeys.all] as const,
 
-  list: (filters?: DocumentFilters) =>
-    [...documentKeys.all, filters] as const,
+	list: (filters?: DocumentFilters) => [...documentKeys.all, filters] as const,
 
-  detail: (id: number) =>
-    [...documentKeys.all, id] as const,
+	detail: (id: number) => [...documentKeys.all, id] as const,
 };
 
 /* ==========================================================
  | Documents
  * ========================================================= */
 
-export function useDocuments(
-  filters?: DocumentFilters
-) {
-  return useQuery({
-    queryKey: documentKeys.list(filters),
+export function useDocuments(filters?: DocumentFilters) {
+	return useQuery({
+		queryKey: documentKeys.list(filters),
 
-    queryFn: () =>
-      DocumentService.getDocuments(filters),
-  });
+		queryFn: () => DocumentService.getDocuments(filters),
+	});
 }
 
 /* ==========================================================
  | Single Document
  * ========================================================= */
 
-export function useDocument(
-  id: number
-) {
-  return useQuery({
-    enabled: !!id,
+export function useDocument(id: number) {
+	return useQuery({
+		enabled: !!id,
 
-    queryKey: documentKeys.detail(id),
+		queryKey: documentKeys.detail(id),
 
-    queryFn: () =>
-      DocumentService.getDocument(id),
-  });
+		queryFn: () => DocumentService.getDocument(id),
+	});
 }
 
 /* ==========================================================
@@ -63,22 +51,18 @@ export function useDocument(
  * ========================================================= */
 
 export function useUploadDocument() {
-  const queryClient =
-    useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (
-      data: UploadDocumentRequest
-    ) =>
-      DocumentService.uploadDocument(data),
+	return useMutation({
+		mutationFn: (data: UploadDocumentRequest) =>
+			DocumentService.uploadDocument(data),
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey:
-          documentKeys.lists(),
-      });
-    },
-  });
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: documentKeys.lists(),
+			});
+		},
+	});
 }
 
 /* ==========================================================
@@ -86,36 +70,22 @@ export function useUploadDocument() {
  * ========================================================= */
 
 export function useUpdateDocument() {
-  const queryClient =
-    useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: FormData;
-    }) =>
-      DocumentService.updateDocument(
-        id,
-        data
-      ),
+	return useMutation({
+		mutationFn: ({ id, data }: { id: number; data: FormData }) =>
+			DocumentService.updateDocument(id, data),
 
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey:
-          documentKeys.detail(
-            variables.id
-          ),
-      });
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({
+				queryKey: documentKeys.detail(variables.id),
+			});
 
-      queryClient.invalidateQueries({
-        queryKey:
-          documentKeys.lists(),
-      });
-    },
-  });
+			queryClient.invalidateQueries({
+				queryKey: documentKeys.lists(),
+			});
+		},
+	});
 }
 
 /* ==========================================================
@@ -123,22 +93,17 @@ export function useUpdateDocument() {
  * ========================================================= */
 
 export function useDeleteDocument() {
-  const queryClient =
-    useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (
-      id: number
-    ) =>
-      DocumentService.deleteDocument(id),
+	return useMutation({
+		mutationFn: (id: number) => DocumentService.deleteDocument(id),
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey:
-          documentKeys.lists(),
-      });
-    },
-  });
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: documentKeys.lists(),
+			});
+		},
+	});
 }
 
 /* ==========================================================
@@ -146,22 +111,17 @@ export function useDeleteDocument() {
  * ========================================================= */
 
 export function useVerifyDocument() {
-  const queryClient =
-    useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (
-      id: number
-    ) =>
-      DocumentService.verifyDocument(id),
+	return useMutation({
+		mutationFn: (id: number) => DocumentService.verifyDocument(id),
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey:
-          documentKeys.lists(),
-      });
-    },
-  });
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: documentKeys.lists(),
+			});
+		},
+	});
 }
 
 /* ==========================================================
@@ -169,50 +129,31 @@ export function useVerifyDocument() {
  * ========================================================= */
 
 export function useRejectDocument() {
-  const queryClient =
-    useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: ({
-      id,
-      remarks,
-    }: {
-      id: number;
-      remarks: string;
-    }) =>
-      DocumentService.rejectDocument(
-        id,
-        remarks
-      ),
+	return useMutation({
+		mutationFn: ({ id, remarks }: { id: number; remarks: string }) =>
+			DocumentService.rejectDocument(id, remarks),
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey:
-          documentKeys.lists(),
-      });
-    },
-  });
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: documentKeys.lists(),
+			});
+		},
+	});
 }
 
 /* ==========================================================
  | Timeline
  * ========================================================= */
 
-export function useDocumentTimeline(
-  id: number
-) {
-  return useQuery({
-    enabled: !!id,
+export function useDocumentTimeline(id: number) {
+	return useQuery({
+		enabled: !!id,
 
-    queryKey: [
-      "document",
-      id,
-      "timeline",
-    ],
+		queryKey: ["document", id, "timeline"],
 
-    queryFn: () =>
-      DocumentService.getDocumentTimeline(
-        id
-      ),
-  });
+		queryFn: () => DocumentService.getDocumentTimeline(id),
+	});
 }
+

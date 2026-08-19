@@ -1,49 +1,29 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
+export async function POST(request: NextRequest) {
+	try {
+		const body = await request.json();
 
-export async function POST(
-  request: NextRequest
-) {
+		const message = body.message ?? "";
 
-  try {
+		return NextResponse.json({
+			success: true,
 
-    const body = await request.json();
+			data: {
+				reply: `Received message: ${message}`,
+			},
+		});
+	} catch (error) {
+		return NextResponse.json(
+			{
+				success: false,
+				message: "Something went wrong",
+			},
 
-
-    const message =
-      body.message ?? "";
-
-
-    return NextResponse.json({
-
-      success: true,
-
-      data: {
-
-        reply:
-          `Received message: ${message}`,
-
-      },
-
-    });
-
-
-  } catch (error) {
-
-
-    return NextResponse.json(
-
-      {
-        success:false,
-        message:"Something went wrong"
-      },
-
-      {
-        status:500
-      }
-
-    );
-
-  }
-
+			{
+				status: 500,
+			},
+		);
+	}
 }
+

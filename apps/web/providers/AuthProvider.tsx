@@ -1,11 +1,9 @@
 "use client";
 
 interface Props {
-  children: React.ReactNode;
+	children: React.ReactNode;
 }
 
-export default function AuthProvider({
-  children,
-}: Props) {
-  return <>{children}</>;
+export default function AuthProvider({ children }: Props) {
+	return <>{children}</>;
 }

@@ -1,0 +1,274 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\OrderTimeline;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+
+class OrderController extends Controller
+{
+    public function index(Request $request)
+    {
+        $orders = Order::query()
+            ->with([
+                'company:id,company_name',
+                'assignedUser:id,name,email',
+            ])
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->string('search')->toString();
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('order_no', 'like', "%{$search}%")
+                        ->orWhere('service_name', 'like', "%{$search}%")
+                        ->orWhere('customer_name', 'like', "%{$search}%")
+                        ->orWhere('customer_email', 'like', "%{$search}%")
+                        ->orWhere('customer_mobile', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->filled('status'), fn ($q) =>
+                $q->where('status', $request->status)
+            )
+            ->when($request->filled('priority'), fn ($q) =>
+                $q->where('priority', $request->priority)
+            )
+            ->when($request->filled('assigned_to'), fn ($q) =>
+                $q->where('assigned_to', $request->assigned_to)
+            )
+            ->latest()
+            ->paginate((int) ($request->per_page ?? 15));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Orders fetched successfully.',
+            'data' => $orders->items(),
+            'meta' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+            ],
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'company_id' => ['required', 'integer', 'exists:companies,id'],
+            'service_name' => ['required', 'string', 'max:255'],
+            'priority' => [
+                'nullable',
+                Rule::in(['low', 'medium', 'high', 'urgent']),
+            ],
+            'amount' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $company = \App\Models\Company::findOrFail($validated['company_id']);
+
+        $order = Order::create([
+            'order_no' => 'FC-' . now()->format('YmdHis') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
+            'company_id' => $company->id,
+            'service_name' => $validated['service_name'],
+            'customer_name' => $company->company_name,
+            'customer_email' => $company->email,
+            'customer_mobile' => $company->phone,
+            'priority' => $validated['priority'] ?? 'medium',
+            'status' => 'pending',
+            'amount' => $validated['amount'] ?? 0,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order created successfully.',
+            'data' => $order->load([
+                'company:id,company_name',
+                'assignedUser:id,name,email',
+                'items',
+                'timeline',
+            ]),
+        ], 201);
+    }
+
+    public function show(Order $order)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Order fetched successfully.',
+            'data' => $order->load([
+                'company',
+                'assignedUser:id,name,email',
+                'items',
+                'timeline.creator:id,name,email',
+            ]),
+        ]);
+    }
+
+    public function update(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'service_name' => ['sometimes', 'string', 'max:255'],
+            'priority' => [
+                'sometimes',
+                Rule::in(['low', 'medium', 'high', 'urgent']),
+            ],
+            'status' => [
+                'sometimes',
+                Rule::in([
+                    'draft',
+                    'pending',
+                    'assigned',
+                    'documents_pending',
+                    'processing',
+                    'verification',
+                    'completed',
+                    'cancelled',
+                ]),
+            ],
+            'amount' => ['sometimes', 'numeric', 'min:0'],
+        ]);
+
+        $oldStatus = $order->status;
+
+        $order->update($validated);
+
+        if (
+            isset($validated['status']) &&
+            $validated['status'] !== $oldStatus
+        ) {
+            OrderTimeline::create([
+                'order_id' => $order->id,
+                'created_by' => $request->user()?->id,
+                'title' => 'Order status changed',
+                'description' => "Status changed from {$oldStatus} to {$validated['status']}.",
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order updated successfully.',
+            'data' => $order->fresh()->load([
+                'company:id,company_name',
+                'assignedUser:id,name,email',
+                'items',
+                'timeline.creator:id,name,email',
+            ]),
+        ]);
+    }
+
+    public function destroy(Order $order)
+    {
+        $order->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order deleted successfully.',
+        ]);
+    }
+
+    public function assign(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'assigned_to' => [
+                'required',
+                'integer',
+                Rule::exists('users', 'id')->where(
+                    fn ($query) => $query->where('status', 'active')
+                ),
+            ],
+        ]);
+
+        $user = User::findOrFail($validated['assigned_to']);
+
+        $order->update([
+            'assigned_to' => $user->id,
+            'status' => $order->status === 'pending'
+                ? 'assigned'
+                : $order->status,
+        ]);
+
+        OrderTimeline::create([
+            'order_id' => $order->id,
+            'created_by' => $request->user()?->id,
+            'title' => 'Order assigned',
+            'description' => "Order assigned to {$user->name}.",
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order assigned successfully.',
+            'data' => $order->fresh()->load([
+                'company:id,company_name',
+                'assignedUser:id,name,email',
+                'items',
+                'timeline.creator:id,name,email',
+            ]),
+        ]);
+    }
+
+    public function changeStatus(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'status' => [
+                'required',
+                Rule::in([
+                    'draft',
+                    'pending',
+                    'assigned',
+                    'documents_pending',
+                    'processing',
+                    'verification',
+                    'completed',
+                    'cancelled',
+                ]),
+            ],
+        ]);
+
+        $oldStatus = $order->status;
+
+        $order->update([
+            'status' => $validated['status'],
+        ]);
+
+        OrderTimeline::create([
+            'order_id' => $order->id,
+            'created_by' => $request->user()?->id,
+            'title' => 'Order status updated',
+            'description' => "Status changed from {$oldStatus} to {$validated['status']}.",
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order status updated successfully.',
+            'data' => $order->fresh()->load([
+                'company:id,company_name',
+                'assignedUser:id,name,email',
+                'items',
+                'timeline.creator:id,name,email',
+            ]),
+        ]);
+    }
+
+    public function addTimeline(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+        ]);
+
+        $timeline = OrderTimeline::create([
+            'order_id' => $order->id,
+            'created_by' => $request->user()?->id,
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order timeline added successfully.',
+            'data' => $timeline->load('creator:id,name,email'),
+        ], 201);
+    }
+}

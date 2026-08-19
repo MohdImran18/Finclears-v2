@@ -16,6 +16,10 @@ class BlogResource extends JsonResource
 
             'id' => $this->id,
 
+            'blog_category_id' => $this->blog_category_id,
+
+            'user_id' => $this->user_id,
+
             'title' => $this->title,
 
             'slug' => $this->slug,

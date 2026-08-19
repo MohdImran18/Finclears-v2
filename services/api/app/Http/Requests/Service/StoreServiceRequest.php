@@ -6,23 +6,17 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreServiceRequest extends FormRequest
 {
-    /**
-     * Authorize the request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Validation Rules.
-     */
     public function rules(): array
     {
         return [
-
             'service_category_id' => [
                 'required',
+                'integer',
                 'exists:service_categories,id',
             ],
 
@@ -55,11 +49,13 @@ class StoreServiceRequest extends FormRequest
             'featured_image' => [
                 'nullable',
                 'string',
+                'max:2048',
             ],
 
             'banner_image' => [
                 'nullable',
                 'string',
+                'max:2048',
             ],
 
             'short_description' => [
@@ -107,22 +103,25 @@ class StoreServiceRequest extends FormRequest
             ],
 
             'is_featured' => [
+                'sometimes',
                 'boolean',
             ],
 
             'is_popular' => [
+                'sometimes',
                 'boolean',
             ],
 
             'status' => [
+                'sometimes',
                 'boolean',
             ],
 
             'sort_order' => [
+                'sometimes',
                 'integer',
                 'min:0',
             ],
-
         ];
     }
 }

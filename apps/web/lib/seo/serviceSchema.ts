@@ -1,54 +1,54 @@
 export function serviceSchema({
-  name,
-  description,
-  url,
-  image,
-  price,
+	name,
+	description,
+	url,
+	image,
+	price,
 }: {
-  name: string;
-  description: string;
-  url: string;
-  image?: string;
-  price?: string;
+	name: string;
+	description: string;
+	url: string;
+	image?: string;
+	price?: string;
 }) {
-  return {
-    "@context": "https://schema.org",
+	return {
+		"@context": "https://schema.org",
 
-    "@type": "Service",
+		"@type": "Service",
 
-    name,
+		name,
 
-    description,
+		description,
 
-    url,
+		url,
 
-    image,
+		image,
 
-    provider: {
-      "@type": "Organization",
+		provider: {
+			"@type": "Organization",
 
-      name: "FinClears",
+			name: "FinClears",
 
-      url: "https://finclears.com",
-    },
+			url: "https://finclears.com",
+		},
 
-    areaServed: {
-      "@type": "Country",
+		areaServed: {
+			"@type": "Country",
 
-      name: "India",
-    },
+			name: "India",
+		},
 
-    offers: price
-      ? {
-          "@type": "Offer",
+		offers: price
+			? {
+					"@type": "Offer",
 
-          price,
+					price,
 
-          priceCurrency: "INR",
+					priceCurrency: "INR",
 
-          availability:
-            "https://schema.org/InStock",
-        }
-      : undefined,
-  };
+					availability: "https://schema.org/InStock",
+				}
+			: undefined,
+	};
 }
+

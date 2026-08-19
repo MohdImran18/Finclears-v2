@@ -1,24 +1,25 @@
 export function faqSchema(
-  faqs: {
-    question: string;
-    answer: string;
-  }[]
+	faqs: {
+		question: string;
+		answer: string;
+	}[],
 ) {
-  return {
-    "@context": "https://schema.org",
+	return {
+		"@context": "https://schema.org",
 
-    "@type": "FAQPage",
+		"@type": "FAQPage",
 
-    mainEntity: faqs.map((faq) => ({
-      "@type": "Question",
+		mainEntity: faqs.map((faq) => ({
+			"@type": "Question",
 
-      name: faq.question,
+			name: faq.question,
 
-      acceptedAnswer: {
-        "@type": "Answer",
+			acceptedAnswer: {
+				"@type": "Answer",
 
-        text: faq.answer,
-      },
-    })),
-  };
+				text: faq.answer,
+			},
+		})),
+	};
 }
+

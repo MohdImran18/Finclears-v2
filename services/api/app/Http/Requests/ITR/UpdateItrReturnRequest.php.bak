@@ -1,0 +1,130 @@
+<?php
+
+namespace App\Http\Requests\ITR;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateItrReturnRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+
+            'company_id' => [
+                'nullable',
+                'exists:companies,id',
+            ],
+
+            'assessment_year' => [
+                'sometimes',
+                'string',
+            ],
+
+            'financial_year' => [
+                'sometimes',
+                'string',
+            ],
+
+            'return_type' => [
+                'sometimes',
+            ],
+
+            'tax_regime' => [
+                'sometimes',
+            ],
+
+            'status' => [
+                'sometimes',
+            ],
+
+            'annual_salary' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'exempt_allowances' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'professional_tax' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'rental_income' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'municipal_tax' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'home_loan_interest' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'business_income' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'business_expenses' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'short_term_capital_gain' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'long_term_capital_gain' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'interest_income' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'dividend_income' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'other_income' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'gross_income' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+        ];
+    }
+}

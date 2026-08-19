@@ -6,89 +6,87 @@ import { persist } from "zustand/middleware";
 import type { User } from "@/types/auth";
 
 interface AuthState {
-  token: string |null;
+	token: string | null;
 
-  user: User | null;
+	user: User | null;
 
-  isAuthenticated: boolean;
+	isAuthenticated: boolean;
 
-  hydrated: boolean;
+	hydrated: boolean;
 
-  setHydrated: () => void;
+	setHydrated: () => void;
 
-  setToken: (token: string | null) => void;
+	setToken: (token: string | null) => void;
 
-  setUser: (user: User | null) => void;
+	setUser: (user: User | null) => void;
 
-  login: (token: string, user: User) => void;
+	login: (token: string, user: User) => void;
 
-  logout: () => void;
+	logout: () => void;
 
-  clear: () => void;
+	clear: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
+	persist(
+		(set) => ({
+			token: null,
 
-      token: null,
+			user: null,
 
-      user: null,
+			isAuthenticated: false,
 
-      isAuthenticated: false,
+			hydrated: false,
 
-      hydrated: false,
+			setHydrated: () =>
+				set({
+					hydrated: true,
+				}),
 
-      setHydrated: () =>
-        set({
-          hydrated: true,
-        }),
+			setToken: (token) =>
+				set({
+					token,
+					isAuthenticated: !!token,
+				}),
 
-      setToken: (token) =>
-        set({
-          token,
-          isAuthenticated: !!token,
-        }),
+			setUser: (user) =>
+				set({
+					user,
+				}),
 
-      setUser: (user) =>
-        set({
-          user,
-        }),
+			login: (token, user) =>
+				set({
+					token,
+					user,
+					isAuthenticated: true,
+				}),
 
-      login: (token, user) =>
-        set({
-          token,
-          user,
-          isAuthenticated: true,
-        }),
+			logout: () =>
+				set({
+					token: null,
+					user: null,
+					isAuthenticated: false,
+					hydrated: true,
+				}),
 
-      logout: () =>
-        set({
-          token: null,
-          user: null,
-          isAuthenticated: false,
-          hydrated: true,
-        }),
+			clear: () =>
+				set({
+					token: null,
+					user: null,
+					isAuthenticated: false,
+					hydrated: true,
+				}),
+		}),
+		{
+			name: "finclears-auth",
 
-      clear: () =>
-        set({
-          token: null,
-          user: null,
-          isAuthenticated: false,
-          hydrated: true,
-        }),
+			version: 1,
 
-    }),
-    {
-      name: "finclears-auth",
-
-      version: 1,
-
-      onRehydrateStorage: () => (state) => {
-        state?.setHydrated();
-      },
-    }
-  )
+			onRehydrateStorage: () => (state) => {
+				state?.setHydrated();
+			},
+		},
+	),
 );
 
 export default useAuthStore;

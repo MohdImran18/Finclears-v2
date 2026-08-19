@@ -1,0 +1,173 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Payment\StorePaymentRequest;
+use App\Http\Resources\PaymentResource;
+use App\Models\ItrPayment;
+use App\Models\ItrReturn;
+use App\Services\Payment\PaymentService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use RuntimeException;
+
+class PaymentController extends Controller
+{
+    public function __construct(
+        protected PaymentService $paymentService
+    ) {
+    }
+
+    public function index(): JsonResponse
+    {
+        $payments = $this->paymentService->paginate();
+
+        return response()->json([
+            'success' => true,
+            'data' => PaymentResource::collection($payments),
+        ]);
+    }
+
+    public function store(
+        StorePaymentRequest $request
+    ): JsonResponse {
+        $itrReturn = ItrReturn::where(
+            'uuid',
+            $request->itr_return_uuid
+        )->firstOrFail();
+
+        $amount = (float) (
+            $request->amount ?? 1
+        );
+
+        $payment = $this->paymentService->createPayment(
+            $itrReturn,
+            $amount
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cashfree payment created successfully.',
+            'data' => new PaymentResource($payment),
+        ], 201);
+    }
+
+    public function show(int $id): JsonResponse
+    {
+        $payment = $this->paymentService->find($id);
+
+        if (! $payment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => new PaymentResource($payment),
+        ]);
+    }
+
+    public function update(
+        StorePaymentRequest $request,
+        int $id
+    ): JsonResponse {
+        $payment = $this->paymentService->update(
+            $id,
+            $request->validated()
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment updated successfully.',
+            'data' => new PaymentResource($payment),
+        ]);
+    }
+
+    /**
+     * Verify Cashfree payment.
+     */
+    public function verify(
+        Request $request
+    ): JsonResponse {
+        $validated = $request->validate([
+            'payment_id' => [
+                'required',
+                'integer',
+            ],
+
+            'order_id' => [
+                'required',
+                'string',
+            ],
+        ]);
+
+        $payment = ItrPayment::find(
+            $validated['payment_id']
+        );
+
+        if (! $payment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment not found.',
+            ], 404);
+        }
+
+        try {
+            $result =
+                $this->paymentService
+                    ->verifyCashfreePayment(
+                        $payment,
+                        $validated['order_id']
+                    );
+
+            return response()->json([
+                'success' =>
+                    $result['status'] === 'success',
+
+                'message' => match (
+                    $result['status']
+                ) {
+                    'success' =>
+                        'Payment verified successfully.',
+
+                    'pending' =>
+                        'Payment is still pending.',
+
+                    default =>
+                        'Payment verification failed.',
+                },
+
+                'data' => [
+                    'payment' =>
+                        new PaymentResource(
+                            $payment->fresh()
+                        ),
+
+                    'status' =>
+                        $result['status'],
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'Unable to verify Cashfree payment.',
+            ], 502);
+        }
+    }
+
+    public function destroy(int $id): JsonResponse
+    {
+        $this->paymentService->delete($id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment deleted successfully.',
+        ]);
+    }
+}

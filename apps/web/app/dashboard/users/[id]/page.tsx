@@ -1,93 +1,48 @@
 "use client";
 
 import { useParams } from "next/navigation";
-
+import UserStatus from "@/components/users/UserStatus";
 import { useUser } from "@/hooks/useUsers";
 
-import UserStatus from "@/components/users/UserStatus";
+export default function UserDetailsPage() {
+	const { id } = useParams();
 
-export default function UserDetailsPage(){
+	const {
+		data,
 
-    const {id}=useParams();
+		isLoading,
+	} = useUser(Number(id));
 
-    const {
+	if (isLoading) {
+		return <>Loading...</>;
+	}
 
-        data,
+	if (!data) {
+		return <>User not found.</>;
+	}
 
-        isLoading,
+	return (
+		<div className="rounded-xl bg-white p-8 shadow">
+			<h1 className="text-3xl font-bold">{data.name}</h1>
 
-    }=useUser(Number(id));
+			<div className="mt-6 space-y-3">
+				<p>
+					<strong>Email:</strong> {data.email}
+				</p>
 
-    if(isLoading){
+				<p>
+					<strong>Phone:</strong> {data.phone}
+				</p>
 
-        return <>Loading...</>;
+				<p>
+					<strong>Role:</strong> {data.role}
+				</p>
 
-    }
-
-    if(!data){
-
-        return <>User not found.</>;
-
-    }
-
-    return(
-
-        <div className="rounded-xl bg-white p-8 shadow">
-
-            <h1 className="text-3xl font-bold">
-
-                {data.name}
-
-            </h1>
-
-            <div className="mt-6 space-y-3">
-
-                <p>
-
-                    <strong>Email:</strong>
-
-                    {" "}
-
-                    {data.email}
-
-                </p>
-
-                <p>
-
-                    <strong>Phone:</strong>
-
-                    {" "}
-
-                    {data.phone}
-
-                </p>
-
-                <p>
-
-                    <strong>Role:</strong>
-
-                    {" "}
-
-                    {data.role}
-
-                </p>
-
-                <p>
-
-                    <strong>Status:</strong>
-
-                    {" "}
-
-                    <UserStatus
-                        status={data.status}
-                    />
-
-                </p>
-
-            </div>
-
-        </div>
-
-    );
-
+				<p>
+					<strong>Status:</strong> <UserStatus status={data.status} />
+				</p>
+			</div>
+		</div>
+	);
 }
+

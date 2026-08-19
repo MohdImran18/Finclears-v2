@@ -5,10 +5,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import AuthService from "@/services/auth/auth.service";
 
 import type {
-  LoginRequest,
-  RegisterRequest,
-  ForgotPasswordRequest,
-  ResetPasswordRequest,
+	ForgotPasswordRequest,
+	LoginRequest,
+	RegisterRequest,
+	ResetPasswordRequest,
 } from "@/types/auth";
 
 /* ==========================================================
@@ -16,10 +16,9 @@ import type {
  * ========================================================== */
 
 export function useLogin() {
-  return useMutation({
-    mutationFn: (data: LoginRequest) =>
-      AuthService.login(data),
-  });
+	return useMutation({
+		mutationFn: (data: LoginRequest) => AuthService.login(data),
+	});
 }
 
 /* ==========================================================
@@ -27,10 +26,9 @@ export function useLogin() {
  * ========================================================== */
 
 export function useRegister() {
-  return useMutation({
-    mutationFn: (data: RegisterRequest) =>
-      AuthService.register(data),
-  });
+	return useMutation({
+		mutationFn: (data: RegisterRequest) => AuthService.register(data),
+	});
 }
 
 /* ==========================================================
@@ -38,12 +36,12 @@ export function useRegister() {
  * ========================================================== */
 
 export function useCurrentUser() {
-  return useQuery({
-    queryKey: ["auth", "me"],
-    queryFn: () => AuthService.me(),
-    retry: false,
-    staleTime: 1000 * 60 * 5,
-  });
+	return useQuery({
+		queryKey: ["auth", "me"],
+		queryFn: () => AuthService.me(),
+		retry: false,
+		staleTime: 1000 * 60 * 5,
+	});
 }
 
 /* ==========================================================
@@ -51,10 +49,9 @@ export function useCurrentUser() {
  * ========================================================== */
 
 export function useLogout() {
-  return useMutation({
-    mutationFn: () =>
-      AuthService.logout(),
-  });
+	return useMutation({
+		mutationFn: () => AuthService.logout(),
+	});
 }
 
 /* ==========================================================
@@ -62,12 +59,10 @@ export function useLogout() {
  * ========================================================== */
 
 export function useForgotPassword() {
-  return useMutation({
-    mutationFn: (
-      data: ForgotPasswordRequest
-    ) =>
-      AuthService.forgotPassword(data),
-  });
+	return useMutation({
+		mutationFn: (data: ForgotPasswordRequest) =>
+			AuthService.forgotPassword(data),
+	});
 }
 
 /* ==========================================================
@@ -75,12 +70,9 @@ export function useForgotPassword() {
  * ========================================================== */
 
 export function useResetPassword() {
-  return useMutation({
-    mutationFn: (
-      data: ResetPasswordRequest
-    ) =>
-      AuthService.resetPassword(data),
-  });
+	return useMutation({
+		mutationFn: (data: ResetPasswordRequest) => AuthService.resetPassword(data),
+	});
 }
 
 /* ==========================================================
@@ -88,8 +80,8 @@ export function useResetPassword() {
  * ========================================================== */
 
 export function useVerifyEmail() {
-  return useMutation({
-    mutationFn: (token: string) =>
-      AuthService.verifyEmail(token),
-  });
+	return useMutation({
+		mutationFn: (token: string) => AuthService.verifyEmail(token),
+	});
 }
+

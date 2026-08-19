@@ -1,0 +1,371 @@
+"use client";
+
+import { CreditCard, Loader2, ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+
+import { getApiError } from "@/lib/getApiError";
+import paymentService from "@/services/payment.service";
+import { useItrStore } from "@/store/itr";
+
+interface RazorpayResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id?: string;
+
+  handler(response: RazorpayResponse): void;
+
+  theme: {
+    color: string;
+  };
+}
+
+interface RazorpayInstance {
+  open(): void;
+
+  on(
+    event: "payment.failed",
+    callback: () => void
+  ): void;
+}
+
+declare global {
+  interface Window {
+    Razorpay: new (
+      options: RazorpayOptions
+    ) => RazorpayInstance;
+  }
+}
+
+interface PaymentSummary {
+  amount: number;
+
+  gst: number;
+
+  total: number;
+
+  payment_id?: number;
+
+  razorpay_order_id?: string;
+}
+
+interface PaymentResponse {
+  data: PaymentSummary;
+}
+
+export default function PaymentStep() {
+  const uuid = useItrStore(
+    (state) => state.uuid
+  );
+
+  const setStep = useItrStore(
+    (state) => state.setStep
+  );
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [paying, setPaying] =
+    useState(false);
+
+  const [summary, setSummary] =
+    useState<PaymentSummary | null>(null);
+
+  const loadPayment =
+    useCallback(async () => {
+      if (!uuid) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const response =
+          (await paymentService.create({
+            itr_return_uuid: uuid,
+          })) as PaymentResponse;
+
+        setSummary(response.data);
+      } catch (error: unknown) {
+        toast.error(
+          getApiError(
+            error,
+            "Unable to load payment."
+          )
+        );
+      } finally {
+        setLoading(false);
+      }
+    }, [uuid]);
+
+  useEffect(() => {
+    void loadPayment();
+  }, [loadPayment]);
+
+  const loadRazorpay = async () => {
+    return new Promise<boolean>(
+      (resolve) => {
+        if (window.Razorpay) {
+          resolve(true);
+          return;
+        }
+
+        const script =
+          document.createElement(
+            "script"
+          );
+
+        script.src =
+          "https://checkout.razorpay.com/v1/checkout.js";
+
+        script.onload = () =>
+          resolve(true);
+
+        script.onerror = () =>
+          resolve(false);
+
+        document.body.appendChild(
+          script
+        );
+      }
+    );
+  };
+
+  const payNow = async () => {
+    if (!summary) return;
+
+    setPaying(true);
+
+    const loaded =
+      await loadRazorpay();
+
+    if (!loaded) {
+      toast.error(
+        "Unable to load Razorpay."
+      );
+
+      setPaying(false);
+
+      return;
+    }
+
+    const options: RazorpayOptions = {
+      key:
+        process.env
+          .NEXT_PUBLIC_RAZORPAY_KEY ??
+        "",
+
+      amount: summary.total * 100,
+
+      currency: "INR",
+
+      name: "FinClears",
+
+      description:
+        "Income Tax Return Filing",
+
+      order_id:
+        summary.razorpay_order_id,
+
+      handler: async (
+        response: RazorpayResponse
+      ) => {
+        try {
+          // TODO:
+          // paymentService.verify()
+
+          toast.success(
+            "Payment Successful."
+          );
+
+          setStep(7);
+        } catch (error: unknown) {
+          toast.error(
+            getApiError(
+              error,
+              "Payment verification failed."
+            )
+          );
+        }
+      },
+
+      theme: {
+        color: "#2563eb",
+      },
+    };
+
+    const razorpay =
+      new window.Razorpay(options);
+
+    razorpay.on(
+      "payment.failed",
+      () => {
+        toast.error(
+          "Payment Failed."
+        );
+      }
+    );
+
+    razorpay.open();
+
+    setPaying(false);
+  };
+
+  const format = (
+    amount: number
+  ) =>
+    new Intl.NumberFormat(
+      "en-IN",
+      {
+        style: "currency",
+        currency: "INR",
+      }
+    ).format(amount);
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+        Loading Payment...
+      </div>
+    );
+  }
+
+  if (!summary) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        Payment information unavailable.
+      </div>
+    );
+  }  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">
+          Payment
+        </h2>
+
+        <p className="mt-2 text-slate-500">
+          Complete your payment securely to
+          continue with your Income Tax Return filing.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <h3 className="text-lg font-semibold">
+            Order Summary
+          </h3>
+        </CardHeader>
+
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span>ITR Filing Charges</span>
+
+              <span>
+                {format(summary.amount)}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>GST</span>
+
+              <span>
+                {format(summary.gst)}
+              </span>
+            </div>
+
+            <hr />
+
+            <div className="flex justify-between text-xl font-bold">
+              <span>Total Payable</span>
+
+              <span className="text-blue-600">
+                {format(summary.total)}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <h3 className="text-lg font-semibold">
+            Payment Method
+          </h3>
+        </CardHeader>
+
+        <CardContent>
+          <div className="rounded-xl border p-5 transition hover:border-blue-500">
+            <div className="flex items-center gap-4">
+              <CreditCard className="h-8 w-8 text-blue-600" />
+
+              <div>
+                <h4 className="font-semibold">
+                  Razorpay Secure Checkout
+                </h4>
+
+                <p className="text-sm text-slate-500">
+                  UPI • Cards • Net Banking • Wallet • EMI
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex items-center gap-3 rounded-lg bg-green-50 p-4">
+            <ShieldCheck className="h-5 w-5 text-green-600" />
+
+            <span className="text-sm font-medium text-green-700">
+              Your payment is protected with
+              256-bit SSL encryption.
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center justify-between">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={paying}
+          onClick={() => setStep(5)}
+        >
+          Previous
+        </Button>
+
+        <Button
+          type="button"
+          disabled={paying}
+          onClick={payNow}
+          className="min-w-[220px]"
+        >
+          {paying ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <CreditCard className="mr-2 h-4 w-4" />
+              Pay {format(summary.total)}
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+

@@ -1,17 +1,31 @@
 import api from "./api";
 
-export async function me() {
-    return api.get("/auth/me");
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
-export async function login(data:any){
-    return api.post("/auth/login",data);
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  phone?: string;
+  password: string;
+  password_confirmation: string;
 }
 
-export async function register(data:any){
-    return api.post("/auth/register",data);
+export function me() {
+  return api.get("/auth/me");
 }
 
-export async function logout(){
-    return api.post("/auth/logout");
+export function login(data: LoginRequest) {
+  return api.post("/auth/login", data);
 }
+
+export function register(data: RegisterRequest) {
+  return api.post("/auth/register", data);
+}
+
+export function logout() {
+  return api.post("/auth/logout");
+}
+

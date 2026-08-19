@@ -1,23 +1,23 @@
 export interface User {
-  id: number;
-  name: string;
-  email: string;
-  phone?: string | null;
-  role: string;
-  status: string;
-  avatar?: string | null;
-  avatar_url?: string | null;
-  email_verified_at?: string | null;
-  last_login_at?: string | null;
-  created_at?: string;
-  updated_at?: string;
+	id: number;
+	name: string;
+	email: string;
+	phone?: string | null;
+	role: string;
+	status: string;
+	avatar?: string | null;
+	avatar_url?: string | null;
+	email_verified_at?: string | null;
+	last_login_at?: string | null;
+	created_at?: string;
+	updated_at?: string;
 }
 
 export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-  meta?: Record<string, unknown>;
+	success: boolean;
+	message: string;
+	data: T;
+	meta?: Record<string, unknown>;
 }
 
 /* ===========================
@@ -25,74 +25,70 @@ export interface ApiResponse<T> {
 =========================== */
 
 export interface LoginRequest {
-  email: string;
-  password: string;
+	email: string;
+	password: string;
 }
 
 export interface LoginResponse
-  extends ApiResponse<{
-    token: string;
-    user: User;
-  }> {}
+	extends ApiResponse<{
+		token: string;
+		user: User;
+	}> {}
 
 /* ===========================
    Register
 =========================== */
 
 export interface RegisterRequest {
-  name: string;
-  email: string;
-  phone?: string;
-  password: string;
-  password_confirmation: string;
+	name: string;
+	email: string;
+	phone?: string;
+	password: string;
+	password_confirmation: string;
 }
 
 export interface RegisterResponse
-  extends ApiResponse<{
-    token: string;
-    user: User;
-  }> {}
+	extends ApiResponse<{
+		token: string;
+		user: User;
+	}> {}
 
 /* ===========================
    Forgot Password
 =========================== */
 
 export interface ForgotPasswordRequest {
-  email: string;
+	email: string;
 }
 
-export interface ForgotPasswordResponse
-  extends ApiResponse<null> {}
+export interface ForgotPasswordResponse extends ApiResponse<null> {}
 
 /* ===========================
    Reset Password
 =========================== */
 
 export interface ResetPasswordRequest {
-  token: string;
-  email: string;
-  password: string;
-  password_confirmation: string;
+	token: string;
+	email: string;
+	password: string;
+	password_confirmation: string;
 }
 
-export interface ResetPasswordResponse
-  extends ApiResponse<null> {}
+export interface ResetPasswordResponse extends ApiResponse<null> {}
 
 /* ===========================
    Verify Email
 =========================== */
 
 export interface VerifyEmailRequest {
-  id: number;
-  hash: string;
+	id: number;
+	hash: string;
 }
 
-export interface VerifyEmailResponse
-  extends ApiResponse<null> {}
+export interface VerifyEmailResponse extends ApiResponse<null> {}
 
-  /* ===========================
+/* ===========================
    Current User
 =========================== */
 
-export interface CurrentUserResponse
-  extends ApiResponse<User> {}
+export interface CurrentUserResponse extends ApiResponse<User> {}

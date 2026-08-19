@@ -1,0 +1,291 @@
+<?php
+
+namespace App\Services\Company;
+
+use App\Models\CompanyPayment;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+use RuntimeException;
+
+class CompanyCashfreeService
+{
+    protected function baseUrl(): string
+    {
+        return rtrim(
+            config(
+                'services.cashfree.base_url',
+                'https://sandbox.cashfree.com/pg'
+            ),
+            '/'
+        );
+    }
+
+    protected function headers(): array
+    {
+        return [
+            'x-client-id' => config('services.cashfree.app_id'),
+            'x-client-secret' => config('services.cashfree.secret_key'),
+            'x-api-version' => config(
+                'services.cashfree.api_version',
+                '2025-01-01'
+            ),
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+        ];
+    }
+
+    protected function returnUrl(): string
+    {
+        return rtrim(
+            config(
+                'services.cashfree.company_return_url',
+                'http://127.0.0.1:8001/api/v1/company-payments/cashfree/return'
+            ),
+            '/'
+        ) . '?order_id={order_id}';
+    }
+
+    public function createOrder(
+        CompanyPayment $payment
+    ): array {
+        $company = $payment->company;
+
+        $orderId =
+            'finclears_company_' .
+            $company->id .
+            '_' .
+            $payment->id .
+            '_' .
+            Str::lower(Str::random(8));
+
+        $customerId = 'company_user_' . $company->user_id;
+
+        $payload = [
+            'order_id' => $orderId,
+
+            'order_amount' => round(
+                (float) $payment->amount,
+                2
+            ),
+
+            'order_currency' => 'INR',
+
+            'customer_details' => [
+                'customer_id' => $customerId,
+
+                'customer_name' =>
+                    $company->company_name
+                    ?: 'FinClears Customer',
+
+                'customer_email' =>
+                    $company->email
+                    ?: 'customer@finclears.com',
+
+                'customer_phone' =>
+                    $company->phone
+                    ?: '9999999999',
+            ],
+
+            'order_meta' => [
+                'return_url' => $this->returnUrl(),
+            ],
+        ];
+
+        $response = Http::timeout(30)
+            ->withHeaders($this->headers())
+            ->post(
+                $this->baseUrl() . '/orders',
+                $payload
+            );
+
+        if ($response->failed()) {
+            throw new RuntimeException(
+                'Cashfree company order creation failed: ' .
+                $response->body()
+            );
+        }
+
+        $data = $response->json();
+
+        if (
+            empty($data['payment_session_id']) ||
+            empty($data['order_id'])
+        ) {
+            throw new RuntimeException(
+                'Cashfree did not return a payment session ID.'
+            );
+        }
+
+        $payment->update([
+            'payment_gateway' => 'cashfree',
+
+            'gateway_order_id' =>
+                $data['order_id'],
+
+            'payment_session_id' =>
+                $data['payment_session_id'],
+
+            'gateway_response' =>
+                $data,
+
+            'metadata' => array_merge(
+                $payment->metadata ?? [],
+                [
+                    'cashfree_order_id' =>
+                        $data['order_id'],
+
+                    'cashfree_payment_session_id' =>
+                        $data['payment_session_id'],
+                ]
+            ),
+        ]);
+
+        return $data;
+    }
+
+    public function getOrderPayments(
+        string $orderId
+    ): array {
+        $response = Http::timeout(30)
+            ->withHeaders($this->headers())
+            ->get(
+                $this->baseUrl() .
+                '/orders/' .
+                urlencode($orderId) .
+                '/payments'
+            );
+
+        if ($response->failed()) {
+            throw new RuntimeException(
+                'Unable to fetch Cashfree company payment status: ' .
+                $response->body()
+            );
+        }
+
+        return $response->json() ?? [];
+    }
+
+    public function verifyPayment(
+        CompanyPayment $payment,
+        string $orderId
+    ): array {
+        $payments = $this->getOrderPayments($orderId);
+
+        $successfulPayment = collect($payments)
+            ->first(
+                fn (array $transaction) =>
+                    strtoupper(
+                        (string) (
+                            $transaction['payment_status'] ?? ''
+                        )
+                    ) === 'SUCCESS'
+            );
+
+        if ($successfulPayment) {
+            $payment->update([
+                'payment_status' => 'success',
+
+                'gateway_order_id' =>
+                    $orderId,
+
+                'gateway_transaction_id' =>
+                    $successfulPayment['cf_payment_id']
+                    ?? $successfulPayment['payment_id']
+                    ?? $payment->gateway_transaction_id,
+
+                'gateway_response' => [
+                    'order_id' => $orderId,
+                    'payments' => $payments,
+                    'successful_payment' => $successfulPayment,
+                ],
+
+                'paid_at' => now(),
+            ]);
+
+            $payment->company()->update([
+                'payment_status' => 'success',
+            ]);
+
+            return [
+                'status' => 'success',
+                'payment' => $successfulPayment,
+                'payments' => $payments,
+            ];
+        }
+
+        $pendingPayment = collect($payments)
+            ->first(
+                fn (array $transaction) =>
+                    strtoupper(
+                        (string) (
+                            $transaction['payment_status'] ?? ''
+                        )
+                    ) === 'PENDING'
+            );
+
+        if ($pendingPayment) {
+            return [
+                'status' => 'pending',
+                'payment' => $pendingPayment,
+                'payments' => $payments,
+            ];
+        }
+
+                $failedPayment = collect($payments)->first();
+
+        $errorDetails =
+            is_array($failedPayment['error_details'] ?? null)
+                ? $failedPayment['error_details']
+                : [];
+
+        $paymentMessage =
+            $failedPayment['payment_message']
+            ?? $failedPayment['payment_message_text']
+            ?? null;
+
+        $failureReason =
+            $errorDetails['error_description']
+            ?? $errorDetails['error_reason']
+            ?? $errorDetails['error_message']
+            ?? $errorDetails['message']
+            ?? $paymentMessage
+            ?? $failedPayment['payment_status']
+            ?? null;
+
+        if (!$failureReason) {
+            $failureReason =
+                'Cashfree did not return transaction or error details for this payment attempt.';
+        }
+
+        $payment->update([
+            'payment_status' => 'failed',
+
+            'gateway_order_id' =>
+                $orderId,
+
+            'gateway_transaction_id' =>
+                $failedPayment['cf_payment_id']
+                ?? $failedPayment['payment_id']
+                ?? $payment->gateway_transaction_id,
+
+            'gateway_response' => [
+                'order_id' => $orderId,
+                'payments' => $payments,
+                'failed_payment' => $failedPayment,
+                'failure_reason' => $failureReason,
+                'error_details' => $errorDetails,
+                'payment_message' => $paymentMessage,
+                'failure_captured_at' => now()->toISOString(),
+            ],
+        ]);
+
+        return [
+            'status' => 'failed',
+            'payment' => $failedPayment,
+            'payments' => $payments,
+            'failure_reason' => $failureReason,
+            'error_details' => $errorDetails,
+            'payment_message' => $paymentMessage,
+        ];
+    }
+}

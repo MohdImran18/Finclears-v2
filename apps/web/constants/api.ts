@@ -1,252 +1,255 @@
 const API = {
-  /* ==========================================================
-   * Authentication
-   * ========================================================== */
-  AUTH: {
-    LOGIN: "/auth/login",
-    REGISTER: "/auth/register",
-    LOGOUT: "/auth/logout",
-    ME: "/auth/me",
+        /* ==========================================================
+         * Authentication
+         * ========================================================== */
+        AUTH: {
+                LOGIN: "/auth/login",
+                REGISTER: "/auth/register",
+                LOGOUT: "/auth/logout",
+                ME: "/auth/me",
 
-    FORGOT_PASSWORD: "/auth/forgot-password",
-    RESET_PASSWORD: "/auth/reset-password",
+                FORGOT_PASSWORD: "/auth/forgot-password",
+                RESET_PASSWORD: "/auth/reset-password",
 
-    VERIFY_EMAIL: "/auth/verify-email",
-    RESEND_VERIFICATION: "/auth/resend-verification",
-  },
+                VERIFY_EMAIL: "/auth/verify-email",
+                RESEND_VERIFICATION: "/auth/resend-verification",
+        },
 
-  /* ==========================================================
-   * Users
-   * ========================================================== */
-  USERS: {
-    INDEX: "/users",
-    STORE: "/users",
-    PROFILE: "/users/profile",
-    CHANGE_PASSWORD: "/users/change-password",
+        /* ==========================================================
+         * Users
+         * ========================================================== */
+        USERS: {
+                INDEX: "/users",
+                STORE: "/users",
+                PROFILE: "/users/profile",
+                CHANGE_PASSWORD: "/users/change-password",
 
-    SHOW: (id: number | string) => `/users/${id}`,
-    UPDATE: (id: number | string) => `/users/${id}`,
-    DELETE: (id: number | string) => `/users/${id}`,
-  },
+                SHOW: (id: number | string) => `/users/${id}`,
+                UPDATE: (id: number | string) => `/users/${id}`,
+                DELETE: (id: number | string) => `/users/${id}`,
+        },
 
-  /* ==========================================================
-   * Companies
-   * ========================================================== */
-  COMPANIES: {
-    INDEX: "/companies",
-    STORE: "/companies",
+        /* ==========================================================
+         * Companies
+         * ========================================================== */
+        COMPANIES: {
+                INDEX: "/companies",
+                STORE: "/companies",
 
-    SHOW: (id: number | string) => `/companies/${id}`,
-    UPDATE: (id: number | string) => `/companies/${id}`,
-    DELETE: (id: number | string) => `/companies/${id}`,
+                SHOW: (id: number | string) => `/companies/${id}`,
+                UPDATE: (id: number | string) => `/companies/${id}`,
+                DELETE: (id: number | string) => `/companies/${id}`,
 
-    DRAFT: "/companies/draft",
+                DRAFT: "/companies/draft",
 
-    UPLOAD: (id: number | string) =>
-      `/companies/${id}/documents`,
+                UPLOAD: (id: number | string) => `/companies/${id}/documents`,
 
-    SUBMIT: (id: number | string) =>
-      `/companies/${id}/submit`,
+                SUBMIT: (id: number | string) => `/companies/${id}/submit`,
 
-    STATUS: (id: number | string) =>
-      `/companies/${id}/status`,
+                STATUS: (id: number | string) => `/companies/${id}/status`,
 
-    ASSIGN_CA: (id: number | string) =>
-      `/companies/${id}/assign-ca`,
+                ASSIGN_CA: (id: number | string) => `/companies/${id}/assign-ca`,
 
-    SYNC_STATUS: (id: number | string) =>
-      `/companies/${id}/sync-status`,
-  },
+                SYNC_STATUS: (id: number | string) => `/companies/${id}/sync-status`,
+        },
 
-  /* ==========================================================
-   * Services
-   * ========================================================== */
-  SERVICES: {
-    INDEX: "/services",
-    FEATURED: "/services/featured",
-    SEARCH: "/services/search",
-    CATEGORIES: "/services/categories",
+        /* ==========================================================
+         * Company Payments
+         * ========================================================== */
+        COMPANY_PAYMENTS: {
+                STORE: "/company-payments",
 
-    SHOW: (slug: string) =>
-      `/services/${slug}`,
+                SHOW: (id: number | string) =>
+                        `/company-payments/${id}`,
 
-    RELATED: (slug: string) =>
-      `/services/${slug}/related`,
-  },
+                VERIFY: (id: number | string) =>
+                        `/company-payments/${id}/verify`,
+        },
 
-  /* ==========================================================
-   * Blogs
-   * ========================================================== */
-  BLOGS: {
-    INDEX: "/blogs",
-    FEATURED: "/blogs/featured",
-    SEARCH: "/blogs/search",
-    CATEGORIES: "/blogs/categories",
+        /* ==========================================================
+         * Shareholders
+         * ========================================================== */
+        SHAREHOLDERS: {
+                INDEX: (companyId: number | string) =>
+                        `/companies/${companyId}/shareholders`,
 
-    SHOW: (slug: string) =>
-      `/blogs/${slug}`,
+                STORE: (companyId: number | string) =>
+                        `/companies/${companyId}/shareholders`,
 
-    RELATED: (slug: string) =>
-      `/blogs/${slug}/related`,
-  },
+                UPDATE: (id: number | string) =>
+                        `/shareholders/${id}`,
 
-  /* ==========================================================
-   * FAQs
-   * ========================================================== */
-  FAQS: {
-    INDEX: "/faqs",
-  },
+                DELETE: (id: number | string) =>
+                        `/shareholders/${id}`,
+        },
 
-  /* ==========================================================
-   * Testimonials
-   * ========================================================== */
-  TESTIMONIALS: {
-    INDEX: "/testimonials",
-  },
+        /* ==========================================================
+         * Services
+         * ========================================================== */
+        SERVICES: {
+                INDEX: "/services",
+                FEATURED: "/services/featured",
+                SEARCH: "/services/search",
+                CATEGORIES: "/services/categories",
 
-  /* ==========================================================
-   * Leads
-   * ========================================================== */
-  LEADS: {
-    INDEX: "/leads",
-    STORE: "/leads",
+                SHOW: (slug: string) => `/services/${slug}`,
 
-    SHOW: (id: number | string) =>
-      `/leads/${id}`,
+                RELATED: (slug: string) => `/services/${slug}/related`,
+        },
 
-    UPDATE: (id: number | string) =>
-      `/leads/${id}`,
+        /* ==========================================================
+         * Blogs
+         * ========================================================== */
+        BLOGS: {
+                INDEX: "/blogs",
+                FEATURED: "/blogs/featured",
+                SEARCH: "/blogs/search",
+                CATEGORIES: "/blogs/categories",
 
-    DELETE: (id: number | string) =>
-      `/leads/${id}`,
-  },
+                SHOW: (slug: string) => `/blogs/${slug}`,
 
-  /* ==========================================================
-   * Orders
-   * ========================================================== */
-  ORDERS: {
-    INDEX: "/orders",
-    STORE: "/orders",
+                RELATED: (slug: string) => `/blogs/${slug}/related`,
+        },
 
-    SHOW: (id: number | string) =>
-      `/orders/${id}`,
+        /* ==========================================================
+         * FAQs
+         * ========================================================== */
+        FAQS: {
+                INDEX: "/faqs",
+        },
 
-    UPDATE: (id: number | string) =>
-      `/orders/${id}`,
+        /* ==========================================================
+         * Testimonials
+         * ========================================================== */
+        TESTIMONIALS: {
+                INDEX: "/testimonials",
+        },
 
-    DELETE: (id: number | string) =>
-      `/orders/${id}`,
-  },
+        /* ==========================================================
+         * Leads
+         * ========================================================== */
+        LEADS: {
+                INDEX: "/leads",
+                STORE: "/leads",
 
-  /* ==========================================================
-   * Payments
-   * ========================================================== */
-  PAYMENTS: {
-    INDEX: "/payments",
-    STORE: "/payments",
+                SHOW: (id: number | string) => `/leads/${id}`,
 
-    SHOW: (id: number | string) =>
-      `/payments/${id}`,
+                UPDATE: (id: number | string) => `/leads/${id}`,
 
-    VERIFY: "/payments/verify",
-  },
+                DELETE: (id: number | string) => `/leads/${id}`,
+        },
 
-  /* ==========================================================
-   * Contact
-   * ========================================================== */
-  CONTACT: {
-    SEND: "/contact",
-  },
+        /* ==========================================================
+         * Orders
+         * ========================================================== */
+        ORDERS: {
+                INDEX: "/orders",
+                STORE: "/orders",
 
-  /* ==========================================================
-   * Newsletter
-   * ========================================================== */
-  NEWSLETTER: {
-    SUBSCRIBE: "/newsletter/subscribe",
-  },
+                SHOW: (id: number | string) => `/orders/${id}`,
 
-  /* ==========================================================
-   * Dashboard
-   * ========================================================== */
-  DASHBOARD: {
-    STATS: "/dashboard/stats",
-    RECENT_ORDERS: "/dashboard/recent-orders",
-    RECENT_PAYMENTS: "/dashboard/recent-payments",
-    RECENT_DOCUMENTS: "/dashboard/recent-documents",
-    RECENT_NOTIFICATIONS: "/dashboard/recent-notifications",
-  },
+                UPDATE: (id: number | string) => `/orders/${id}`,
 
-  /* ==========================================================
-   * Notifications
-   * ========================================================== */
-  NOTIFICATIONS: {
-    INDEX: "/notifications",
+                DELETE: (id: number | string) => `/orders/${id}`,
+        },
 
-    READ: (id: number | string) =>
-      `/notifications/${id}/read`,
+        /* ==========================================================
+         * Payments
+         * ========================================================== */
+        PAYMENTS: {
+                INDEX: "/payments",
+                STORE: "/payments",
 
-    READ_ALL: "/notifications/read-all",
-  },
+                SHOW: (id: number | string) => `/payments/${id}`,
 
-  /* ==========================================================
-   * Settings
-   * ========================================================== */
-  SETTINGS: {
-    INDEX: "/settings",
-    UPDATE: "/settings",
-  },
+                VERIFY: "/payments/verify",
+        },
 
-  /* ==========================================================
-   * SEO
-   * ========================================================== */
-  SEO: {
-    INDEX: "/seo",
-  },
+        /* ==========================================================
+         * Contact
+         * ========================================================== */
+        CONTACT: {
+                SEND: "/contact",
+        },
 
-  /* ==========================================================
-   * Documents
-   * ========================================================== */
-  DOCUMENTS: {
-    INDEX: "/documents",
-    STORE: "/documents",
+        /* ==========================================================
+         * Newsletter
+         * ========================================================== */
+        NEWSLETTER: {
+                SUBSCRIBE: "/newsletter/subscribe",
+        },
 
-    SHOW: (id: number | string) =>
-      `/documents/${id}`,
+        /* ==========================================================
+         * Dashboard
+         * ========================================================== */
+        DASHBOARD: {
+                STATS: "/dashboard/stats",
+                RECENT_ORDERS: "/dashboard/recent-orders",
+                RECENT_PAYMENTS: "/dashboard/recent-payments",
+                RECENT_DOCUMENTS: "/dashboard/recent-documents",
+                RECENT_NOTIFICATIONS: "/dashboard/recent-notifications",
+        },
 
-    UPDATE: (id: number | string) =>
-      `/documents/${id}`,
+        /* ==========================================================
+         * Notifications
+         * ========================================================== */
+        NOTIFICATIONS: {
+                INDEX: "/notifications",
 
-    DELETE: (id: number | string) =>
-      `/documents/${id}`,
+                READ: (id: number | string) => `/notifications/${id}/read`,
 
-    DOWNLOAD: (id: number | string) =>
-      `/documents/${id}/download`,
+                READ_ALL: "/notifications/read-all",
+        },
 
-    VERIFY: (id: number | string) =>
-      `/documents/${id}/verify`,
+        /* ==========================================================
+         * Settings
+         * ========================================================== */
+        SETTINGS: {
+                INDEX: "/settings",
+                UPDATE: "/settings",
+        },
 
-    REJECT: (id: number | string) =>
-      `/documents/${id}/reject`,
+        /* ==========================================================
+         * SEO
+         * ========================================================== */
+        SEO: {
+                INDEX: "/seo",
+        },
 
-    TIMELINE: (id: number | string) =>
-      `/documents/${id}/timeline`,
+        /* ==========================================================
+         * Documents
+         * ========================================================== */
+        DOCUMENTS: {
+                INDEX: "/documents",
+                STORE: "/documents",
 
-    VERSIONS: (id: number | string) =>
-      `/documents/${id}/versions`,
+                SHOW: (id: number | string) => `/documents/${id}`,
 
-    REPLACE: (id: number | string) =>
-      `/documents/${id}/replace`,
-  },
+                UPDATE: (id: number | string) => `/documents/${id}`,
 
-  /* ==========================================================
-   * Media
-   * ========================================================== */
-  MEDIA: {
-    UPLOAD: "/media/upload",
+                DELETE: (id: number | string) => `/documents/${id}`,
 
-    DELETE: (id: number | string) =>
-      `/media/${id}`,
-  },
+                DOWNLOAD: (id: number | string) => `/documents/${id}/download`,
+
+                VERIFY: (id: number | string) => `/documents/${id}/verify`,
+
+                REJECT: (id: number | string) => `/documents/${id}/reject`,
+
+                TIMELINE: (id: number | string) => `/documents/${id}/timeline`,
+
+                VERSIONS: (id: number | string) => `/documents/${id}/versions`,
+
+                REPLACE: (id: number | string) => `/documents/${id}/replace`,
+        },
+
+        /* ==========================================================
+         * Media
+         * ========================================================== */
+        MEDIA: {
+                UPLOAD: "/media/upload",
+
+                DELETE: (id: number | string) => `/media/${id}`,
+        },
 } as const;
 
 export default API;

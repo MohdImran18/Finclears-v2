@@ -1,0 +1,825 @@
+<?php
+
+namespace App\Services\ITR;
+
+use App\Contracts\Repositories\ItrReturnRepositoryInterface;
+use App\Models\AssessmentYear;
+use App\Models\FinancialYear;
+use App\Models\ItrIncome;
+use App\Models\ItrReturn;
+use App\Models\ItrType;
+use App\Models\ReturnStatus;
+use App\Models\TaxRegime;
+use App\Services\Pdf\PdfService;
+use App\Services\Tax\TaxCalculationService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+
+class ItrReturnService
+{
+    public function __construct(
+        protected ItrReturnRepositoryInterface $repository,
+        protected TaxCalculationService $taxCalculationService,
+        protected PdfService $pdfService
+    ) {
+    }
+
+    public function getAll(int $perPage = 15): LengthAwarePaginator
+    {
+        return $this->repository->paginate($perPage);
+    }
+
+    public function findByUuid(string $uuid): ?ItrReturn
+    {
+        return $this->repository->findByUuid($uuid);
+    }
+
+    public function findExistingDraft(array $data): ?ItrReturn
+    {
+        $financialYear = FinancialYear::where(
+            'name',
+            $data['financial_year']
+        )->first();
+
+        $assessmentYear = AssessmentYear::where(
+            'name',
+            $data['assessment_year']
+        )->first();
+
+        $itrType = ItrType::where(
+            'code',
+            $data['return_type']
+        )->first();
+
+        $draftStatus = ReturnStatus::where(
+            'code',
+            'draft'
+        )->first();
+
+        if (
+            !$financialYear ||
+            !$assessmentYear ||
+            !$itrType ||
+            !$draftStatus
+        ) {
+            return null;
+        }
+
+        return ItrReturn::where(
+            'user_id',
+            auth()->id()
+        )
+            ->where(
+                'pan',
+                strtoupper($data['pan'])
+            )
+            ->where(
+                'financial_year_id',
+                $financialYear->id
+            )
+            ->where(
+                'assessment_year_id',
+                $assessmentYear->id
+            )
+            ->where(
+                'itr_type_id',
+                $itrType->id
+            )
+            ->where(
+                'return_status_id',
+                $draftStatus->id
+            )
+            ->first();
+    }
+    public function createReturn(array $data): ItrReturn
+    {
+        Log::info('========== ITR REQUEST DATA ==========');
+        Log::info($data);
+
+        return DB::transaction(function () use ($data) {
+
+            $financialYear = FinancialYear::where(
+                'name',
+                $data['financial_year']
+            )->firstOrFail();
+
+            $assessmentYear = AssessmentYear::where(
+                'name',
+                $data['assessment_year']
+            )->firstOrFail();
+
+            $itrType = ItrType::where(
+                'code',
+                $data['return_type']
+            )->firstOrFail();
+
+            $taxRegime = TaxRegime::where(
+                'code',
+                $data['tax_regime']
+            )->firstOrFail();
+
+            $draftStatus = ReturnStatus::where(
+                'code',
+                'draft'
+            )->firstOrFail();
+
+            $insertData = [
+                'user_id' => auth()->id() ?: 1,
+                'company_id' => $data['company_id'] ?? null,
+                'financial_year_id' => $financialYear->id,
+                'assessment_year_id' => $assessmentYear->id,
+                'itr_type_id' => $itrType->id,
+                'tax_regime_id' => $taxRegime->id,
+                'return_status_id' => $draftStatus->id,
+
+                'return_number' => sprintf(
+                    'ITR-%s-%04d',
+                    now()->format('YmdHis'),
+                    random_int(1000, 9999)
+                ),
+
+                'pan' => strtoupper($data['pan']),
+                'aadhaar' => $data['aadhaar'],
+                'mobile' => $data['mobile'],
+                'email' => strtolower($data['email']),
+            ];
+
+            return $this->repository->create($insertData);
+        });
+    }
+
+    /**
+     * Update ITR Return + Income Details
+     */
+    public function updateReturn(
+        int $id,
+        array $data
+    ): bool {
+
+        return DB::transaction(function () use ($id, $data) {
+
+            $return = ItrReturn::findOrFail($id);
+
+            /*
+             * Fields that belong directly to itr_returns.
+             *
+             * Important:
+             * Only update fields that were actually sent.
+             * This prevents partial updates from resetting
+             * existing income/tax values to zero.
+             */
+            $returnData = [];
+
+            foreach ([
+                'company_id',
+                'gross_income',
+                'total_deductions',
+                'taxable_income',
+                'tax_liability',
+                'interest_amount',
+                'late_fee',
+                'relief_amount',
+                'rebate_amount',
+                'tds_amount',
+                'tcs_amount',
+                'advance_tax',
+                'self_assessment_tax',
+                'refund_amount',
+                'net_payable',
+            ] as $field) {
+
+                if (array_key_exists($field, $data)) {
+                    $returnData[$field] = $data[$field];
+                }
+            }
+
+            if (!empty($returnData)) {
+                $return->update($returnData);
+            }
+
+            /*
+             * Save detailed income data.
+             */
+            $userId = $return->user_id ?: (auth()->id() ?: 1);
+
+            /*
+             * Salary
+             *
+             * Partial-update safe.
+             *
+             * If only tds_amount is sent, existing salary,
+             * exempt amount and taxable amount are preserved.
+             */
+            if (
+                array_key_exists('annual_salary', $data) ||
+                array_key_exists('exempt_allowances', $data) ||
+                array_key_exists('professional_tax', $data) ||
+                array_key_exists('tds_amount', $data) ||
+                array_key_exists('tcs_amount', $data) ||
+                array_key_exists('advance_tax', $data)
+            ) {
+
+                $salaryIncome = ItrIncome::where(
+                    'itr_return_id',
+                    $return->id
+                )
+                    ->where('income_type_id', 1)
+                    ->where('is_active', true)
+                    ->first();
+
+                $annualSalary = array_key_exists(
+                    'annual_salary',
+                    $data
+                )
+                    ? (float) $data['annual_salary']
+                    : (float) ($salaryIncome->gross_amount ?? 0);
+
+                $exemptAllowances = array_key_exists(
+                    'exempt_allowances',
+                    $data
+                )
+                    ? (float) $data['exempt_allowances']
+                    : (float) ($salaryIncome->exempt_amount ?? 0);
+
+                $professionalTax = array_key_exists(
+                    'professional_tax',
+                    $data
+                )
+                    ? (float) $data['professional_tax']
+                    : 0;
+
+                $tdsAmount = array_key_exists(
+                    'tds_amount',
+                    $data
+                )
+                    ? (float) $data['tds_amount']
+                    : (float) ($salaryIncome->tds_amount ?? 0);
+
+                $tcsAmount = array_key_exists(
+                    'tcs_amount',
+                    $data
+                )
+                    ? (float) $data['tcs_amount']
+                    : (float) ($salaryIncome->tcs_amount ?? 0);
+
+                $advanceTax = array_key_exists(
+                    'advance_tax',
+                    $data
+                )
+                    ? (float) $data['advance_tax']
+                    : (float) ($salaryIncome->advance_tax ?? 0);
+
+                $taxableSalary = max(
+                    0,
+                    $annualSalary
+                    - $exemptAllowances
+                    - $professionalTax
+                );
+
+                ItrIncome::updateOrCreate(
+                    [
+                        'itr_return_id' => $return->id,
+                        'income_type_id' => 1,
+                    ],
+                    [
+                        'user_id' => $userId,
+                        'company_id' => $return->company_id,
+                        'income_source' => 'Salary',
+
+                        'gross_amount' => $annualSalary,
+
+                        'exempt_amount' => $exemptAllowances,
+
+                        'taxable_amount' => $taxableSalary,
+
+                        'tds_amount' => $tdsAmount,
+
+                        'tcs_amount' => $tcsAmount,
+
+                        'advance_tax' => $advanceTax,
+
+                        'is_manual_entry' => true,
+
+                        'is_active' => true,
+                    ]
+                );
+            }
+
+                    /*
+             * House Property
+             */
+            if (
+                array_key_exists('rental_income', $data) ||
+                array_key_exists('municipal_tax', $data) ||
+                array_key_exists('home_loan_interest', $data)
+            ) {
+
+                $existingHouseProperty = ItrIncome::where(
+                    'itr_return_id',
+                    $return->id
+                )
+                    ->where('income_type_id', 2)
+                    ->where('is_active', true)
+                    ->first();
+
+                $rentalIncome = array_key_exists(
+                    'rental_income',
+                    $data
+                )
+                    ? (float) $data['rental_income']
+                    : (float) ($existingHouseProperty->rental_income ?? 0);
+
+                $municipalTax = array_key_exists(
+                    'municipal_tax',
+                    $data
+                )
+                    ? (float) $data['municipal_tax']
+                    : (float) ($existingHouseProperty->municipal_tax ?? 0);
+
+                $homeLoanInterest = array_key_exists(
+                    'home_loan_interest',
+                    $data
+                )
+                    ? (float) $data['home_loan_interest']
+                    : (float) ($existingHouseProperty->interest_on_housing_loan ?? 0);
+
+                ItrIncome::updateOrCreate(
+                    [
+                        'itr_return_id' => $return->id,
+                        'income_type_id' => 2,
+                    ],
+                    [
+                        'user_id' => $userId,
+                        'company_id' => $return->company_id,
+                        'income_source' => 'House Property',
+
+                        'gross_amount' => $rentalIncome,
+
+                        'exempt_amount' => $municipalTax,
+
+                        'taxable_amount' => max(
+                            0,
+                            $rentalIncome
+                            - $municipalTax
+                            - $homeLoanInterest
+                        ),
+
+                        'rental_income' => $rentalIncome,
+
+                        'municipal_tax' => $municipalTax,
+
+                        'interest_on_housing_loan' => $homeLoanInterest,
+
+                        'is_manual_entry' => true,
+
+                        'is_active' => true,
+                    ]
+                );
+            }
+
+            /*
+             * Business / Profession
+             */
+            if (
+                array_key_exists('business_income', $data) ||
+                array_key_exists('business_expenses', $data)
+            ) {
+
+                $existingBusiness = ItrIncome::where(
+                    'itr_return_id',
+                    $return->id
+                )
+                    ->where('income_type_id', 3)
+                    ->where('is_active', true)
+                    ->first();
+
+                $businessIncome = array_key_exists(
+                    'business_income',
+                    $data
+                )
+                    ? (float) $data['business_income']
+                    : (float) ($existingBusiness->gross_amount ?? 0);
+
+                $businessExpenses = array_key_exists(
+                    'business_expenses',
+                    $data
+                )
+                    ? (float) $data['business_expenses']
+                    : 0;
+
+                ItrIncome::updateOrCreate(
+                    [
+                        'itr_return_id' => $return->id,
+                        'income_type_id' => 3,
+                    ],
+                    [
+                        'user_id' => $userId,
+                        'company_id' => $return->company_id,
+                        'income_source' => 'Business / Profession',
+
+                        'gross_amount' => $businessIncome,
+
+                        'taxable_amount' => max(
+                            0,
+                            $businessIncome
+                            - $businessExpenses
+                        ),
+
+                        'business_profit' => max(
+                            0,
+                            $businessIncome
+                            - $businessExpenses
+                        ),
+
+                        'is_manual_entry' => true,
+
+                        'is_active' => true,
+                    ]
+                );
+            }
+
+            /*
+             * Capital Gains
+             */
+            if (
+                array_key_exists(
+                    'short_term_capital_gain',
+                    $data
+                ) ||
+                array_key_exists(
+                    'long_term_capital_gain',
+                    $data
+                )
+            ) {
+
+                $existingCapitalGain = ItrIncome::where(
+                    'itr_return_id',
+                    $return->id
+                )
+                    ->where('income_type_id', 4)
+                    ->where('is_active', true)
+                    ->first();
+
+                $stcg = array_key_exists(
+                    'short_term_capital_gain',
+                    $data
+                )
+                    ? (float) $data['short_term_capital_gain']
+                    : (float) ($existingCapitalGain->short_term_gain ?? 0);
+
+                $ltcg = array_key_exists(
+                    'long_term_capital_gain',
+                    $data
+                )
+                    ? (float) $data['long_term_capital_gain']
+                    : (float) ($existingCapitalGain->long_term_gain ?? 0);
+
+                ItrIncome::updateOrCreate(
+                    [
+                        'itr_return_id' => $return->id,
+                        'income_type_id' => 4,
+                    ],
+                    [
+                        'user_id' => $userId,
+                        'company_id' => $return->company_id,
+                        'income_source' => 'Capital Gains',
+
+                        'gross_amount' => $stcg + $ltcg,
+
+                        'taxable_amount' => $stcg + $ltcg,
+
+                        'short_term_gain' => $stcg,
+
+                        'long_term_gain' => $ltcg,
+
+                        'is_manual_entry' => true,
+
+                        'is_active' => true,
+                    ]
+                );
+            }
+
+            /*
+             * Other Sources
+             */
+            if (
+                array_key_exists(
+                    'interest_income',
+                    $data
+                ) ||
+                array_key_exists(
+                    'dividend_income',
+                    $data
+                ) ||
+                array_key_exists(
+                    'other_income',
+                    $data
+                )
+            ) {
+
+                $existingOther = ItrIncome::where(
+                    'itr_return_id',
+                    $return->id
+                )
+                    ->where('income_type_id', 5)
+                    ->where('is_active', true)
+                    ->first();
+
+                $interestIncome = array_key_exists(
+                    'interest_income',
+                    $data
+                )
+                    ? (float) $data['interest_income']
+                    : (float) ($existingOther->interest_income ?? 0);
+
+                $dividendIncome = array_key_exists(
+                    'dividend_income',
+                    $data
+                )
+                    ? (float) $data['dividend_income']
+                    : (float) ($existingOther->dividend_income ?? 0);
+
+                $otherIncome = array_key_exists(
+                    'other_income',
+                    $data
+                )
+                    ? (float) $data['other_income']
+                    : 0;
+
+                $otherTotal =
+                    $interestIncome
+                    + $dividendIncome
+                    + $otherIncome;
+
+                ItrIncome::updateOrCreate(
+                    [
+                        'itr_return_id' => $return->id,
+                        'income_type_id' => 5,
+                    ],
+                    [
+                        'user_id' => $userId,
+                        'company_id' => $return->company_id,
+                        'income_source' => 'Other Sources',
+
+                        'gross_amount' => $otherTotal,
+
+                        'taxable_amount' => $otherTotal,
+
+                        'interest_income' => $interestIncome,
+
+                        'dividend_income' => $dividendIncome,
+
+                        'is_manual_entry' => true,
+
+                        'is_active' => true,
+                    ]
+                );
+            }
+
+            /*
+             * Recalculate ITR return income totals
+             * from active detailed income records.
+             *
+             * TDS is a tax credit.
+             * It must NOT reduce gross income
+             * or taxable income.
+             */
+            $incomeTotals = ItrIncome::where(
+                'itr_return_id',
+                $return->id
+            )
+                ->where('is_active', true)
+                ->selectRaw('
+                    COALESCE(SUM(gross_amount), 0) as gross_income,
+                    COALESCE(SUM(taxable_amount), 0) as taxable_income,
+                    COALESCE(SUM(tds_amount), 0) as tds_amount,
+                    COALESCE(SUM(tcs_amount), 0) as tcs_amount,
+                    COALESCE(SUM(advance_tax), 0) as advance_tax,
+                    COALESCE(SUM(self_assessment_tax), 0) as self_assessment_tax
+                ')
+                ->first();
+
+            $return->update([
+                'gross_income' =>
+                    $incomeTotals->gross_income ?? 0,
+
+                'taxable_income' =>
+                    $incomeTotals->taxable_income ?? 0,
+
+                'tds_amount' =>
+                    $incomeTotals->tds_amount ?? 0,
+
+                'tcs_amount' =>
+                    $incomeTotals->tcs_amount ?? 0,
+
+                'advance_tax' =>
+                    $incomeTotals->advance_tax ?? 0,
+
+                'self_assessment_tax' =>
+                    $incomeTotals->self_assessment_tax ?? 0,
+            ]);
+
+            return true;
+        });
+    }
+
+    public function deleteReturn(int $id): bool
+    {
+        return $this->repository->delete($id);
+    }
+
+        public function calculateTax(ItrReturn $return)
+    {
+        /*
+         * Recalculate active income totals before tax calculation.
+         */
+        $incomeTotals = ItrIncome::where(
+            'itr_return_id',
+            $return->id
+        )
+            ->where('is_active', true)
+            ->selectRaw('
+                COALESCE(SUM(gross_amount), 0) as gross_income,
+                COALESCE(SUM(taxable_amount), 0) as taxable_income,
+                COALESCE(SUM(tds_amount), 0) as tds_amount,
+                COALESCE(SUM(tcs_amount), 0) as tcs_amount,
+                COALESCE(SUM(advance_tax), 0) as advance_tax,
+                COALESCE(SUM(self_assessment_tax), 0) as self_assessment_tax
+            ')
+            ->first();
+
+        /*
+         * Sync income totals back to ITR return.
+         */
+        $return->update([
+            'gross_income' =>
+                (float) (
+                    $incomeTotals->gross_income ?? 0
+                ),
+
+            'taxable_income' =>
+                (float) (
+                    $incomeTotals->taxable_income ?? 0
+                ),
+
+            'tds_amount' =>
+                (float) (
+                    $incomeTotals->tds_amount ?? 0
+                ),
+
+            'tcs_amount' =>
+                (float) (
+                    $incomeTotals->tcs_amount ?? 0
+                ),
+
+            'advance_tax' =>
+                (float) (
+                    $incomeTotals->advance_tax ?? 0
+                ),
+
+            'self_assessment_tax' =>
+                (float) (
+                    $incomeTotals->self_assessment_tax ?? 0
+                ),
+        ]);
+
+        $return->refresh();
+
+        /*
+         * Tax calculation input.
+         */
+        $data = [
+            'gross_income' => (float) (
+                $return->gross_income ?? 0
+            ),
+
+            'deductions' => (float) (
+                $return->total_deductions ?? 0
+            ),
+
+            'taxable_income' => (float) (
+                $return->taxable_income ?? 0
+            ),
+
+            'tds_amount' => (float) (
+                $return->tds_amount ?? 0
+            ),
+
+            'tcs_amount' => (float) (
+                $return->tcs_amount ?? 0
+            ),
+
+            'advance_tax' => (float) (
+                $return->advance_tax ?? 0
+            ),
+
+            'self_assessment_tax' => (float) (
+                $return->self_assessment_tax ?? 0
+            ),
+        ];
+
+        /*
+         * Calculate tax.
+         */
+        $result = $this->taxCalculationService->calculate(
+            $data
+        );
+
+        /*
+         * Save tax result.
+         */
+        $return->update([
+
+            /*
+             * Tax liability before tax credits.
+             */
+            'tax_liability' =>
+                $result['tax_liability'] ?? 0,
+
+            /*
+             * Tax credits.
+             */
+            'tds_amount' =>
+                $result['tds_amount']
+                ?? $data['tds_amount'],
+
+            'tcs_amount' =>
+                $result['tcs_amount']
+                ?? $data['tcs_amount'],
+
+            'advance_tax' =>
+                $result['advance_tax']
+                ?? $data['advance_tax'],
+
+            'self_assessment_tax' =>
+                $result['self_assessment_tax']
+                ?? $data['self_assessment_tax'],
+
+            /*
+             * Final settlement.
+             */
+            'refund_amount' =>
+                $result['refund_amount'] ?? 0,
+
+            'net_payable' =>
+                $result['net_payable'] ?? 0,
+        ]);
+
+        /*
+         * Return fresh values.
+         */
+        $return->refresh();
+
+        return [
+            ...$result,
+
+            'saved' => true,
+
+            'return' => [
+
+                'tax_liability' =>
+                    (float) $return->tax_liability,
+
+                'tds_amount' =>
+                    (float) $return->tds_amount,
+
+                'tcs_amount' =>
+                    (float) $return->tcs_amount,
+
+                'advance_tax' =>
+                    (float) $return->advance_tax,
+
+                'self_assessment_tax' =>
+                    (float) $return->self_assessment_tax,
+
+                'refund_amount' =>
+                    (float) $return->refund_amount,
+
+                'net_payable' =>
+                    (float) $return->net_payable,
+            ],
+        ];
+    }
+
+    public function downloadPdf(
+        ItrReturn $return
+    ): BinaryFileResponse {
+        return $this->pdfService->generate($return);
+    }
+
+    public function submitReturn(
+        ItrReturn $return
+    ): bool {
+        return $return->update([
+            'return_status_id' => ReturnStatus::where(
+                'code',
+                'submitted'
+            )->value('id'),
+        ]);
+    }
+}
+
+
+

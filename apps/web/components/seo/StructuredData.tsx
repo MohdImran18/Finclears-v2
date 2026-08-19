@@ -1,16 +1,15 @@
 interface Props {
-  data: object;
+	data: object;
 }
 
-export default function StructuredData({
-  data,
-}: Props) {
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify(data),
-      }}
-    />
-  );
+export default function StructuredData({ data }: Props) {
+	return (
+		<script
+			type="application/ld+json"
+			dangerouslySetInnerHTML={{
+				__html: JSON.stringify(data),
+			}}
+		/>
+	);
 }
+

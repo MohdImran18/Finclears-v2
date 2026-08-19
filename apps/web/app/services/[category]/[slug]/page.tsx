@@ -1,453 +1,286 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import StructuredData from "@/components/seo/StructuredData";
-
-import { serviceSchema } from "@/lib/seo/serviceSchema";
-import { breadcrumbSchema } from "@/lib/seo/breadcrumbSchema";
-import { faqSchema } from "@/lib/seo/faqSchema";
-
 import Breadcrumb from "@/components/services/Breadcrumb";
-import ServiceHero from "@/components/services/ServiceHero";
+import Newsletter from "@/components/services/Newsletter";
+import RelatedServices from "@/components/services/RelatedServices";
 import ServiceBenefits from "@/components/services/ServiceBenefits";
-import ServicePricing from "@/components/services/ServicePricing";
-import ServiceProcess from "@/components/services/ServiceProcess";
+import ServiceCTA from "@/components/services/ServiceCTA";
 import ServiceDocuments from "@/components/services/ServiceDocuments";
 import ServiceFAQ from "@/components/services/ServiceFAQ";
-import RelatedServices from "@/components/services/RelatedServices";
-import ServiceCTA from "@/components/services/ServiceCTA";
-import Newsletter from "@/components/services/Newsletter";
+import ServiceHero from "@/components/services/ServiceHero";
+import ServicePricing from "@/components/services/ServicePricing";
+import ServiceProcess from "@/components/services/ServiceProcess";
+import { breadcrumbSchema } from "@/lib/seo/breadcrumbSchema";
+import { faqSchema } from "@/lib/seo/faqSchema";
+import { serviceSchema } from "@/lib/seo/serviceSchema";
 
 import type {
-  Service,
-  ServiceBenefit,
-  ServiceFaq,
-  ServicePricing as PricingItem,
-  ServiceProcess as ProcessItem,
-  ServiceDocument,
+	ServicePricing as PricingItem,
+	ServiceProcess as ProcessItem,
+	Service,
+	ServiceBenefit,
+	ServiceDocument,
+	ServiceFaq,
 } from "@/types/service";
 
-const API =
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://127.0.0.1:8000";
+const API = (process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000").replace(/\/api\/v1\/?$/, "");
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_APP_URL ??
-  "https://finclears.com";
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://finclears.com";
 
 interface Props {
-  params: Promise<{
-    category: string;
-    slug: string;
-  }>;
+	params: Promise<{
+		category: string;
+		slug: string;
+	}>;
 }
 
 /* ==========================================================
  | Service
  * ========================================================= */
 
-async function getService(
-  slug: string
-): Promise<Service | null> {
-  const response = await fetch(
-    `${API}/api/v1/services/${slug}`,
-    {
-      next: {
-        revalidate: 3600,
-      },
-    }
-  );
+async function getService(slug: string): Promise<Service | null> {
+	const response = await fetch(`${API}/api/v1/services/${slug}`, {
+		next: {
+			revalidate: 3600,
+		},
+	});
 
-  if (!response.ok) {
-    return null;
-  }
+	if (!response.ok) {
+		return null;
+	}
 
-  const json = await response.json();
+	const json = await response.json();
 
-  return json?.data?.service ?? null;
+	return json?.data?.service ?? null;
 }
 
 /* ==========================================================
  | Related
  * ========================================================= */
 
-async function getRelated(
-  category: string
-): Promise<Service[]> {
-  const response = await fetch(
-    `${API}/api/v1/services`,
-    {
-      next: {
-        revalidate: 3600,
-      },
-    }
-  );
+async function getRelated(category: string): Promise<Service[]> {
+	const response = await fetch(`${API}/api/v1/services`, {
+		next: {
+			revalidate: 3600,
+		},
+	});
 
-  if (!response.ok) {
-    return [];
-  }
+	if (!response.ok) {
+		return [];
+	}
 
-  const json = await response.json();
+	const json = await response.json();
 
-  return (
-    json?.data?.services ?? []
-  ).filter(
-    (item: Service) =>
-      item.category?.slug === category
-  );
+	return (json?.data?.services ?? []).filter(
+		(item: Service) => item.category?.slug === category,
+	);
 }
 
 /* ==========================================================
  | Metadata
  * ========================================================= */
 
-export async function generateMetadata({
-  params,
-}: Props): Promise<Metadata> {
-  const { slug } = await params;
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+	const { slug } = await params;
 
-  const service =
-    await getService(slug);
+	const service = await getService(slug);
 
-  if (!service) {
-    return {
-      title: "Service Not Found",
-    };
-  }
+	if (!service) {
+		return {
+			title: "Service Not Found",
+		};
+	}
 
-  const canonical =
-    `${SITE_URL}/services/${service.category?.slug}/${service.slug}`;
+	const canonical = `${SITE_URL}/services/${service.category?.slug}/${service.slug}`;
 
-  return {
-    title:
-      service.meta_title ??
-      service.title,
+	return {
+		title: service.meta_title ?? service.title,
 
-    description:
-      service.meta_description ??
-      service.description,
+		description: service.meta_description ?? service.description ?? "",
 
-    keywords:
-      service.meta_keywords,
+		keywords: service.meta_keywords,
 
-    robots: {
-      index: true,
-      follow: true,
-    },
+		robots: {
+			index: true,
+			follow: true,
+		},
 
-    alternates: {
-      canonical,
-    },
+		alternates: {
+			canonical,
+		},
 
-    openGraph: {
-      siteName: "FinClears",
+		openGraph: {
+			siteName: "FinClears",
 
-      type: "website",
+			type: "website",
 
-      url: canonical,
+			url: canonical,
 
-      title:
-        service.meta_title ??
-        service.title,
+			title: service.meta_title ?? service.title,
 
-      description:
-        service.meta_description ??
-        service.description,
+			description: service.meta_description ?? service.description ?? "",
 
-      images:
-        service.featured_image
-          ? [
-              {
-                url:
-                  service.featured_image,
-                width: 1200,
-                height: 630,
-                alt:
-                  service.title,
-              },
-            ]
-          : [],
-    },
+			images: service.featured_image
+				? [
+						{
+							url: service.featured_image,
+							width: 1200,
+							height: 630,
+							alt: service.title,
+						},
+					]
+				: [],
+		},
 
-    twitter: {
-      card:
-        "summary_large_image",
+		twitter: {
+			card: "summary_large_image",
 
-      title:
-        service.meta_title ??
-        service.title,
+			title: service.meta_title ?? service.title,
 
-      description:
-        service.meta_description ??
-        service.description,
-    },
-  };
+			description: service.meta_description ?? service.description ?? "",
+		},
+	};
 }
 
-export default async function ServicePage({
-  params,
-}: Props) {
-  const {
-    category,
-    slug,
-  } = await params;
+export default async function ServicePage({ params }: Props) {
+	const { category, slug } = await params;
 
-  const service =
-    await getService(slug);
+	const service = await getService(slug);
 
-  if (!service) {
-    notFound();
-  }
+	if (!service) {
+		notFound();
+	}
 
-  const related = (
-    await getRelated(category)
-  ).filter(
-    (item: Service) =>
-      item.id !== service.id
-  );
+	const related = (await getRelated(category)).filter(
+		(item: Service) => item.id !== service.id,
+	);
 
-  /* ==========================================================
+	/* ==========================================================
    | Structured Data
    * ========================================================= */
 
-  const serviceJson = serviceSchema({
-    name: service.title,
+	const serviceJson = serviceSchema({
+		name: service.title,
 
-    description:
-      service.meta_description ??
-      service.description,
+		description: service.meta_description ?? service.description ?? "",
 
-    url:
-      `${SITE_URL}/services/${category}/${slug}`,
+		url: `${SITE_URL}/services/${category}/${slug}`,
 
-    image:
- service.featured_image ?? undefined,
- 
-    price:
-  String(service.starting_price),
-  });
+		image: service.featured_image ?? undefined,
 
-  const breadcrumbJson =
-    breadcrumbSchema([
-      {
-        name: "Home",
-        url: SITE_URL,
-      },
+		price: String(service.starting_price),
+	});
 
-      {
-        name: "Services",
-        url:
-          `${SITE_URL}/services`,
-      },
+	const breadcrumbJson = breadcrumbSchema([
+		{
+			name: "Home",
+			url: SITE_URL,
+		},
 
-      {
-        name:
-          service.category?.name ??
-          "Service",
+		{
+			name: "Services",
+			url: `${SITE_URL}/services`,
+		},
 
-        url:
-          `${SITE_URL}/services/${service.category?.slug}`,
-      },
+		{
+			name: service.category?.name ?? "Service",
 
-      {
-        name:
-          service.title,
+			url: `${SITE_URL}/services/${service.category?.slug}`,
+		},
 
-        url:
-          `${SITE_URL}/services/${category}/${slug}`,
-      },
-    ]);
+		{
+			name: service.title,
 
-  const faqJson = faqSchema(
-    (
-      service.faqs ?? []
-    )
-      .map(
-        (
-          item: ServiceFaq
-        ) => ({
-          question:
-            item.question,
+			url: `${SITE_URL}/services/${category}/${slug}`,
+		},
+	]);
 
-          answer:
-            item.answer,
-        })
-      )
-      .filter(
-        (item) =>
-          item.question &&
-          item.answer
-      )
-  );
+	const faqJson = faqSchema(
+		(service.faqs ?? [])
+			.map((item: ServiceFaq) => ({
+				question: item.question,
 
-  /* ==========================================================
+				answer: item.answer,
+			}))
+			.filter((item) => item.question && item.answer),
+	);
+
+	/* ==========================================================
    | Mapped Data
    * ========================================================= */
 
-  const benefits =
-    (
-      service.benefits ??
-      []
-    ).map(
-      (
-        item: ServiceBenefit
-      ) =>
-        item.title
-    );
+	const benefits = (service.benefits ?? []).map(
+		(item: ServiceBenefit) => item.title,
+	);
 
-  const processSteps =
-    (
-      service.processes ??
-      []
-    ).map(
-      (
-        item: ProcessItem
-      ) =>
-        item.title
-    );
+	const processSteps = (service.processes ?? []).map(
+		(item: ProcessItem) => item.title,
+	);
 
-  const documents =
-    (
-      service.documents ??
-      []
-    ).map(
-      (
-        item: ServiceDocument
-      ) =>
-        item.title
-    );
+	const documents = (service.documents ?? []).map(
+		(item: ServiceDocument) => item.document_name,
+	);
 
-  const pricingFeatures =
-    (
-      service.pricing ??
-      []
-    ).map(
-      (
-        item: PricingItem
-      ) =>
-        item.title
-    );
-      return (
-    <main>
+	const pricingFeatures = (service.pricing ?? []).map(
+		(item: PricingItem) => item.plan_name,
+	);
+	return (
+		<main>
+			<StructuredData data={serviceJson} />
 
-      <StructuredData
-        data={serviceJson}
-      />
+			<StructuredData data={breadcrumbJson} />
 
-      <StructuredData
-        data={breadcrumbJson}
-      />
+			{service.faqs && service.faqs.length > 0 && (
+				<StructuredData data={faqJson} />
+			)}
 
-      {service.faqs &&
-        service.faqs.length > 0 && (
-          <StructuredData
-            data={faqJson}
-          />
-        )}
+			<div className="container mx-auto px-6 pt-8">
+				<Breadcrumb
+					category={service.category?.slug ?? ""}
+					title={service.title}
+				/>
+			</div>
 
-      <div className="container mx-auto px-6 pt-8">
+			<ServiceHero service={service} />
 
-        <Breadcrumb
-          category={
-            service.category?.slug ??
-            ""
-          }
-          title={service.title}
-        />
+			{/* Overview */}
 
-      </div>
+			<section className="py-20">
+				<div className="mx-auto max-w-7xl px-6">
+					<div className="mx-auto max-w-4xl text-center">
+						<h2 className="text-4xl font-bold">About this Service</h2>
 
-      <ServiceHero
-        service={service}
-      />
+						<p className="mt-6 text-lg leading-8 text-gray-600">
+							{service.description}
+						</p>
+					</div>
+				</div>
+			</section>
 
-      {/* Overview */}
+			{benefits.length > 0 && <ServiceBenefits benefits={benefits} />}
 
-      <section className="py-20">
+			<ServicePricing
+				price={service.starting_price ?? 0}
+				priceLabel={service.price_label ?? undefined}
+				features={pricingFeatures}
+			/>
 
-        <div className="mx-auto max-w-7xl px-6">
+			{processSteps.length > 0 && <ServiceProcess steps={processSteps} />}
 
-          <div className="mx-auto max-w-4xl text-center">
+			{documents.length > 0 && <ServiceDocuments documents={documents} />}
 
-            <h2 className="text-4xl font-bold">
+			{service.faqs && service.faqs.length > 0 && (
+				<ServiceFAQ faqs={service.faqs} />
+			)}
 
-              About this Service
+			{related.length > 0 && <RelatedServices services={related} />}
 
-            </h2>
+			<ServiceCTA />
 
-            <p className="mt-6 text-lg leading-8 text-gray-600">
-
-              {service.description}
-
-            </p>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      {benefits.length > 0 && (
-
-        <ServiceBenefits
-          benefits={benefits}
-        />
-
-      )}
-
-      <ServicePricing
-        price={
-          service.starting_price
-        }
-        priceLabel={
-          service.price_label
-        }
-        features={
-          pricingFeatures
-        }
-      />
-
-      {processSteps.length > 0 && (
-
-        <ServiceProcess
-          steps={
-            processSteps
-          }
-        />
-
-      )}
-
-      {documents.length > 0 && (
-
-        <ServiceDocuments
-          documents={
-            documents
-          }
-        />
-
-      )}
-
-      {service.faqs &&
-        service.faqs.length > 0 && (
-
-          <ServiceFAQ
-            faqs={service.faqs}
-          />
-
-      )}
-
-      {related.length > 0 && (
-
-        <RelatedServices
-          services={related}
-        />
-
-      )}
-
-      <ServiceCTA />
-
-      <Newsletter />
-
-    </main>
-  );
+			<Newsletter />
+		</main>
+	);
 }
+

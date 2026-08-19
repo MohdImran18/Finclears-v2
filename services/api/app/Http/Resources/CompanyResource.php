@@ -10,29 +10,52 @@ class CompanyResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
+            'uuid' => $this->uuid,
 
-            'id'=>$this->id,
+            'company_name' => $this->company_name,
+            'company_type' => $this->company_type,
+            'service_type' => $this->service_type,
 
-            'uuid'=>$this->uuid,
+            'business_activity' => $this->business_activity,
 
-            'company_name'=>$this->company_name,
+            'authorized_capital' => $this->authorized_capital,
+            'paid_up_capital' => $this->paid_up_capital,
 
-            'company_type'=>$this->company_type,
+            'state' => $this->state,
+            'city' => $this->city,
+            'address' => $this->address,
+            'pin_code' => $this->pin_code,
 
-            'service_type'=>$this->service_type,
+            'cin' => $this->cin,
+            'llpin' => $this->llpin,
+            'pan_number' => $this->pan_number,
+            'tan_number' => $this->tan_number,
+            'gst_number' => $this->gst_number,
 
-            'status'=>$this->status,
+            'email' => $this->email,
+            'phone' => $this->phone,
+            'website' => $this->website,
 
-            'payment_status'=>$this->payment_status,
+            'status' => $this->status,
+            'payment_status' => $this->payment_status,
 
-            'state'=>$this->state,
+            'incorporation_date' => $this->incorporation_date,
 
-            'city'=>$this->city,
+            'directors' => $this->whenLoaded(
+                'directors'
+            ),
 
-            'created_at'=>$this->created_at,
+            'shareholders' => $this->whenLoaded(
+                'shareholders'
+            ),
 
-            'updated_at'=>$this->updated_at,
+            'documents' => $this->whenLoaded(
+                'documents'
+            ),
 
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

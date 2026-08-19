@@ -1,59 +1,54 @@
 "use client";
 
-import { useState } from "react";
-
 import DocumentUploader, {
-  UploadDocument,
+        type UploadDocument,
 } from "./DocumentUploader";
 
+import { useCompanyWizard } from "@/hooks/useCompanyWizard";
+
 interface Props {
-  next: () => void;
-  previous: () => void;
+        next: () => void;
+        previous: () => void;
 }
 
-export default function DocumentsStep({
-  next,
-  previous,
-}: Props) {
-  const [documents, setDocuments] =
-    useState<UploadDocument[]>([]);
+export default function DocumentsStep({ next, previous }: Props) {
+        const { documents, setDocuments } = useCompanyWizard();
 
-  function submit() {
-    // TODO:
-    // Save documents in wizard store
-    next();
-  }
+        function submit() {
+                setDocuments(documents);
+                next();
+        }
 
-  return (
-    <div className="space-y-8">
+        return (
+                <div className="space-y-8">
+                        <h2 className="text-2xl font-bold">
+                                Upload Documents
+                        </h2>
 
-      <h2 className="text-2xl font-bold">
-        Upload Documents
-      </h2>
+                        <DocumentUploader
+                                documents={documents}
+                                onChange={(items: UploadDocument[]) =>
+                                        setDocuments(items)
+                                }
+                        />
 
-      <DocumentUploader
-        documents={documents}
-        onChange={setDocuments}
-      />
+                        <div className="flex justify-between">
+                                <button
+                                        type="button"
+                                        onClick={previous}
+                                        className="rounded-lg border px-6 py-3"
+                                >
+                                        Previous
+                                </button>
 
-      <div className="flex justify-between">
-
-        <button
-          onClick={previous}
-          className="rounded-lg border px-6 py-3"
-        >
-          Previous
-        </button>
-
-        <button
-          onClick={submit}
-          className="rounded-lg bg-blue-600 px-6 py-3 text-white"
-        >
-          Continue
-        </button>
-
-      </div>
-
-    </div>
-  );
+                                <button
+                                        type="button"
+                                        onClick={submit}
+                                        className="rounded-lg bg-blue-600 px-6 py-3 text-white"
+                                >
+                                        Continue
+                                </button>
+                        </div>
+                </div>
+        );
 }

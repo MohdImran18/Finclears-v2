@@ -3,64 +3,57 @@
  * ========================================================= */
 
 export type PaymentStatus =
-  | "pending"
-  | "paid"
-  | "failed"
-  | "cancelled"
-  | "refunded";
+	| "pending"
+	| "paid"
+	| "failed"
+	| "cancelled"
+	| "refunded";
 
 /* ==========================================================
  | Payment Method
  * ========================================================= */
 
 export type PaymentMethod =
-  | "razorpay"
-  | "cashfree"
-  | "stripe"
-  | "bank_transfer"
-  | "cash";
+	| "razorpay"
+	| "cashfree"
+	| "stripe"
+	| "bank_transfer"
+	| "cash";
 
 /* ==========================================================
  | Invoice Status
  * ========================================================= */
 
-export type InvoiceStatus =
-  | "draft"
-  | "sent"
-  | "paid"
-  | "overdue"
-  | "cancelled";
+export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
 
 /* ==========================================================
  | Invoice
  * ========================================================= */
 
 export interface Invoice {
+	id: number;
 
-  id: number;
+	invoice_no: string;
 
-  invoice_no: string;
+	company_id: number;
 
-  company_id: number;
+	order_id?: number;
 
-  order_id?: number;
+	subtotal: number;
 
-  subtotal: number;
+	tax: number;
 
-  tax: number;
+	discount: number;
 
-  discount: number;
+	total: number;
 
-  total: number;
+	status: InvoiceStatus;
 
-  status: InvoiceStatus;
+	due_date: string;
 
-  due_date: string;
+	invoice_url?: string;
 
-  invoice_url?: string;
-
-  created_at: string;
-
+	created_at: string;
 }
 
 /* ==========================================================
@@ -68,33 +61,31 @@ export interface Invoice {
  * ========================================================= */
 
 export interface Payment {
+	id: number;
 
-  id: number;
+	invoice_id: number;
 
-  invoice_id: number;
+	company_id: number;
 
-  company_id: number;
+	amount: number;
 
-  amount: number;
+	currency: string;
 
-  currency: string;
+	method: PaymentMethod;
 
-  method: PaymentMethod;
+	status: PaymentStatus;
 
-  status: PaymentStatus;
+	transaction_id?: string;
 
-  transaction_id?: string;
+	gateway_order_id?: string;
 
-  gateway_order_id?: string;
+	gateway_payment_id?: string;
 
-  gateway_payment_id?: string;
+	gateway_signature?: string;
 
-  gateway_signature?: string;
+	paid_at?: string;
 
-  paid_at?: string;
-
-  created_at: string;
-
+	created_at: string;
 }
 
 /* ==========================================================
@@ -102,21 +93,19 @@ export interface Payment {
  * ========================================================= */
 
 export interface CreatePaymentRequest {
-
-  invoice_id: number;
-
-  method: PaymentMethod;
-
+        invoice_id?: number;
+        company_id?: number;
+        order_id?: number;
+        amount?: number;
+        method?: PaymentMethod;
 }
 
 export interface VerifyPaymentRequest {
+	payment_id: string;
 
-  payment_id: string;
+	order_id: string;
 
-  order_id: string;
-
-  signature: string;
-
+	signature: string;
 }
 
 /* ==========================================================
@@ -124,19 +113,17 @@ export interface VerifyPaymentRequest {
  * ========================================================= */
 
 export interface PaymentFilters {
+	search?: string;
 
-  search?: string;
+	status?: PaymentStatus;
 
-  status?: PaymentStatus;
+	method?: PaymentMethod;
 
-  method?: PaymentMethod;
+	company_id?: number;
 
-  company_id?: number;
+	page?: number;
 
-  page?: number;
-
-  per_page?: number;
-
+	per_page?: number;
 }
 
 /* ==========================================================
@@ -144,41 +131,33 @@ export interface PaymentFilters {
  * ========================================================= */
 
 export interface PaymentResponse {
+	success: boolean;
 
-  success: boolean;
+	message: string;
 
-  message: string;
-
-  data: Payment;
-
+	data: Payment;
 }
 
 export interface PaymentListResponse {
+	success: boolean;
 
-  success: boolean;
+	message: string;
 
-  message: string;
-
-  data: Payment[];
-
+	data: Payment[];
 }
 
 export interface InvoiceResponse {
+	success: boolean;
 
-  success: boolean;
+	message: string;
 
-  message: string;
-
-  data: Invoice;
-
+	data: Invoice;
 }
 
 export interface InvoiceListResponse {
+	success: boolean;
 
-  success: boolean;
+	message: string;
 
-  message: string;
-
-  data: Invoice[];
-
+	data: Invoice[];
 }

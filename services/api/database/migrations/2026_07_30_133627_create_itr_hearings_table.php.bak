@@ -1,0 +1,574 @@
+Schema::create('itr_hearings', function (Blueprint $table) {
+            /*
+        |--------------------------------------------------------------------------
+        | Primary Key
+        |--------------------------------------------------------------------------
+        */
+
+        $table->id();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Relationships
+        |--------------------------------------------------------------------------
+        */
+
+        $table->foreignId('itr_appeal_id')
+            ->constrained('itr_appeals')
+            ->cascadeOnDelete();
+
+        $table->foreignId('itr_notice_id')
+            ->nullable()
+            ->constrained('itr_notices')
+            ->nullOnDelete();
+
+        $table->foreignId('user_id')
+            ->constrained('users')
+            ->cascadeOnDelete();
+
+        $table->foreignId('company_id')
+            ->nullable()
+            ->constrained('companies')
+            ->nullOnDelete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Hearing Information
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('hearing_number', 100)
+            ->unique();
+
+        $table->string('case_number', 100)
+            ->nullable();
+
+        $table->string('court_reference_number', 100)
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Hearing Authority
+        |--------------------------------------------------------------------------
+        */
+
+        $table->enum('authority_level', [
+            'cit_a',
+            'itat',
+            'high_court',
+            'supreme_court'
+        ]);
+
+        $table->string('authority_name', 255)
+            ->nullable();
+
+        $table->string('bench_name', 255)
+            ->nullable();
+
+        $table->string('court_room', 100)
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Hearing Type
+        |--------------------------------------------------------------------------
+        */
+
+        $table->enum('hearing_type', [
+            'physical',
+            'virtual',
+            'hybrid'
+        ])->default('physical');
+
+        $table->enum('status', [
+            'scheduled',
+            'adjourned',
+            'completed',
+            'cancelled',
+            'order_reserved'
+        ])->default('scheduled');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Hearing Schedule
+        |--------------------------------------------------------------------------
+        */
+
+        $table->date('hearing_date')
+            ->nullable();
+
+        $table->time('hearing_time')
+            ->nullable();
+
+        $table->timestamp('starts_at')
+            ->nullable();
+
+        $table->timestamp('ends_at')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Representation
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('advocate_name', 255)
+            ->nullable();
+
+        $table->string('chartered_accountant', 255)
+            ->nullable();
+
+        $table->string('department_officer', 255)
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Basic Notes
+        |--------------------------------------------------------------------------
+        */
+
+        $table->longText('agenda')
+            ->nullable();
+
+        $table->longText('hearing_notes')
+            ->nullable();
+
+        $table->text('remarks')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Flags
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('attendance_marked')
+            ->default(false);
+
+        $table->boolean('order_pronounced')
+            ->default(false);
+
+        $table->boolean('next_hearing_required')
+            ->default(false);
+                    /*
+        |--------------------------------------------------------------------------
+        | Adjournment Details
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('is_adjourned')
+            ->default(false);
+
+        $table->date('adjourned_to_date')
+            ->nullable();
+
+        $table->time('adjourned_to_time')
+            ->nullable();
+
+        $table->unsignedSmallInteger('adjournment_count')
+            ->default(0);
+
+        $table->text('adjournment_reason')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Hearing Outcome
+        |--------------------------------------------------------------------------
+        */
+
+        $table->enum('hearing_outcome', [
+            'pending',
+            'heard',
+            'adjourned',
+            'order_reserved',
+            'order_pronounced',
+            'disposed'
+        ])->default('pending');
+
+        $table->longText('order_summary')
+            ->nullable();
+
+        $table->date('order_date')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Government Integration
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('government_synced')
+            ->default(false);
+
+        $table->timestamp('government_synced_at')
+            ->nullable();
+
+        $table->string('api_provider', 100)
+            ->nullable();
+
+        $table->integer('api_status_code')
+            ->nullable();
+
+        $table->integer('api_response_time')
+            ->nullable()
+            ->comment('Response time in milliseconds');
+
+        $table->json('api_request')
+            ->nullable();
+
+        $table->json('api_response')
+            ->nullable();
+
+        $table->string('api_reference_number', 100)
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | AI Hearing Preparation
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('ai_prepared')
+            ->default(false);
+
+        $table->timestamp('ai_prepared_at')
+            ->nullable();
+
+        $table->decimal('ai_confidence_score', 5, 2)
+            ->nullable();
+
+        $table->enum('risk_level', [
+            'low',
+            'medium',
+            'high',
+            'critical'
+        ])->default('medium');
+
+        $table->json('recommended_arguments')
+            ->nullable();
+
+        $table->json('required_documents')
+            ->nullable();
+
+        $table->json('hearing_checklist')
+            ->nullable();
+
+        $table->longText('ai_summary')
+            ->nullable();
+
+        $table->json('validation_errors')
+            ->nullable();
+
+        $table->json('warnings')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Hearing Documents
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('hearing_notice_file_name', 255)
+            ->nullable();
+
+        $table->string('hearing_notice_file_path')
+            ->nullable();
+
+        $table->string('order_file_name', 255)
+            ->nullable();
+
+        $table->string('order_file_path')
+            ->nullable();
+
+        $table->json('supporting_documents')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Metadata
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('ip_address', 45)
+            ->nullable();
+
+        $table->string('device_type', 100)
+            ->nullable();
+
+        $table->string('browser', 150)
+            ->nullable();
+
+        $table->string('operating_system', 150)
+            ->nullable();
+
+        $table->uuid('hearing_session')
+            ->nullable();
+                    /*
+        |--------------------------------------------------------------------------
+        | Enterprise Metadata
+        |--------------------------------------------------------------------------
+        */
+
+        $table->uuid('uuid')->unique();
+
+        $table->unsignedInteger('version')
+            ->default(1);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Trail
+        |--------------------------------------------------------------------------
+        */
+
+        $table->foreignId('created_by')
+            ->nullable()
+            ->constrained('users')
+            ->nullOnDelete();
+
+        $table->foreignId('updated_by')
+            ->nullable()
+            ->constrained('users')
+            ->nullOnDelete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Timestamps
+        |--------------------------------------------------------------------------
+        */
+
+        $table->timestamps();
+
+        $table->softDeletes();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Performance Indexes
+        |--------------------------------------------------------------------------
+        */
+
+        $table->index('itr_appeal_id');
+        $table->index('itr_notice_id');
+        $table->index('user_id');
+        $table->index('company_id');
+
+        $table->index('hearing_number');
+        $table->index('case_number');
+        $table->index('court_reference_number');
+
+        $table->index('authority_level');
+        $table->index('authority_name');
+        $table->index('hearing_type');
+
+        $table->index('status');
+        $table->index('hearing_outcome');
+
+        $table->index('government_synced');
+        $table->index('ai_prepared');
+
+        $table->index('risk_level');
+
+        $table->index('attendance_marked');
+        $table->index('order_pronounced');
+        $table->index('next_hearing_required');
+        $table->index('is_adjourned');
+
+        $table->index('hearing_date');
+        $table->index('adjourned_to_date');
+        $table->index('order_date');
+
+        $table->index('api_reference_number');
+
+        $table->index('hearing_session');
+
+        $table->index('uuid');
+
+        $table->index('created_at');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Composite Indexes
+        |--------------------------------------------------------------------------
+        */
+
+        $table->index([
+            'itr_appeal_id',
+            'status'
+        ]);
+
+        $table->index([
+            'itr_notice_id',
+            'status'
+        ]);
+
+        $table->index([
+            'user_id',
+            'status'
+        ]);
+
+        $table->index([
+            'company_id',
+            'status'
+        ]);
+
+        $table->index([
+            'authority_level',
+            'status'
+        ]);
+
+        $table->index([
+            'hearing_type',
+            'status'
+        ]);
+
+        $table->index([
+            'hearing_outcome',
+            'status'
+        ]);
+
+        $table->index([
+            'government_synced',
+            'status'
+        ]);
+
+        $table->index([
+            'ai_prepared',
+            'status'
+        ]);
+
+        $table->index([
+            'risk_level',
+            'status'
+        ]);
+
+        $table->index([
+            'status',
+            'hearing_date'
+        ]);
+
+        $table->index([
+            'status',
+            'adjourned_to_date'
+        ]);
+
+        $table->index([
+            'status',
+            'order_date'
+        ]);
+
+        $table->index([
+            'authority_level',
+            'hearing_date'
+        ]);
+
+        $table->index([
+            'hearing_number',
+            'authority_level'
+        ]);
+
+                /*
+        |--------------------------------------------------------------------------
+        | Business Rule Constraints
+        |--------------------------------------------------------------------------
+        */
+
+        DB::statement("
+            ALTER TABLE itr_hearings
+            ADD CONSTRAINT chk_itr_hearings_authority
+            CHECK (
+                authority_level IN (
+                    'cit_a',
+                    'itat',
+                    'high_court',
+                    'supreme_court'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_hearings
+            ADD CONSTRAINT chk_itr_hearings_type
+            CHECK (
+                hearing_type IN (
+                    'physical',
+                    'virtual',
+                    'hybrid'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_hearings
+            ADD CONSTRAINT chk_itr_hearings_status
+            CHECK (
+                status IN (
+                    'scheduled',
+                    'adjourned',
+                    'completed',
+                    'cancelled',
+                    'order_reserved'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_hearings
+            ADD CONSTRAINT chk_itr_hearings_outcome
+            CHECK (
+                hearing_outcome IN (
+                    'pending',
+                    'heard',
+                    'adjourned',
+                    'order_reserved',
+                    'order_pronounced',
+                    'disposed'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_hearings
+            ADD CONSTRAINT chk_itr_hearings_risk
+            CHECK (
+                risk_level IN (
+                    'low',
+                    'medium',
+                    'high',
+                    'critical'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_hearings
+            ADD CONSTRAINT chk_itr_hearings_ai_confidence
+            CHECK (
+                ai_confidence_score IS NULL
+                OR (
+                    ai_confidence_score >= 0
+                    AND ai_confidence_score <= 100
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_hearings
+            ADD CONSTRAINT chk_itr_hearings_version
+            CHECK (
+                version >= 1
+            )
+        ");
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::disableForeignKeyConstraints();
+
+        Schema::dropIfExists('itr_hearings');
+
+        Schema::enableForeignKeyConstraints();
+    }
+};

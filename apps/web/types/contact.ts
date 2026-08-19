@@ -1,11 +1,11 @@
 export interface ContactForm {
-  name: string;
+	name: string;
 
-  email: string;
+	email: string;
 
-  phone?: string;
+	phone?: string;
 
-  subject: string;
+	subject: string;
 
-  message: string;
+	message: string;
 }

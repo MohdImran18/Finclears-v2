@@ -1,58 +1,87 @@
+import {
+  LayoutDashboard,
+  Building2,
+  FileText,
+  ShoppingCart,
+  CreditCard,
+  Bell,
+  User,
+  Settings,
+  Users,
+  BarChart3,
+  LineChart,
+} from "lucide-react";
+
 import { ROLES } from "./roles";
 import { ROUTES } from "./routes";
 
 export interface NavigationItem {
   label: string;
   href: string;
-  icon: string;
+  icon: any;
   roles: string[];
+  group?: string;
 }
 
 /* ==========================================================
  * Customer Navigation
  * ========================================================== */
 
-const CUSTOMER_NAVIGATION: NavigationItem[] = [
+export const CUSTOMER_NAVIGATION: NavigationItem[] = [
   {
     label: "Dashboard",
     href: ROUTES.DASHBOARD,
-    icon: "layout-dashboard",
+    icon: LayoutDashboard,
+    group: "General",
     roles: [ROLES.CLIENT],
   },
   {
     label: "My Companies",
     href: ROUTES.COMPANY,
-    icon: "building-2",
+    icon: Building2,
+    group: "Business",
     roles: [ROLES.CLIENT],
   },
   {
     label: "Documents",
     href: ROUTES.DOCUMENTS,
-    icon: "file-text",
+    icon: FileText,
+    group: "Business",
     roles: [ROLES.CLIENT],
   },
   {
     label: "Orders",
     href: ROUTES.ORDERS,
-    icon: "shopping-cart",
+    icon: ShoppingCart,
+    group: "Business",
     roles: [ROLES.CLIENT],
   },
   {
     label: "Payments",
     href: ROUTES.PAYMENTS,
-    icon: "credit-card",
+    icon: CreditCard,
+    group: "Business",
+    roles: [ROLES.CLIENT],
+  },
+  {
+    label: "Notifications",
+    href: ROUTES.NOTIFICATIONS,
+    icon: Bell,
+    group: "General",
     roles: [ROLES.CLIENT],
   },
   {
     label: "Profile",
     href: ROUTES.PROFILE,
-    icon: "user",
+    icon: User,
+    group: "Account",
     roles: [ROLES.CLIENT],
   },
   {
     label: "Settings",
     href: ROUTES.SETTINGS,
-    icon: "settings",
+    icon: Settings,
+    group: "Account",
     roles: [ROLES.CLIENT],
   },
 ];
@@ -61,11 +90,12 @@ const CUSTOMER_NAVIGATION: NavigationItem[] = [
  * Admin Navigation
  * ========================================================== */
 
-const ADMIN_NAVIGATION: NavigationItem[] = [
+export const ADMIN_NAVIGATION: NavigationItem[] = [
   {
     label: "Dashboard",
     href: ROUTES.DASHBOARD,
-    icon: "layout-dashboard",
+    icon: LayoutDashboard,
+    group: "General",
     roles: [
       ROLES.SUPER_ADMIN,
       ROLES.ADMIN,
@@ -74,32 +104,25 @@ const ADMIN_NAVIGATION: NavigationItem[] = [
       ROLES.EMPLOYEE,
     ],
   },
-
   {
     label: "Companies",
     href: ROUTES.ADMIN_COMPANIES,
-    icon: "building-2",
-    roles: [
-      ROLES.SUPER_ADMIN,
-      ROLES.ADMIN,
-      ROLES.MANAGER,
-    ],
+    icon: Building2,
+    group: "Management",
+    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
   },
-
   {
     label: "Users",
     href: ROUTES.ADMIN_USERS,
-    icon: "users",
-    roles: [
-      ROLES.SUPER_ADMIN,
-      ROLES.ADMIN,
-    ],
+    icon: Users,
+    group: "Management",
+    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   },
-
   {
     label: "Orders",
     href: ROUTES.ADMIN_ORDERS,
-    icon: "shopping-cart",
+    icon: ShoppingCart,
+    group: "Operations",
     roles: [
       ROLES.SUPER_ADMIN,
       ROLES.ADMIN,
@@ -107,40 +130,60 @@ const ADMIN_NAVIGATION: NavigationItem[] = [
       ROLES.ACCOUNTANT,
     ],
   },
-
   {
     label: "Payments",
     href: ROUTES.ADMIN_PAYMENTS,
-    icon: "credit-card",
+    icon: CreditCard,
+    group: "Operations",
     roles: [
       ROLES.SUPER_ADMIN,
       ROLES.ADMIN,
       ROLES.ACCOUNTANT,
     ],
   },
-
   {
     label: "Documents",
     href: ROUTES.ADMIN_DOCUMENTS,
-    icon: "file-text",
-    roles: [
-      ROLES.SUPER_ADMIN,
-      ROLES.ADMIN,
-    ],
+    icon: FileText,
+    group: "Operations",
+    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   },
-
+  
+  {
+    label: "Reports",
+    href: ROUTES.ADMIN_REPORTS,
+    icon: BarChart3,
+    group: "Analytics",
+    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+  },
   {
     label: "Settings",
     href: ROUTES.ADMIN_SETTINGS,
-    icon: "settings",
-    roles: [
-      ROLES.SUPER_ADMIN,
-      ROLES.ADMIN,
-    ],
+    icon: Settings,
+    group: "System",
+    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   },
 ];
 
-export const NAVIGATION: NavigationItem[] = [
+/* ==========================================================
+ * Combined Navigation
+ * ========================================================== */
+
+export const NAVIGATION = [
   ...CUSTOMER_NAVIGATION,
   ...ADMIN_NAVIGATION,
 ];
+
+export const sidebarNavigation = [
+  {
+    title: "Dashboard",
+    href: "/dashboard",
+    
+  },
+  {
+    title: "Orders",
+    href: "/dashboard/orders",
+    icon: FileText,
+  },
+];
+

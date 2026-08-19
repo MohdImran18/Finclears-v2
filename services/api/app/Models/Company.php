@@ -2,54 +2,43 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Enums\PaymentStatus;
+use App\Traits\HasUUID;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Company extends Model
+class Company extends BaseModel
 {
-    use HasFactory;
-    use SoftDeletes;
+    use HasUUID;
 
-    protected $fillable = [
+    protected string $uuidColumn = 'uuid';
 
-        'uuid',
+    protected $guarded = [];
 
-        'user_id',
+    /*
+    |--------------------------------------------------------------------------
+    | Attribute Casting
+    |--------------------------------------------------------------------------
+    */
 
-        'service_type',
+    protected function casts(): array
+    {
+        return [
 
-        'company_name',
+            'authorized_capital' => 'decimal:2',
 
-        'company_type',
+            'paid_up_capital' => 'decimal:2',
 
-        'business_activity',
+            'payment_status' => PaymentStatus::class,
 
-        'authorized_capital',
+            'created_at' => 'datetime',
 
-        'paid_up_capital',
+            'updated_at' => 'datetime',
 
-        'state',
+            'deleted_at' => 'datetime',
 
-        'city',
-
-        'address',
-
-        'pin_code',
-
-        'status',
-
-        'payment_status',
-
-    ];
-
-    protected $casts = [
-
-        'authorized_capital' => 'decimal:2',
-
-        'paid_up_capital' => 'decimal:2',
-
-    ];
+        ];
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -57,44 +46,111 @@ class Company extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function directors()
+    public function directors(): HasMany
     {
-        return $this->hasMany(
-            CompanyDirector::class
+        return $this->hasMany(CompanyDirector::class);
+    }
+
+    public function shareholders(): HasMany
+    {
+        return $this->hasMany(CompanyShareholder::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(CompanyDocument::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(CompanyPayment::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Query Scopes
+    |--------------------------------------------------------------------------
+    */
+
+    public function scopeApproved($query)
+    {
+        return $query->where(
+            'status',
+            self::STATUS_APPROVED
         );
     }
 
-    public function shareholders()
+    public function scopePending($query)
     {
-        return $this->hasMany(
-            CompanyShareholder::class
+        return $query->where(
+            'status',
+            self::STATUS_PENDING
         );
     }
 
-    public function documents()
+    public function scopeDraft($query)
     {
-        return $this->hasMany(
-            CompanyDocument::class
+        return $query->where(
+            'status',
+            self::STATUS_DRAFT
         );
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Status
+    | Helpers
     |--------------------------------------------------------------------------
     */
 
-    public const STATUS_DRAFT="draft";
+    public function isApproved(): bool
+    {
+        return $this->status === self::STATUS_APPROVED;
+    }
 
-    public const STATUS_PENDING="pending";
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
 
-    public const STATUS_APPROVED="approved";
+    public function isDraft(): bool
+    {
+        return $this->status === self::STATUS_DRAFT;
+    }
 
-    public const STATUS_REJECTED="rejected";
+    /*
+    |--------------------------------------------------------------------------
+    | Accessors
+    |--------------------------------------------------------------------------
+    */
 
+    public function getFullAddressAttribute(): string
+    {
+        return collect([
+            $this->address,
+            $this->city,
+            $this->state,
+            $this->pin_code,
+        ])
+            ->filter()
+            ->implode(', ');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Status Constants
+    |--------------------------------------------------------------------------
+    */
+
+    public const STATUS_DRAFT = 'draft';
+
+    public const STATUS_PENDING = 'pending';
+
+    public const STATUS_APPROVED = 'approved';
+
+    public const STATUS_REJECTED = 'rejected';
 }

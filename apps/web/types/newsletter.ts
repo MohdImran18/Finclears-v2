@@ -1,10 +1,10 @@
 export interface NewsletterInput {
-  email: string;
+	email: string;
 }
 
 export interface NewsletterSubscriber {
-  id: number;
-  email: string;
-  status: boolean;
-  created_at: string;
+	id: number;
+	email: string;
+	status: boolean;
+	created_at: string;
 }

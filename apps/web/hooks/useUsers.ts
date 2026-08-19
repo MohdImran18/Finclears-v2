@@ -1,17 +1,13 @@
 "use client";
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import UsersService from "@/services/users/users.service";
 
 import type {
-  CreateUserRequest,
-  UpdateUserRequest,
-  UserFilters,
+	CreateUserRequest,
+	UpdateUserRequest,
+	UserFilters,
 } from "@/types/user";
 
 /*
@@ -21,18 +17,15 @@ import type {
 */
 
 export const userKeys = {
-  all: ["users"] as const,
+	all: ["users"] as const,
 
-  lists: () => [...userKeys.all, "list"] as const,
+	lists: () => [...userKeys.all, "list"] as const,
 
-  list: (filters?: UserFilters) =>
-    [...userKeys.lists(), filters] as const,
+	list: (filters?: UserFilters) => [...userKeys.lists(), filters] as const,
 
-  details: () =>
-    [...userKeys.all, "detail"] as const,
+	details: () => [...userKeys.all, "detail"] as const,
 
-  detail: (id: number | string) =>
-    [...userKeys.details(), id] as const,
+	detail: (id: number | string) => [...userKeys.details(), id] as const,
 };
 
 /*
@@ -41,21 +34,18 @@ export const userKeys = {
 |--------------------------------------------------------------------------
 */
 
-export function useUsers(
-  filters?: UserFilters
-) {
-  return useQuery({
-    queryKey: userKeys.list(filters),
+export function useUsers(filters?: UserFilters) {
+	return useQuery({
+		queryKey: userKeys.list(filters),
 
-    queryFn: () =>
-      UsersService.index(filters),
+		queryFn: () => UsersService.index(filters),
 
-    staleTime: 1000 * 60 * 5,
+		staleTime: 1000 * 60 * 5,
 
-    gcTime: 1000 * 60 * 10,
+		gcTime: 1000 * 60 * 10,
 
-    retry: 1,
-  });
+		retry: 1,
+	});
 }
 
 /*
@@ -64,19 +54,16 @@ export function useUsers(
 |--------------------------------------------------------------------------
 */
 
-export function useUser(
-  id: number | string
-) {
-  return useQuery({
-    queryKey: userKeys.detail(id),
+export function useUser(id: number | string) {
+	return useQuery({
+		queryKey: userKeys.detail(id),
 
-    queryFn: () =>
-      UsersService.show(id),
+		queryFn: () => UsersService.show(id),
 
-    enabled: !!id,
+		enabled: !!id,
 
-    retry: 1,
-  });
+		retry: 1,
+	});
 }
 
 /*
@@ -86,19 +73,17 @@ export function useUser(
 */
 
 export function useCreateUser() {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (
-      data: CreateUserRequest
-    ) => UsersService.store(data),
+	return useMutation({
+		mutationFn: (data: CreateUserRequest) => UsersService.store(data),
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: userKeys.lists(),
-      });
-    },
-  });
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: userKeys.lists(),
+			});
+		},
+	});
 }
 
 /*
@@ -108,30 +93,27 @@ export function useCreateUser() {
 */
 
 export function useUpdateUser() {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: number | string;
-      data: UpdateUserRequest;
-    }) =>
-      UsersService.update(id, data),
+	return useMutation({
+		mutationFn: ({
+			id,
+			data,
+		}: {
+			id: number | string;
+			data: UpdateUserRequest;
+		}) => UsersService.update(id, data),
 
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: userKeys.lists(),
-      });
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({
+				queryKey: userKeys.lists(),
+			});
 
-      queryClient.invalidateQueries({
-        queryKey: userKeys.detail(
-          variables.id
-        ),
-      });
-    },
-  });
+			queryClient.invalidateQueries({
+				queryKey: userKeys.detail(variables.id),
+			});
+		},
+	});
 }
 
 /*
@@ -141,17 +123,16 @@ export function useUpdateUser() {
 */
 
 export function useDeleteUser() {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (
-      id: number | string
-    ) => UsersService.destroy(id),
+	return useMutation({
+		mutationFn: (id: number | string) => UsersService.destroy(id),
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: userKeys.lists(),
-      });
-    },
-  });
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: userKeys.lists(),
+			});
+		},
+	});
 }
+

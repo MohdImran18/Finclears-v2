@@ -16,10 +16,14 @@ class UpdateServiceRequest extends FormRequest
     {
         $service = $this->route('service');
 
-        return [
+        $serviceId = is_object($service)
+            ? $service->id
+            : $service;
 
+        return [
             'service_category_id' => [
                 'required',
+                'integer',
                 'exists:service_categories,id',
             ],
 
@@ -32,30 +36,35 @@ class UpdateServiceRequest extends FormRequest
             'slug' => [
                 'required',
                 'string',
+                'max:255',
                 Rule::unique('services', 'slug')
-                    ->ignore($service),
+                    ->ignore($serviceId),
             ],
 
             'code' => [
                 'nullable',
                 'string',
+                'max:100',
                 Rule::unique('services', 'code')
-                    ->ignore($service),
+                    ->ignore($serviceId),
             ],
 
             'icon' => [
                 'nullable',
                 'string',
+                'max:255',
             ],
 
             'featured_image' => [
                 'nullable',
                 'string',
+                'max:2048',
             ],
 
             'banner_image' => [
                 'nullable',
                 'string',
+                'max:2048',
             ],
 
             'short_description' => [
@@ -71,21 +80,25 @@ class UpdateServiceRequest extends FormRequest
             'starting_price' => [
                 'nullable',
                 'numeric',
+                'min:0',
             ],
 
             'price_label' => [
                 'nullable',
                 'string',
+                'max:100',
             ],
 
             'processing_days' => [
                 'nullable',
                 'integer',
+                'min:1',
             ],
 
             'meta_title' => [
                 'nullable',
                 'string',
+                'max:255',
             ],
 
             'meta_description' => [
@@ -99,21 +112,25 @@ class UpdateServiceRequest extends FormRequest
             ],
 
             'is_featured' => [
+                'sometimes',
                 'boolean',
             ],
 
             'is_popular' => [
+                'sometimes',
                 'boolean',
             ],
 
             'status' => [
+                'sometimes',
                 'boolean',
             ],
 
             'sort_order' => [
+                'sometimes',
                 'integer',
+                'min:0',
             ],
-
         ];
     }
 }

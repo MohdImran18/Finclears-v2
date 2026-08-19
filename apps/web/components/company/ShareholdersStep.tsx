@@ -1,33 +1,33 @@
 "use client";
 
-import ShareholderForm from "./forms/ShareholderForm";
+import ShareholderForm, { type Shareholder } from "./forms/ShareholderForm";
+import { useCompanyWizard } from "@/hooks/useCompanyWizard";
 
 interface Props {
-  next: () => void;
-  previous: () => void;
+    next: () => void;
+    previous: () => void;
 }
 
-export default function ShareholdersStep({
-  next,
-  previous,
-}: Props) {
+export default function ShareholdersStep({ next, previous }: Props) {
+    const { data, updateData } = useCompanyWizard();
 
-  function handleNext() {
-    // TODO:
-    // Save shareholders to Company Wizard Store
-    next();
-  }
+    function handleNext(shareholders: Shareholder[]) {
+        updateData({
+            shareholders,
+        });
 
-  return (
-    <>
-      <h2 className="mb-6 text-2xl font-bold">
-        Company Shareholders
-      </h2>
+        next();
+    }
 
-      <ShareholderForm
-        onNext={handleNext}
-        onPrevious={previous}
-      />
-    </>
-  );
+    return (
+        <>
+            <h2 className="mb-6 text-2xl font-bold">Company Shareholders</h2>
+
+            <ShareholderForm
+                defaultValues={data.shareholders ?? []}
+                onNext={handleNext}
+                onPrevious={previous}
+            />
+        </>
+    );
 }

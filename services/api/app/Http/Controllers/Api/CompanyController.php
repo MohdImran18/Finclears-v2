@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\Company\StoreCompanyRequest;
 use App\Http\Requests\Company\UpdateCompanyRequest;
+use App\Models\Company;
 use App\Http\Resources\CompanyResource;
 use App\Services\Company\CompanyService;
 use Illuminate\Http\JsonResponse;
@@ -22,8 +23,8 @@ class CompanyController extends BaseController
     public function index(Request $request): JsonResponse
     {
         $companies = $this->companies->paginate(
-            (int) $request->get('per_page', 15),
-            $request->all()
+            $request->all(),
+            (int) $request->get('per_page', 15)
         );
 
         return $this->success([
@@ -73,8 +74,10 @@ class CompanyController extends BaseController
         int $company
     ): JsonResponse {
 
+        $companyModel = \App\Models\Company::findOrFail($company);
+
         $updated = $this->companies->update(
-            $company,
+            $companyModel,
             $request->validated()
         );
 
@@ -87,13 +90,34 @@ class CompanyController extends BaseController
     }
 
     /**
+     * Submit Company
+     */
+    public function submit(
+        int $company
+    ): JsonResponse {
+
+        $companyModel = Company::findOrFail($company);
+
+        $submitted = $this->companies->submit($companyModel);
+
+        return $this->success(
+            [
+                'company' => new CompanyResource($submitted),
+            ],
+            'Company submitted successfully.'
+        );
+    }
+
+    /**
      * Delete Company
      */
     public function destroy(
         int $company
     ): JsonResponse {
 
-        $this->companies->delete($company);
+        $companyModel = Company::findOrFail($company);
+
+        $this->companies->delete($companyModel);
 
         return $this->success(
             [],

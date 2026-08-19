@@ -1,24 +1,23 @@
 export function breadcrumbSchema(
-  items: {
-    name: string;
-    url: string;
-  }[]
+	items: {
+		name: string;
+		url: string;
+	}[],
 ) {
-  return {
-    "@context": "https://schema.org",
+	return {
+		"@context": "https://schema.org",
 
-    "@type": "BreadcrumbList",
+		"@type": "BreadcrumbList",
 
-    itemListElement: items.map(
-      (item, index) => ({
-        "@type": "ListItem",
+		itemListElement: items.map((item, index) => ({
+			"@type": "ListItem",
 
-        position: index + 1,
+			position: index + 1,
 
-        name: item.name,
+			name: item.name,
 
-        item: item.url,
-      })
-    ),
-  };
+			item: item.url,
+		})),
+	};
 }
+

@@ -1,75 +1,58 @@
 "use client";
 
 import { useState } from "react";
-
-import { useUsers } from "@/hooks/useUsers";
-
-import UserTable from "@/components/users/UserTable";
+import CreateUserButton from "@/components/users/CreateUserButton";
 import UserFilters from "@/components/users/UserFilters";
 import UserStats from "@/components/users/UserStats";
-import CreateUserButton from "@/components/users/CreateUserButton";
+import UserTable from "@/components/users/UserTable";
+import { useUsers } from "@/hooks/useUsers";
 
 import type { UserFilters as IUserFilters } from "@/types/user";
 
 export default function UsersPage() {
-  const [filters, setFilters] =
-    useState<IUserFilters>({
-      search: "",
-      role: undefined,
-      status: undefined,
-      page: 1,
-      per_page: 10,
-    });
+	const [filters, setFilters] = useState<IUserFilters>({
+		search: "",
+		role: undefined,
+		status: undefined,
+		page: 1,
+		per_page: 10,
+	});
 
-  const {
-    data,
-    isLoading,
-    isError,
-  } = useUsers(filters);
+	const { data, isLoading, isError } = useUsers(filters);
 
-  return (
-    <div className="container mx-auto space-y-6 p-6">
+	return (
+		<div className="container mx-auto space-y-6 p-6">
+			{/* Header */}
 
-      {/* Header */}
+			<div className="flex items-center justify-between">
+				<div>
+					<h1 className="text-3xl font-bold">Users</h1>
 
-      <div className="flex items-center justify-between">
+					<p className="mt-1 text-gray-500">
+						Manage users, roles and permissions.
+					</p>
+				</div>
 
-        <div>
+				<CreateUserButton />
+			</div>
 
-          <h1 className="text-3xl font-bold">
-            Users
-          </h1>
+			{/* Stats */}
 
-          <p className="mt-1 text-gray-500">
-            Manage users, roles and permissions.
-          </p>
+			<UserStats />
 
-        </div>
+			{/* Filters */}
 
-        <CreateUserButton />
+			<UserFilters filters={filters} onChange={setFilters} />
 
-      </div>
+			{/* Table */}
 
-      {/* Stats */}
-
-      <UserStats />
-
-      {/* Filters */}
-
-      <UserFilters
-        filters={filters}
-        onChange={setFilters}
-      />
-
-      {/* Table */}
-
-      <UserTable
-        users={data?.data ?? []}
-        meta={data?.meta}
-        loading={isLoading}
-        error={isError}
-      />
-
-    </div>
-  );
+			<UserTable
+				users={data?.data ?? []}
+				meta={data?.meta}
+				loading={isLoading}
+				error={isError}
+			/>
+		</div>
+	);
 }
+

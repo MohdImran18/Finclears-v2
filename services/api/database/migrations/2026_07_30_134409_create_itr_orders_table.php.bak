@@ -1,0 +1,621 @@
+Schema::create('itr_orders', function (Blueprint $table) {
+            /*
+        |--------------------------------------------------------------------------
+        | Primary Key
+        |--------------------------------------------------------------------------
+        */
+
+        $table->id();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Relationships
+        |--------------------------------------------------------------------------
+        */
+
+        $table->foreignId('itr_return_id')
+            ->nullable()
+            ->constrained('itr_returns')
+            ->nullOnDelete();
+
+        $table->foreignId('itr_notice_id')
+            ->nullable()
+            ->constrained('itr_notices')
+            ->nullOnDelete();
+
+        $table->foreignId('itr_appeal_id')
+            ->nullable()
+            ->constrained('itr_appeals')
+            ->nullOnDelete();
+
+        $table->foreignId('itr_hearing_id')
+            ->nullable()
+            ->constrained('itr_hearings')
+            ->nullOnDelete();
+
+        $table->foreignId('user_id')
+            ->constrained('users')
+            ->cascadeOnDelete();
+
+        $table->foreignId('company_id')
+            ->nullable()
+            ->constrained('companies')
+            ->nullOnDelete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Order Identification
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('order_number', 100)
+            ->unique();
+
+        $table->string('order_reference_number', 100)
+            ->nullable();
+
+        $table->string('document_identification_number', 100)
+            ->nullable();
+
+        $table->string('case_number', 100)
+            ->nullable();
+
+        $table->string('appeal_number', 100)
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Order Classification
+        |--------------------------------------------------------------------------
+        */
+
+        $table->enum('authority_level', [
+            'cit_a',
+            'itat',
+            'high_court',
+            'supreme_court'
+        ]);
+
+        $table->string('authority_name', 255)
+            ->nullable();
+
+        $table->enum('order_type', [
+            'interim',
+            'final',
+            'ex_parte',
+            'rectification',
+            'miscellaneous'
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Order Status
+        |--------------------------------------------------------------------------
+        */
+
+        $table->enum('status', [
+            'draft',
+            'reserved',
+            'pronounced',
+            'implemented',
+            'closed'
+        ])->default('draft');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Order Timeline
+        |--------------------------------------------------------------------------
+        */
+
+        $table->date('order_date')
+            ->nullable();
+
+        $table->date('pronouncement_date')
+            ->nullable();
+
+        $table->date('implementation_date')
+            ->nullable();
+
+        $table->date('closed_date')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Basic Details
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('subject', 500)
+            ->nullable();
+
+        $table->longText('order_summary')
+            ->nullable();
+
+        $table->longText('judgment_summary')
+            ->nullable();
+
+        $table->longText('authority_remarks')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Flags
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('is_final_order')
+            ->default(false);
+
+        $table->boolean('is_implemented')
+            ->default(false);
+
+        $table->boolean('is_closed')
+            ->default(false);
+
+        $table->text('remarks')
+            ->nullable();
+                    /*
+        |--------------------------------------------------------------------------
+        | Financial Impact
+        |--------------------------------------------------------------------------
+        */
+
+        $table->decimal('tax_confirmed', 15, 2)
+            ->default(0);
+
+        $table->decimal('tax_deleted', 15, 2)
+            ->default(0);
+
+        $table->decimal('tax_relief', 15, 2)
+            ->default(0);
+
+        $table->decimal('interest_confirmed', 15, 2)
+            ->default(0);
+
+        $table->decimal('interest_deleted', 15, 2)
+            ->default(0);
+
+        $table->decimal('penalty_confirmed', 15, 2)
+            ->default(0);
+
+        $table->decimal('penalty_deleted', 15, 2)
+            ->default(0);
+
+        $table->decimal('refund_ordered', 15, 2)
+            ->default(0);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Compliance
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('compliance_required')
+            ->default(false);
+
+        $table->date('compliance_due_date')
+            ->nullable();
+
+        $table->date('compliance_completed_at')
+            ->nullable();
+
+        $table->enum('compliance_status', [
+            'pending',
+            'in_progress',
+            'completed',
+            'overdue',
+            'waived'
+        ])->default('pending');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Government Integration
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('government_synced')
+            ->default(false);
+
+        $table->timestamp('government_synced_at')
+            ->nullable();
+
+        $table->string('api_provider', 100)
+            ->nullable();
+
+        $table->integer('api_status_code')
+            ->nullable();
+
+        $table->integer('api_response_time')
+            ->nullable()
+            ->comment('Response time in milliseconds');
+
+        $table->json('api_request')
+            ->nullable();
+
+        $table->json('api_response')
+            ->nullable();
+
+        $table->string('api_reference_number', 100)
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | AI Order Analysis
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('ai_analyzed')
+            ->default(false);
+
+        $table->timestamp('ai_analyzed_at')
+            ->nullable();
+
+        $table->decimal('ai_confidence_score', 5, 2)
+            ->nullable();
+
+        $table->enum('risk_level', [
+            'low',
+            'medium',
+            'high',
+            'critical'
+        ])->default('medium');
+
+        $table->json('legal_precedents')
+            ->nullable();
+
+        $table->json('similar_judgments')
+            ->nullable();
+
+        $table->json('compliance_checklist')
+            ->nullable();
+
+        $table->json('recommended_actions')
+            ->nullable();
+
+        $table->longText('ai_summary')
+            ->nullable();
+
+        $table->json('validation_errors')
+            ->nullable();
+
+        $table->json('warnings')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Order Documents
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('order_file_name', 255)
+            ->nullable();
+
+        $table->string('order_file_path')
+            ->nullable();
+
+        $table->string('certified_copy_file_name', 255)
+            ->nullable();
+
+        $table->string('certified_copy_file_path')
+            ->nullable();
+
+        $table->json('annexures')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Metadata
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('ip_address', 45)
+            ->nullable();
+
+        $table->string('device_type', 100)
+            ->nullable();
+
+        $table->string('browser', 150)
+            ->nullable();
+
+        $table->string('operating_system', 150)
+            ->nullable();
+
+        $table->uuid('order_session')
+            ->nullable();
+                    /*
+        |--------------------------------------------------------------------------
+        | Enterprise Metadata
+        |--------------------------------------------------------------------------
+        */
+
+        $table->uuid('uuid')->unique();
+
+        $table->unsignedInteger('version')
+            ->default(1);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Trail
+        |--------------------------------------------------------------------------
+        */
+
+        $table->foreignId('created_by')
+            ->nullable()
+            ->constrained('users')
+            ->nullOnDelete();
+
+        $table->foreignId('updated_by')
+            ->nullable()
+            ->constrained('users')
+            ->nullOnDelete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Timestamps
+        |--------------------------------------------------------------------------
+        */
+
+        $table->timestamps();
+
+        $table->softDeletes();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Performance Indexes
+        |--------------------------------------------------------------------------
+        */
+
+        $table->index('itr_return_id');
+        $table->index('itr_notice_id');
+        $table->index('itr_appeal_id');
+        $table->index('itr_hearing_id');
+
+        $table->index('user_id');
+        $table->index('company_id');
+
+        $table->index('order_number');
+        $table->index('order_reference_number');
+        $table->index('document_identification_number');
+
+        $table->index('case_number');
+        $table->index('appeal_number');
+
+        $table->index('authority_level');
+        $table->index('authority_name');
+
+        $table->index('order_type');
+        $table->index('status');
+
+        $table->index('government_synced');
+        $table->index('ai_analyzed');
+
+        $table->index('risk_level');
+
+        $table->index('compliance_required');
+        $table->index('compliance_status');
+
+        $table->index('is_final_order');
+        $table->index('is_implemented');
+        $table->index('is_closed');
+
+        $table->index('order_date');
+        $table->index('pronouncement_date');
+        $table->index('implementation_date');
+        $table->index('compliance_due_date');
+        $table->index('closed_date');
+
+        $table->index('api_reference_number');
+
+        $table->index('order_session');
+
+        $table->index('uuid');
+
+        $table->index('created_at');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Composite Indexes
+        |--------------------------------------------------------------------------
+        */
+
+        $table->index([
+            'itr_appeal_id',
+            'status'
+        ]);
+
+        $table->index([
+            'itr_hearing_id',
+            'status'
+        ]);
+
+        $table->index([
+            'itr_notice_id',
+            'status'
+        ]);
+
+        $table->index([
+            'itr_return_id',
+            'status'
+        ]);
+
+        $table->index([
+            'user_id',
+            'status'
+        ]);
+
+        $table->index([
+            'company_id',
+            'status'
+        ]);
+
+        $table->index([
+            'authority_level',
+            'status'
+        ]);
+
+        $table->index([
+            'order_type',
+            'status'
+        ]);
+
+        $table->index([
+            'government_synced',
+            'status'
+        ]);
+
+        $table->index([
+            'ai_analyzed',
+            'status'
+        ]);
+
+        $table->index([
+            'risk_level',
+            'status'
+        ]);
+
+        $table->index([
+            'compliance_status',
+            'status'
+        ]);
+
+        $table->index([
+            'status',
+            'order_date'
+        ]);
+
+        $table->index([
+            'status',
+            'compliance_due_date'
+        ]);
+
+        $table->index([
+            'authority_level',
+            'order_date'
+        ]);
+
+        $table->index([
+            'order_number',
+            'authority_level'
+        ]);
+                /*
+        |--------------------------------------------------------------------------
+        | Business Rule Constraints
+        |--------------------------------------------------------------------------
+        */
+
+        DB::statement("
+            ALTER TABLE itr_orders
+            ADD CONSTRAINT chk_itr_orders_authority
+            CHECK (
+                authority_level IN (
+                    'cit_a',
+                    'itat',
+                    'high_court',
+                    'supreme_court'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_orders
+            ADD CONSTRAINT chk_itr_orders_type
+            CHECK (
+                order_type IN (
+                    'interim',
+                    'final',
+                    'ex_parte',
+                    'rectification',
+                    'miscellaneous'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_orders
+            ADD CONSTRAINT chk_itr_orders_status
+            CHECK (
+                status IN (
+                    'draft',
+                    'reserved',
+                    'pronounced',
+                    'implemented',
+                    'closed'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_orders
+            ADD CONSTRAINT chk_itr_orders_compliance_status
+            CHECK (
+                compliance_status IN (
+                    'pending',
+                    'in_progress',
+                    'completed',
+                    'overdue',
+                    'waived'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_orders
+            ADD CONSTRAINT chk_itr_orders_risk
+            CHECK (
+                risk_level IN (
+                    'low',
+                    'medium',
+                    'high',
+                    'critical'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_orders
+            ADD CONSTRAINT chk_itr_orders_amounts
+            CHECK (
+                tax_confirmed >= 0
+                AND tax_deleted >= 0
+                AND tax_relief >= 0
+                AND interest_confirmed >= 0
+                AND interest_deleted >= 0
+                AND penalty_confirmed >= 0
+                AND penalty_deleted >= 0
+                AND refund_ordered >= 0
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_orders
+            ADD CONSTRAINT chk_itr_orders_ai_confidence
+            CHECK (
+                ai_confidence_score IS NULL
+                OR (
+                    ai_confidence_score >= 0
+                    AND ai_confidence_score <= 100
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_orders
+            ADD CONSTRAINT chk_itr_orders_version
+            CHECK (
+                version >= 1
+            )
+        ");
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::disableForeignKeyConstraints();
+
+        Schema::dropIfExists('itr_orders');
+
+        Schema::enableForeignKeyConstraints();
+    }
+};

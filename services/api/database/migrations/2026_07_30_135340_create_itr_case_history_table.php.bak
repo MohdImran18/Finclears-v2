@@ -1,0 +1,632 @@
+Schema::create('itr_case_history', function (Blueprint $table) {
+            /*
+        |--------------------------------------------------------------------------
+        | Primary Key
+        |--------------------------------------------------------------------------
+        */
+
+        $table->id();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Relationships
+        |--------------------------------------------------------------------------
+        */
+
+        $table->foreignId('itr_return_id')
+            ->nullable()
+            ->constrained('itr_returns')
+            ->nullOnDelete();
+
+        $table->foreignId('itr_notice_id')
+            ->nullable()
+            ->constrained('itr_notices')
+            ->nullOnDelete();
+
+        $table->foreignId('itr_appeal_id')
+            ->nullable()
+            ->constrained('itr_appeals')
+            ->nullOnDelete();
+
+        $table->foreignId('itr_hearing_id')
+            ->nullable()
+            ->constrained('itr_hearings')
+            ->nullOnDelete();
+
+        $table->foreignId('itr_order_id')
+            ->nullable()
+            ->constrained('itr_orders')
+            ->nullOnDelete();
+
+        $table->foreignId('itr_refund_id')
+            ->nullable()
+            ->constrained('itr_refunds')
+            ->nullOnDelete();
+
+        $table->foreignId('itr_verification_id')
+            ->nullable()
+            ->constrained('itr_verifications')
+            ->nullOnDelete();
+
+        $table->foreignId('user_id')
+            ->nullable()
+            ->constrained('users')
+            ->nullOnDelete();
+
+        $table->foreignId('company_id')
+            ->nullable()
+            ->constrained('companies')
+            ->nullOnDelete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Activity Information
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('event_number', 100)
+            ->unique();
+
+        $table->string('reference_number', 100)
+            ->nullable();
+
+        $table->enum('module', [
+            'return',
+            'calculation',
+            'document',
+            'verification',
+            'refund',
+            'notice',
+            'appeal',
+            'hearing',
+            'order',
+            'compliance',
+            'system'
+        ]);
+
+        $table->enum('event_type', [
+            'created',
+            'updated',
+            'deleted',
+            'submitted',
+            'approved',
+            'rejected',
+            'verified',
+            'synced',
+            'generated',
+            'uploaded',
+            'downloaded',
+            'completed',
+            'failed'
+        ]);
+
+        $table->enum('actor_type', [
+            'user',
+            'chartered_accountant',
+            'admin',
+            'ai',
+            'government',
+            'system',
+            'api'
+        ]);
+
+        $table->string('actor_name', 255)
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Event Status
+        |--------------------------------------------------------------------------
+        */
+
+        $table->enum('status', [
+            'pending',
+            'processing',
+            'completed',
+            'failed',
+            'cancelled'
+        ])->default('completed');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Timeline
+        |--------------------------------------------------------------------------
+        */
+
+        $table->timestamp('event_at')
+            ->useCurrent();
+
+        $table->date('event_date')
+            ->nullable();
+
+        $table->time('event_time')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Event Details
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('title', 255);
+
+        $table->text('description')
+            ->nullable();
+
+        $table->longText('remarks')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Flags
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('is_system_generated')
+            ->default(false);
+
+        $table->boolean('is_visible_to_user')
+            ->default(true);
+
+        $table->boolean('requires_attention')
+            ->default(false);
+                    /*
+        |--------------------------------------------------------------------------
+        | Change Tracking
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('entity_name', 150)
+            ->nullable();
+
+        $table->string('entity_id', 100)
+            ->nullable();
+
+        $table->json('changed_fields')
+            ->nullable();
+
+        $table->json('old_values')
+            ->nullable();
+
+        $table->json('new_values')
+            ->nullable();
+
+        $table->text('change_reason')
+            ->nullable();
+
+        $table->json('event_payload')
+            ->nullable();
+
+        $table->json('event_context')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Government API Integration
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('government_synced')
+            ->default(false);
+
+        $table->timestamp('government_synced_at')
+            ->nullable();
+
+        $table->string('api_provider', 100)
+            ->nullable();
+
+        $table->integer('api_status_code')
+            ->nullable();
+
+        $table->integer('api_response_time')
+            ->nullable()
+            ->comment('Response time in milliseconds');
+
+        $table->json('api_request')
+            ->nullable();
+
+        $table->json('api_response')
+            ->nullable();
+
+        $table->string('api_reference_number', 100)
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | AI Activity
+        |--------------------------------------------------------------------------
+        */
+
+        $table->boolean('ai_processed')
+            ->default(false);
+
+        $table->timestamp('ai_processed_at')
+            ->nullable();
+
+        $table->decimal('ai_confidence_score', 5, 2)
+            ->nullable();
+
+        $table->enum('risk_level', [
+            'low',
+            'medium',
+            'high',
+            'critical'
+        ])->default('low');
+
+        $table->longText('ai_summary')
+            ->nullable();
+
+        $table->json('ai_recommendations')
+            ->nullable();
+
+        $table->json('validation_errors')
+            ->nullable();
+
+        $table->json('warnings')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Metadata
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('ip_address', 45)
+            ->nullable();
+
+        $table->string('device_type', 100)
+            ->nullable();
+
+        $table->string('browser', 150)
+            ->nullable();
+
+        $table->string('operating_system', 150)
+            ->nullable();
+
+        $table->string('user_agent')
+            ->nullable();
+
+        $table->uuid('event_session')
+            ->nullable();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Attachments
+        |--------------------------------------------------------------------------
+        */
+
+        $table->string('attachment_name', 255)
+            ->nullable();
+
+        $table->string('attachment_path')
+            ->nullable();
+
+        $table->json('supporting_documents')
+            ->nullable();
+                    /*
+        |--------------------------------------------------------------------------
+        | Enterprise Metadata
+        |--------------------------------------------------------------------------
+        */
+
+        $table->uuid('uuid')->unique();
+
+        $table->unsignedInteger('version')
+            ->default(1);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Trail
+        |--------------------------------------------------------------------------
+        */
+
+        $table->foreignId('created_by')
+            ->nullable()
+            ->constrained('users')
+            ->nullOnDelete();
+
+        $table->foreignId('updated_by')
+            ->nullable()
+            ->constrained('users')
+            ->nullOnDelete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Timestamps
+        |--------------------------------------------------------------------------
+        */
+
+        $table->timestamps();
+
+        $table->softDeletes();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Performance Indexes
+        |--------------------------------------------------------------------------
+        */
+
+        $table->index('itr_return_id');
+        $table->index('itr_notice_id');
+        $table->index('itr_appeal_id');
+        $table->index('itr_hearing_id');
+        $table->index('itr_order_id');
+        $table->index('itr_refund_id');
+        $table->index('itr_verification_id');
+
+        $table->index('user_id');
+        $table->index('company_id');
+
+        $table->index('event_number');
+        $table->index('reference_number');
+
+        $table->index('module');
+        $table->index('event_type');
+        $table->index('actor_type');
+        $table->index('actor_name');
+
+        $table->index('status');
+
+        $table->index('government_synced');
+        $table->index('ai_processed');
+
+        $table->index('risk_level');
+
+        $table->index('is_system_generated');
+        $table->index('is_visible_to_user');
+        $table->index('requires_attention');
+
+        $table->index('entity_name');
+        $table->index('entity_id');
+
+        $table->index('event_at');
+        $table->index('event_date');
+        $table->index('event_time');
+
+        $table->index('api_reference_number');
+
+        $table->index('event_session');
+
+        $table->index('uuid');
+
+        $table->index('created_at');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Composite Indexes
+        |--------------------------------------------------------------------------
+        */
+
+        $table->index([
+            'itr_return_id',
+            'event_at'
+        ]);
+
+        $table->index([
+            'itr_notice_id',
+            'event_at'
+        ]);
+
+        $table->index([
+            'itr_appeal_id',
+            'event_at'
+        ]);
+
+        $table->index([
+            'itr_hearing_id',
+            'event_at'
+        ]);
+
+        $table->index([
+            'itr_order_id',
+            'event_at'
+        ]);
+
+        $table->index([
+            'itr_refund_id',
+            'event_at'
+        ]);
+
+        $table->index([
+            'itr_verification_id',
+            'event_at'
+        ]);
+
+        $table->index([
+            'user_id',
+            'event_at'
+        ]);
+
+        $table->index([
+            'company_id',
+            'event_at'
+        ]);
+
+        $table->index([
+            'module',
+            'event_type'
+        ]);
+
+        $table->index([
+            'module',
+            'status'
+        ]);
+
+        $table->index([
+            'actor_type',
+            'event_at'
+        ]);
+
+        $table->index([
+            'government_synced',
+            'status'
+        ]);
+
+        $table->index([
+            'ai_processed',
+            'status'
+        ]);
+
+        $table->index([
+            'risk_level',
+            'status'
+        ]);
+
+        $table->index([
+            'status',
+            'event_at'
+        ]);
+
+        $table->index([
+            'entity_name',
+            'entity_id'
+        ]);
+
+        $table->index([
+            'module',
+            'event_at'
+        ]);
+
+        $table->index([
+            'event_type',
+            'event_at'
+        ]);
+
+        $table->index([
+            'is_visible_to_user',
+            'event_at'
+        ]);
+
+        $table->index([
+            'requires_attention',
+            'status'
+        ]);
+
+        $table->index([
+            'event_number',
+            'module'
+        ]);
+                /*
+        |--------------------------------------------------------------------------
+        | Business Rule Constraints
+        |--------------------------------------------------------------------------
+        */
+
+        DB::statement("
+            ALTER TABLE itr_case_history
+            ADD CONSTRAINT chk_itr_case_history_module
+            CHECK (
+                module IN (
+                    'return',
+                    'calculation',
+                    'document',
+                    'verification',
+                    'refund',
+                    'notice',
+                    'appeal',
+                    'hearing',
+                    'order',
+                    'compliance',
+                    'system'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_case_history
+            ADD CONSTRAINT chk_itr_case_history_event_type
+            CHECK (
+                event_type IN (
+                    'created',
+                    'updated',
+                    'deleted',
+                    'submitted',
+                    'approved',
+                    'rejected',
+                    'verified',
+                    'synced',
+                    'generated',
+                    'uploaded',
+                    'downloaded',
+                    'completed',
+                    'failed'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_case_history
+            ADD CONSTRAINT chk_itr_case_history_actor
+            CHECK (
+                actor_type IN (
+                    'user',
+                    'chartered_accountant',
+                    'admin',
+                    'ai',
+                    'government',
+                    'system',
+                    'api'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_case_history
+            ADD CONSTRAINT chk_itr_case_history_status
+            CHECK (
+                status IN (
+                    'pending',
+                    'processing',
+                    'completed',
+                    'failed',
+                    'cancelled'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_case_history
+            ADD CONSTRAINT chk_itr_case_history_risk
+            CHECK (
+                risk_level IN (
+                    'low',
+                    'medium',
+                    'high',
+                    'critical'
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_case_history
+            ADD CONSTRAINT chk_itr_case_history_ai_confidence
+            CHECK (
+                ai_confidence_score IS NULL
+                OR (
+                    ai_confidence_score >= 0
+                    AND ai_confidence_score <= 100
+                )
+            )
+        ");
+
+        DB::statement("
+            ALTER TABLE itr_case_history
+            ADD CONSTRAINT chk_itr_case_history_version
+            CHECK (
+                version >= 1
+            )
+        ");
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::disableForeignKeyConstraints();
+
+        Schema::dropIfExists('itr_case_history');
+
+        Schema::enableForeignKeyConstraints();
+    }
+};

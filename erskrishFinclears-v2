@@ -1,0 +1,88 @@
+warning: in the working copy of 'apps/web/AGENTS.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/CLAUDE.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/blog/[slug]/loading.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/blog/[slug]/not-found.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/blog/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/dashboard/documents/[id]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/dashboard/users/[id]/edit/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/dashboard/users/[id]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/globals.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/services/[category]/[slug]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/components.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/eslint.config.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/package-lock.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/postcss.config.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/public/site.webmanifest', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/tsconfig.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'services/api/app/Http/Requests/Auth/LoginRequest.php', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'services/api/app/Http/Requests/Auth/RegisterRequest.php', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'services/api/app/Http/Requests/Company/StoreCompanyRequest.php', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'services/api/app/Http/Requests/Company/UpdateCompanyRequest.php', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'services/api/app/Providers/AppServiceProvider.php', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'services/api/app/Services/Auth/AuthService.php', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'services/api/routes/api.php', CRLF will be replaced by LF the next time Git touches it
+ .github/workflows/deploy.yml                       |    84 [32m+[m[31m-[m
+ apps/web/AGENTS.md                                 |     1 [32m+[m
+ apps/web/app/about/page.tsx                        |    55 [32m+[m[31m-[m
+ apps/web/app/api/chat/route.ts                     |    76 [32m+[m[31m-[m
+ apps/web/app/api/contact/route.ts                  |   135 [32m+[m[31m-[m
+ apps/web/app/api/health/route.ts                   |    18 [32m+[m[31m-[m
+ apps/web/app/api/lead/route.ts                     |   133 [32m+[m[31m-[m
+ apps/web/app/api/newsletter/route.ts               |   121 [32m+[m[31m-[m
+ apps/web/app/api/upload/route.ts                   |   121 [32m+[m[31m-[m
+ apps/web/app/auth/forgot-password/page.tsx         |    18 [32m+[m[31m-[m
+ apps/web/app/auth/layout.tsx                       |     7 [32m+[m[31m-[m
+ apps/web/app/auth/login/page.tsx                   |    17 [32m+[m[31m-[m
+ apps/web/app/auth/register/page.tsx                |    25 [32m+[m[31m-[m
+ apps/web/app/auth/reset-password/page.tsx          |    19 [32m+[m[31m-[m
+ apps/web/app/auth/verify-email/page.tsx            |    13 [32m+[m[31m-[m
+ apps/web/app/blog/[slug]/loading.tsx               |    15 [32m+[m[31m-[m
+ apps/web/app/blog/[slug]/not-found.tsx             |    25 [32m+[m[31m-[m
+ apps/web/app/blog/[slug]/page.tsx                  |   375 [32m+[m[31m-[m
+ apps/web/app/blog/page.tsx                         |    66 [32m+[m[31m-[m
+ apps/web/app/careers/page.tsx                      |    18 [32m+[m[31m-[m
+ apps/web/app/contact/page.tsx                      |    66 [32m+[m[31m-[m
+ apps/web/app/dashboard/companies/create/page.tsx   |    19 [32m+[m[31m-[m
+ apps/web/app/dashboard/companies/page.tsx          |    53 [32m+[m[31m-[m
+ apps/web/app/dashboard/documents/[id]/page.tsx     |   803 [32m+[m[31m-[m
+ apps/web/app/dashboard/documents/page.tsx          |   260 [32m+[m[31m-[m
+ apps/web/app/dashboard/documents/upload/page.tsx   |   596 [32m+[m[31m-[m
+ apps/web/app/dashboard/layout.tsx                  |    63 [32m+[m[31m-[m
+ apps/web/app/dashboard/notifications/page.tsx      |    25 [32m+[m[31m-[m
+ apps/web/app/dashboard/orders/page.tsx             |    66 [32m+[m[31m-[m
+ apps/web/app/dashboard/overview/page.tsx           |    18 [32m+[m[31m-[m
+ apps/web/app/dashboard/page.tsx                    |    13 [32m+[m[31m-[m
+ apps/web/app/dashboard/payments/page.tsx           |   107 [32m+[m[31m-[m
+ apps/web/app/dashboard/profile/page.tsx            |    33 [32m+[m[31m-[m
+ apps/web/app/dashboard/settings/page.tsx           |    33 [32m+[m[31m-[m
+ apps/web/app/dashboard/users/[id]/edit/page.tsx    |   125 [32m+[m[31m-[m
+ apps/web/app/dashboard/users/[id]/page.tsx         |   111 [32m+[m[31m-[m
+ apps/web/app/dashboard/users/create/page.tsx       |   105 [32m+[m[31m-[m
+ apps/web/app/dashboard/users/page.tsx              |    91 [32m+[m[31m-[m
+ apps/web/app/globals.css                           |     2 [32m+[m[31m-[m
+ apps/web/app/layout.tsx                            |   271 [32m+[m[31m-[m
+ apps/web/app/page.tsx                              |    90 [32m+[m[31m-[m
+ apps/web/app/pricing/page.tsx                      |    49 [32m+[m[31m-[m
+ apps/web/app/privacy-policy/page.tsx               |    18 [32m+[m[31m-[m
+ apps/web/app/refund-policy/page.tsx                |    18 [32m+[m[31m-[m
+ apps/web/app/robots.ts                             |    25 [32m+[m[31m-[m
+ apps/web/app/services/[category]/[slug]/page.tsx   |   589 [32m+[m[31m-[m
+ .../web/app/services/company-registration/page.tsx |    18 [32m+[m[31m-[m
+ apps/web/app/services/compliance/page.tsx          |    18 [32m+[m[31m-[m
+ apps/web/app/services/gst/page.tsx                 |    18 [32m+[m[31m-[m
+ apps/web/app/services/income-tax/page.tsx          |    18 [32m+[m[31m-[m
+ apps/web/app/services/page.tsx                     |   304 [32m+[m[31m-[m
+ apps/web/app/services/roc/page.tsx                 |    18 [32m+[m[31m-[m
+ apps/web/app/services/trademark/page.tsx           |    18 [32m+[m[31m-[m
+ apps/web/app/sitemap.ts                            |    87 [32m+[m[31m-[m
+ apps/web/app/terms-and-conditions/page.tsx         |    18 [32m+[m[31m-[m
+ apps/web/app/thank-you/page.tsx                    |    89 [32m+[m[31m-[m
+ apps/web/app/verify-email/page.tsx                 |    57 [32m+[m[31m-[m
+ apps/web/components.json                           |    46 [32m+[m[31m-[m
+ apps/web/components/about/Achievements.tsx         |   269 [32m+[m[31m-[m
+ apps/web/components/about/CTA.tsx                  |   197 [32m+[m[31m-[m
+ apps/web/components/about/Hero.tsx                 |   102 [32m+[m[31m-[m
+ apps/web/components/about/MissionVision.tsx        |   269 [32m+[m[31m-[m
+ apps/web/components/about/Story.tsx                |   154 [32m+[m[31m-[m

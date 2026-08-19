@@ -2,49 +2,42 @@
  | Company Enums
  * ========================================================= */
 export type CompanyStatus =
-  | "draft"
-  | "submitted"
-  | "under_review"
-  | "documents_pending"
-  | "payment_pending"
-  | "processing"
-  | "approved"
-  | "rejected"
-  | "completed";
+	| "draft"
+	| "submitted"
+	| "under_review"
+	| "documents_pending"
+	| "payment_pending"
+	| "processing"
+	| "approved"
+	| "rejected"
+	| "completed";
 
 export type CompanyServiceType =
-  | "private_limited"
-  | "llp"
-  | "opc"
-  | "section8"
-  | "foreign_company";
+	| "private_limited"
+	| "llp"
+	| "opc"
+	| "section8"
+	| "foreign_company";
 
-export type CompanyType =
-  | "private"
-  | "public"
-  | "llp"
-  | "opc";
+export type CompanyType = "private" | "public" | "llp" | "opc";
 
 /* ==========================================================
  | Address
  * ========================================================= */
 
 export interface CompanyAddress {
-  registered_address: string;
-  address_line_2?: string;
+	registered_address: string;
+	address_line_2?: string;
 
-  city: string;
-  district: string;
-  state: string;
+	city: string;
+	district: string;
+	state: string;
 
-  pin_code: string;
+	pin_code: string;
 
-  police_station?: string;
+	police_station?: string;
 
-  ownership_type:
-    | "owned"
-    | "rented"
-    | "leased";
+	ownership_type: "owned" | "rented" | "leased";
 }
 
 /* ==========================================================
@@ -52,31 +45,33 @@ export interface CompanyAddress {
  * ========================================================= */
 
 export interface Director {
-  id?: number;
+        id?: number;
 
-  name: string;
+        name: string;
 
-  father_name: string;
+        email: string;
 
-  email: string;
+        phone: string;
 
-  mobile: string;
+        pan: string;
 
-  pan: string;
+        aadhaar: string;
 
-  aadhaar: string;
+        din?: string;
 
-  din?: string;
+        designation: string;
 
-  nationality: string;
+        father_name?: string;
 
-  occupation: string;
+        mobile?: string;
 
-  designation?: string;
+        nationality?: string;
 
-  shareholding: number;
+        occupation?: string;
 
-  is_signing_director?: boolean;
+        shareholding?: number;
+
+        is_signing_director?: boolean;
 }
 
 /* ==========================================================
@@ -84,53 +79,55 @@ export interface Director {
  * ========================================================= */
 
 export interface Shareholder {
-  id?: number;
+        id?: number;
 
-  name: string;
+        name: string;
 
-  pan: string;
+        email: string;
 
-  shares: number;
+        phone: string;
 
-  percentage: number;
+        pan: string;
+
+        shares: number;
+
+        percentage: number;
 }
-
-
 
 /* ==========================================================
  | Company Documents
  * ========================================================= */
 
 export type DocumentType =
-  | "pan_card"
-  | "aadhaar_card"
-  | "passport_photo"
-  | "electricity_bill"
-  | "rent_agreement"
-  | "noc"
-  | "moa"
-  | "aoa"
-  | "inc9"
-  | "spice_plus"
-  | "agile_pro"
-  | "proof_of_identity"
-  | "proof_of_address"
-  | "other";
+	| "pan_card"
+	| "aadhaar_card"
+	| "passport_photo"
+	| "electricity_bill"
+	| "rent_agreement"
+	| "noc"
+	| "moa"
+	| "aoa"
+	| "inc9"
+	| "spice_plus"
+	| "agile_pro"
+	| "proof_of_identity"
+	| "proof_of_address"
+	| "other";
 
 /* ==========================================================
  | Company Document
  * ========================================================= */
 
 export interface CompanyDocument {
-  id: number;
-  company_id: number;
-  title: string;
-  file_name: string;
-  file_url: string;
-  type: DocumentType;
-  status?: string;
-  created_at: string;
-  updated_at: string;
+	id: number;
+	company_id: number;
+	title: string;
+	file_name: string;
+	file_url: string;
+	type: DocumentType;
+	status?: string;
+	created_at: string;
+	updated_at: string;
 }
 
 /* ==========================================================
@@ -138,80 +135,83 @@ export interface CompanyDocument {
  * ========================================================= */
 
 export interface Company {
-  id: number;
+	id: number;
 
-  name: string;
+	name: string;
 
-  company_name?: string;
+	company_name?: string;
 
-  company_type?: CompanyType;
+	company_type?: CompanyType;
 
-  service_type?: CompanyServiceType;
+	service_type?: CompanyServiceType;
 
-  business_activity?: string;
+	business_activity?: string;
 
-  authorized_capital?: number;
+	authorized_capital?: number;
 
-  paid_up_capital?: number;
+	paid_up_capital?: number;
 
-  registration_number?: string;
+	registration_number?: string;
 
-  cin?: string;
+	cin?: string;
 
-  llpin?: string;
+	llpin?: string;
 
-  gst_number?: string;
+	gst_number?: string;
 
-  pan_number?: string;
+	pan_number?: string;
 
-  tan_number?: string;
+	tan_number?: string;
 
-  email?: string;
+	email?: string;
 
-  phone?: string;
+	phone?: string;
 
-  website?: string;
+	website?: string;
 
-  address?: string;
+	address?: string;
 
-  city?: string;
+	city?: string;
 
-  district?: string;
+	district?: string;
 
-  state?: string;
+	state?: string;
 
-  country?: string;
+	country?: string;
 
-  pin_code?: string;
+	pin_code?: string;
 
-  owner_name?: string;
+	owner_name?: string;
 
-  contact_person?: string;
+	contact_person?: string;
 
-  incorporation_date?: string;
+	incorporation_date?: string;
 
-  status?: CompanyStatus;
+	status?: CompanyStatus;
+        payment_status?: "pending" | "success" | "failed" | "refunded";
 
-  created_at?: string;
+        directors?: Director[];
 
-  updated_at?: string;
+        shareholders?: Shareholder[];
+
+        documents?: CompanyDocument[];
 }
 /* ==========================================================
  | Company Timeline
  * ========================================================= */
 
 export interface CompanyTimeline {
-  id: number;
+	id: number;
 
-  title: string;
+	title: string;
 
-  description?: string;
+	description?: string;
 
-  status: CompanyStatus;
+	status: CompanyStatus;
 
-  created_by?: number;
+	created_by?: number;
 
-  created_at: string;
+	created_at: string;
 }
 
 /* ==========================================================
@@ -219,15 +219,15 @@ export interface CompanyTimeline {
  * ========================================================= */
 
 export interface CompanyActivity {
-  id: number;
+	id: number;
 
-  action: string;
+	action: string;
 
-  description: string;
+	description: string;
 
-  performed_by: string;
+	performed_by: string;
 
-  created_at: string;
+	created_at: string;
 }
 
 /* ==========================================================
@@ -235,25 +235,25 @@ export interface CompanyActivity {
  * ========================================================= */
 
 export interface CompanyInvoice {
-  id: number;
+	id: number;
 
-  invoice_no: string;
+	invoice_no: string;
 
-  subtotal: number;
+	subtotal: number;
 
-  tax: number;
+	tax: number;
 
-  discount: number;
+	discount: number;
 
-  total: number;
+	total: number;
 
-  paid: boolean;
+	paid: boolean;
 
-  due_date?: string;
+	due_date?: string;
 
-  invoice_url?: string;
+	invoice_url?: string;
 
-  created_at: string;
+	created_at: string;
 }
 
 /* ==========================================================
@@ -261,27 +261,19 @@ export interface CompanyInvoice {
  * ========================================================= */
 
 export interface CompanyPayment {
-  id: number;
+	id: number;
 
-  amount: number;
+	amount: number;
 
-  currency: string;
+	currency: string;
 
-  method:
-    | "razorpay"
-    | "cashfree"
-    | "bank_transfer"
-    | "cash";
+	method: "razorpay" | "cashfree" | "bank_transfer" | "cash";
 
-  payment_status:
-    | "pending"
-    | "success"
-    | "failed"
-    | "refunded";
+	payment_status: "pending" | "success" | "failed" | "refunded";
 
-  transaction_id?: string;
+	transaction_id?: string;
 
-  payment_date?: string;
+	payment_date?: string;
 }
 
 /* ==========================================================
@@ -289,17 +281,17 @@ export interface CompanyPayment {
  * ========================================================= */
 
 export interface MCAStatus {
-  cin?: string;
+	cin?: string;
 
-  llpin?: string;
+	llpin?: string;
 
-  incorporation_date?: string;
+	incorporation_date?: string;
 
-  company_status?: string;
+	company_status?: string;
 
-  roc?: string;
+	roc?: string;
 
-  last_synced_at?: string;
+	last_synced_at?: string;
 }
 
 /* ==========================================================
@@ -307,18 +299,15 @@ export interface MCAStatus {
  * ========================================================= */
 
 export interface ComplianceItem {
-  id: number;
+	id: number;
 
-  title: string;
+	title: string;
 
-  due_date: string;
+	due_date: string;
 
-  status:
-    | "pending"
-    | "completed"
-    | "overdue";
+	status: "pending" | "completed" | "overdue";
 
-  mandatory: boolean;
+	mandatory: boolean;
 }
 
 /* ==========================================================
@@ -326,73 +315,73 @@ export interface ComplianceItem {
  * ========================================================= */
 
 export interface CompanyDashboard {
-  total_documents: number;
+	total_documents: number;
 
-  verified_documents: number;
+	verified_documents: number;
 
-  pending_documents: number;
+	pending_documents: number;
 
-  completed_steps: number;
+	completed_steps: number;
 
-  total_steps: number;
+	total_steps: number;
 
-  completion_percentage: number;
+	completion_percentage: number;
 }
 /* ==========================================================
  | Wizard Forms
  * ========================================================= */
 
 export interface CreateCompanyRequest {
-  company_name: string;
+	company_name: string;
 
-  service_type: CompanyServiceType;
+	service_type: CompanyServiceType;
 
-  company_type: CompanyType;
+	company_type: CompanyType;
 
-  business_activity: string;
+	business_activity: string;
 
-  authorized_capital: number;
+	authorized_capital: number;
 
-  paid_up_capital: number;
+	paid_up_capital: number;
 
-  state: string;
+	state: string;
 
-  city: string;
+	city: string;
 
-  address: string;
+	address: string;
 
-  pin_code: string;
+	pin_code: string;
 
-  promoters?: Director[];
+	promoters?: Director[];
+        shareholders?: Shareholder[];
 }
 
-export interface UpdateCompanyRequest
-  extends Partial<CreateCompanyRequest> {}
+export interface UpdateCompanyRequest extends Partial<CreateCompanyRequest> {}
 
 /* ==========================================================
  | Business Form
  * ========================================================= */
 
 export interface BusinessFormRequest {
-  company_name: string;
+	company_name: string;
 
-  service_type: CompanyServiceType;
+	service_type: CompanyServiceType;
 
-  company_type: CompanyType;
+	company_type: CompanyType;
 
-  business_activity: string;
+	business_activity: string;
 
-  authorized_capital: number;
+	authorized_capital: number;
 
-  paid_up_capital: number;
+	paid_up_capital: number;
 
-  state: string;
+	state: string;
 
-  city: string;
+	city: string;
 
-  address: string;
+	address: string;
 
-  pin_code: string;
+	pin_code: string;
 }
 
 /* ==========================================================
@@ -400,7 +389,7 @@ export interface BusinessFormRequest {
  * ========================================================= */
 
 export interface PromoterFormRequest {
-  promoters: Director[];
+	promoters: Director[];
 }
 
 /* ==========================================================
@@ -408,30 +397,27 @@ export interface PromoterFormRequest {
  * ========================================================= */
 
 export interface AddressFormRequest {
-  registered_address: string;
+	registered_address: string;
 
-  address_line_2?: string;
+	address_line_2?: string;
 
-  city: string;
+	city: string;
 
-  district: string;
+	district: string;
 
-  state: string;
+	state: string;
 
-  pin_code: string;
+	pin_code: string;
 
-  police_station?: string;
+	police_station?: string;
 
-  ownership_type:
-    | "owned"
-    | "rented"
-    | "leased";
+	ownership_type: "owned" | "rented" | "leased";
 
-  electricity_bill?: FileList;
+	electricity_bill?: FileList;
 
-  rent_agreement?: FileList;
+	rent_agreement?: FileList;
 
-  noc?: FileList;
+	noc?: FileList;
 }
 
 /* ==========================================================
@@ -439,17 +425,17 @@ export interface AddressFormRequest {
  * ========================================================= */
 
 export interface DocumentsFormRequest {
-  pan_card?: FileList;
+	pan_card?: FileList;
 
-  aadhaar_card?: FileList;
+	aadhaar_card?: FileList;
 
-  passport_photo?: FileList;
+	passport_photo?: FileList;
 
-  electricity_bill?: FileList;
+	electricity_bill?: FileList;
 
-  rent_agreement?: FileList;
+	rent_agreement?: FileList;
 
-  noc?: FileList;
+	noc?: FileList;
 }
 
 /* ==========================================================
@@ -457,15 +443,15 @@ export interface DocumentsFormRequest {
  * ========================================================= */
 
 export interface CompanyFilters {
-  search?: string;
+	search?: string;
 
-  status?: CompanyStatus;
+	status?: CompanyStatus;
 
-  service_type?: CompanyServiceType;
+	service_type?: CompanyServiceType;
 
-  page?: number;
+	page?: number;
 
-  per_page?: number;
+	per_page?: number;
 }
 
 /* ==========================================================
@@ -473,13 +459,13 @@ export interface CompanyFilters {
  * ========================================================= */
 
 export interface PaginationMeta {
-  current_page: number;
+	current_page: number;
 
-  last_page: number;
+	last_page: number;
 
-  per_page: number;
+	per_page: number;
 
-  total: number;
+	total: number;
 }
 
 /* ==========================================================
@@ -487,27 +473,27 @@ export interface PaginationMeta {
  * ========================================================= */
 
 export interface CompanyResponse {
-  success: boolean;
+	success: boolean;
 
-  message: string;
+	message: string;
 
-  data: Company;
+	data: Company;
 }
 
 export interface CompanyListResponse {
-  success: boolean;
+	success: boolean;
 
-  message: string;
+	message: string;
 
-  data: Company[];
+	data: Company[];
 
-  meta: PaginationMeta;
+	meta: PaginationMeta;
 }
 
 export interface CompanyStatusResponse {
-  success: boolean;
+	success: boolean;
 
-  data: MCAStatus;
+	data: MCAStatus;
 }
 
 /* ==========================================================
@@ -515,11 +501,11 @@ export interface CompanyStatusResponse {
  * ========================================================= */
 
 export interface UploadResponse {
-  success: boolean;
+	success: boolean;
 
-  message: string;
+	message: string;
 
-  data: CompanyDocument;
+	data: CompanyDocument;
 }
 
 /* ==========================================================
@@ -527,7 +513,7 @@ export interface UploadResponse {
  * ========================================================= */
 
 export interface CompanyDashboardResponse {
-  success: boolean;
+	success: boolean;
 
-  data: CompanyDashboard;
+	data: CompanyDashboard;
 }

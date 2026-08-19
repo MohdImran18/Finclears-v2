@@ -3,19 +3,19 @@
  * ========================================================= */
 
 export interface PaginationMeta {
-  current_page: number;
+	current_page: number;
 
-  last_page: number;
+	last_page: number;
 
-  per_page: number;
+	per_page: number;
 
-  total: number;
+	total: number;
 
-  from?: number;
+	from?: number;
 
-  to?: number;
+	to?: number;
 
-  has_more_pages?: boolean;
+	has_more_pages?: boolean;
 }
 
 /* ==========================================================
@@ -23,11 +23,11 @@ export interface PaginationMeta {
  * ========================================================= */
 
 export interface ApiResponse<T> {
-  success: boolean;
+	success: boolean;
 
-  message: string;
+	message: string;
 
-  data: T;
+	data: T;
 }
 
 /* ==========================================================
@@ -35,9 +35,9 @@ export interface ApiResponse<T> {
  * ========================================================= */
 
 export interface PaginatedResponse<T> {
-  data: T[];
+	data: T[];
 
-  meta: PaginationMeta;
+	meta: PaginationMeta;
 }
 
 /* ==========================================================
@@ -45,9 +45,9 @@ export interface PaginatedResponse<T> {
  * ========================================================= */
 
 export interface SelectOption {
-  label: string;
+	label: string;
 
-  value: string | number;
+	value: string | number;
 }
 
 /* ==========================================================
@@ -55,11 +55,11 @@ export interface SelectOption {
  * ========================================================= */
 
 export interface BaseFilters {
-  search?: string;
+	search?: string;
 
-  page?: number;
+	page?: number;
 
-  per_page?: number;
+	per_page?: number;
 }
 
 /* ==========================================================
@@ -67,15 +67,15 @@ export interface BaseFilters {
  * ========================================================= */
 
 export interface UploadResponse {
-  success: boolean;
+	success: boolean;
 
-  message: string;
+	message: string;
 
-  data: {
-    url: string;
+	data: {
+		url: string;
 
-    path: string;
+		path: string;
 
-    file_name: string;
-  };
+		file_name: string;
+	};
 }

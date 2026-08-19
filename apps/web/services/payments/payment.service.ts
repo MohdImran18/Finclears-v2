@@ -1,118 +1,92 @@
+import { API_ENDPOINTS } from "@/constants/api";
 import api from "@/lib/api";
 
-import { API_ENDPOINTS } from "@/constants/api";
-
-import type {
-  PaymentFilters,
-  VerifyPaymentRequest,
-} from "@/types/payment";
+import type { CreatePaymentRequest, PaymentFilters, VerifyPaymentRequest } from "@/types/payment";
 
 /* ==========================================================
  | Get Payments
- * ========================================================= */
+ * ========================================================== */
 
-export async function getPayments(
-  filters?: PaymentFilters
-) {
-  const { data } = await api.get(
-    API_ENDPOINTS.PAYMENTS.INDEX,
-    {
-      params: filters,
-    }
-  );
+export async function getPayments(filters?: PaymentFilters) {
+        const { data } = await api.get(API_ENDPOINTS.PAYMENTS.INDEX, {
+                params: filters,
+        });
 
-  return data;
+        return data;
 }
 
 /* ==========================================================
  | Get Payment
- * ========================================================= */
+ * ========================================================== */
 
-export async function getPayment(
-  id: number | string
-) {
-  const { data } = await api.get(
-    API_ENDPOINTS.PAYMENTS.SHOW(id)
-  );
+export async function getPayment(id: number | string) {
+        const { data } = await api.get(API_ENDPOINTS.COMPANY_PAYMENTS.SHOW(id));
 
-  return data;
+        return data;
 }
 
 /* ==========================================================
- | Create Payment
- * ========================================================= */
+ | Create Cashfree Payment
+ * ========================================================== */
 
 export async function createPayment(
-  payload: unknown
+        payload: CreatePaymentRequest,
 ) {
-  const { data } = await api.post(
-    API_ENDPOINTS.PAYMENTS.STORE,
-    payload
-  );
+        const { data } = await api.post(
+                API_ENDPOINTS.COMPANY_PAYMENTS.STORE,
+                payload,
+        );
 
-  return data;
+        return data;
 }
 
 /* ==========================================================
  | Verify Payment
- * ========================================================= */
+ * ========================================================== */
 
-export async function verifyPayment(
-  payload: VerifyPaymentRequest
-) {
-  const { data } = await api.post(
-    API_ENDPOINTS.PAYMENTS.VERIFY,
-    payload
-  );
+export async function verifyPayment(id: number | string) {
+        const { data } = await api.post(
+                API_ENDPOINTS.COMPANY_PAYMENTS.VERIFY(id),
+        );
 
-  return data;
+        return data;
 }
 
 /* ==========================================================
  | Refund Payment
- * ========================================================= */
+ * ========================================================== */
 
-export async function refundPayment(
-  id: number | string
-) {
-  const { data } = await api.post(
-    `${API_ENDPOINTS.PAYMENTS.SHOW(id)}/refund`
-  );
+export async function refundPayment(id: number | string) {
+        const { data } = await api.post(
+                `${API_ENDPOINTS.COMPANY_PAYMENTS.SHOW(id)}/refund`,
+        );
 
-  return data;
+        return data;
 }
 
 /* ==========================================================
  | Invoices
- * ========================================================= */
+ * ========================================================== */
 
 export async function getInvoices() {
-  const { data } = await api.get(
-    "/payments/invoices"
-  );
+        const { data } = await api.get("/payments/invoices");
 
-  return data;
+        return data;
 }
 
-export async function getInvoice(
-  id: number | string
-) {
-  const { data } = await api.get(
-    `/payments/invoices/${id}`
-  );
+export async function getInvoice(id: number | string) {
+        const { data } = await api.get(`/payments/invoices/${id}`);
 
-  return data;
+        return data;
 }
 
-export async function downloadInvoice(
-  id: number | string
-) {
-  const { data } = await api.get(
-    `/payments/invoice/${id}/download`,
-    {
-      responseType: "blob",
-    }
-  );
+export async function downloadInvoice(id: number | string) {
+        const { data } = await api.get(
+                `/payments/invoice/${id}/download`,
+                {
+                        responseType: "blob",
+                },
+        );
 
-  return data;
+        return data;
 }

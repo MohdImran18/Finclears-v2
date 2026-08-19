@@ -3,40 +3,114 @@
 namespace App\Repositories;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
-abstract class BaseRepository
+use App\Contracts\Repositories\RepositoryInterface;
+
+abstract class BaseRepository implements RepositoryInterface
 {
+    /**
+     * Model Instance
+     */
     protected Model $model;
 
-    public function all()
-    {
-        return $this->model->all();
+    /**
+     * Repository Constructor
+     */
+    public function __construct(
+        Model $model
+    ) {
+        $this->model = $model;
     }
 
-    public function paginate(int $perPage = 15)
-    {
+    /**
+     * Get All Records
+     */
+    public function all(
+        array $columns = ['*']
+    ): Collection {
+        return $this->model->get($columns);
+    }
+
+    /**
+     * Paginate Records
+     */
+    public function paginate(
+        int $perPage = 15
+    ): LengthAwarePaginator {
         return $this->model->paginate($perPage);
     }
 
-    public function find(int|string $id)
-    {
+    /**
+     * Find Record
+     */
+    public function find(
+        int|string $id
+    ): ?Model {
         return $this->model->find($id);
     }
 
-    public function create(array $data)
-    {
+    /**
+     * Find Or Fail
+     */
+    public function findOrFail(
+        int|string $id
+    ): Model {
+        return $this->model->findOrFail($id);
+    }
+
+    /**
+     * Create Record
+     */
+    public function create(
+        array $data
+    ): Model {
         return $this->model->create($data);
     }
 
-    public function update(Model $model, array $data)
-    {
-        $model->update($data);
-
-        return $model->refresh();
+    /**
+     * Update Record
+     */
+    public function update(
+        int|string $id,
+        array $data
+    ): bool {
+        return $this->findOrFail($id)
+            ->update($data);
     }
 
-    public function delete(Model $model): bool
-    {
-        return (bool) $model->delete();
+    /**
+     * Delete Record
+     */
+    public function delete(
+        int|string $id
+    ): bool {
+        return (bool) $this->findOrFail($id)
+            ->delete();
+    }
+
+    /**
+     * Restore Record
+     */
+    public function restore(
+        int|string $id
+    ): bool {
+        return (bool) $this->model
+            ->onlyTrashed()
+            ->findOrFail($id)
+            ->restore();
+    }
+
+    /**
+     * Force Delete Record
+     */
+    public function forceDelete(
+        int|string $id
+    ): bool {
+        return (bool) $this->model
+            ->onlyTrashed()
+            ->findOrFail($id)
+            ->forceDelete();
     }
 }

@@ -1,193 +1,128 @@
-import api from "@/lib/api";
 import { API_ENDPOINTS } from "@/constants/api";
+import api from "@/lib/api";
 
-import type {
-  DocumentFilters,
-  UploadDocumentRequest,
-} from "@/types/document";
+import type { DocumentFilters, UploadDocumentRequest } from "@/types/document";
 
 /* ==========================================================
  | Get Documents
  * ========================================================= */
 
-export async function getDocuments(
-  params?: DocumentFilters
-) {
-  const { data } = await api.get(
-    API_ENDPOINTS.DOCUMENTS.INDEX,
-    {
-      params,
-    }
-  );
+export async function getDocuments(params?: DocumentFilters) {
+	const { data } = await api.get(API_ENDPOINTS.DOCUMENTS.INDEX, {
+		params,
+	});
 
-  return data;
+	return data;
 }
 
 /* ==========================================================
  | Get Single Document
  * ========================================================= */
 
-export async function getDocument(
-  id: number | string
-) {
-  const { data } = await api.get(
-    API_ENDPOINTS.DOCUMENTS.SHOW(id)
-  );
+export async function getDocument(id: number | string) {
+	const { data } = await api.get(API_ENDPOINTS.DOCUMENTS.SHOW(id));
 
-  return data;
+	return data;
 }
 
 /* ==========================================================
  | Upload Document
  * ========================================================= */
 
-export async function uploadDocument(
-  payload: UploadDocumentRequest
-) {
-  const formData = new FormData();
+export async function uploadDocument(payload: UploadDocumentRequest) {
+	const formData = new FormData();
 
-  formData.append("title", payload.title);
+	formData.append("title", payload.title);
 
-  formData.append(
-    "document_type",
-    payload.document_type
-  );
+	formData.append("document_type", payload.document_type);
 
-  if (payload.company_id) {
-    formData.append(
-      "company_id",
-      String(payload.company_id)
-    );
-  }
+	if (payload.company_id) {
+		formData.append("company_id", String(payload.company_id));
+	}
 
-  if (payload.order_id) {
-    formData.append(
-      "order_id",
-      String(payload.order_id)
-    );
-  }
+	if (payload.order_id) {
+		formData.append("order_id", String(payload.order_id));
+	}
 
-  if (payload.remarks) {
-    formData.append(
-      "remarks",
-      payload.remarks
-    );
-  }
+	if (payload.remarks) {
+		formData.append("remarks", payload.remarks);
+	}
 
-  formData.append(
-    "file",
-    payload.file
-  );
+	formData.append("file", payload.file);
 
-  const { data } = await api.post(
-    API_ENDPOINTS.DOCUMENTS.STORE,
-    formData,
-    {
-      headers: {
-        "Content-Type":
-          "multipart/form-data",
-      },
-    }
-  );
+	const { data } = await api.post(API_ENDPOINTS.DOCUMENTS.STORE, formData, {
+		headers: {
+			"Content-Type": "multipart/form-data",
+		},
+	});
 
-  return data;
+	return data;
 }
 
 /* ==========================================================
  | Update Document
  * ========================================================= */
 
-export async function updateDocument(
-  id: number | string,
-  payload: FormData
-) {
-  const { data } = await api.post(
-    API_ENDPOINTS.DOCUMENTS.UPDATE(id),
-    payload,
-    {
-      headers: {
-        "Content-Type":
-          "multipart/form-data",
-      },
-    }
-  );
+export async function updateDocument(id: number | string, payload: FormData) {
+	const { data } = await api.post(API_ENDPOINTS.DOCUMENTS.UPDATE(id), payload, {
+		headers: {
+			"Content-Type": "multipart/form-data",
+		},
+	});
 
-  return data;
+	return data;
 }
 
 /* ==========================================================
  | Delete Document
  * ========================================================= */
 
-export async function deleteDocument(
-  id: number | string
-) {
-  const { data } = await api.delete(
-    API_ENDPOINTS.DOCUMENTS.DELETE(id)
-  );
+export async function deleteDocument(id: number | string) {
+	const { data } = await api.delete(API_ENDPOINTS.DOCUMENTS.DELETE(id));
 
-  return data;
+	return data;
 }
 
 /* ==========================================================
  | Download Document
  * ========================================================= */
 
-export async function downloadDocument(
-  id: number | string
-) {
-  const { data } = await api.get(
-    API_ENDPOINTS.DOCUMENTS.DOWNLOAD(id),
-    {
-      responseType: "blob",
-    }
-  );
+export async function downloadDocument(id: number | string) {
+	const { data } = await api.get(API_ENDPOINTS.DOCUMENTS.DOWNLOAD(id), {
+		responseType: "blob",
+	});
 
-  return data;
+	return data;
 }
 
 /* ==========================================================
  | Verify Document
  * ========================================================= */
 
-export async function verifyDocument(
-  id: number | string
-) {
-  const { data } = await api.patch(
-    API_ENDPOINTS.DOCUMENTS.VERIFY(id)
-  );
+export async function verifyDocument(id: number | string) {
+	const { data } = await api.patch(API_ENDPOINTS.DOCUMENTS.VERIFY(id));
 
-  return data;
+	return data;
 }
 
 /* ==========================================================
  | Reject Document
  * ========================================================= */
 
-export async function rejectDocument(
-  id: number | string,
-  reason: string
-) {
-  const { data } = await api.patch(
-    API_ENDPOINTS.DOCUMENTS.REJECT(id),
-    {
-      reason,
-    }
-  );
+export async function rejectDocument(id: number | string, reason: string) {
+	const { data } = await api.patch(API_ENDPOINTS.DOCUMENTS.REJECT(id), {
+		reason,
+	});
 
-  return data;
+	return data;
 }
 
 /* ==========================================================
  | Timeline
  * ========================================================= */
 
-export async function getDocumentTimeline(
-  id: number | string
-) {
-  const { data } = await api.get(
-    API_ENDPOINTS.DOCUMENTS.TIMELINE(id)
-  );
+export async function getDocumentTimeline(id: number | string) {
+	const { data } = await api.get(API_ENDPOINTS.DOCUMENTS.TIMELINE(id));
 
-  return data;
+	return data;
 }

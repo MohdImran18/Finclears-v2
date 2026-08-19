@@ -1,57 +1,3 @@
-name: Deploy Finclears
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Show Repository Structure
-        run: |
-          pwd
-          ls -la
-          ls -la apps
-          ls -la apps/web
-
-      - name: Show package.json
-        run: cat apps/web/package.json
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: apps/web/package-lock.json
-
-      - name: Install Frontend Dependencies
-        working-directory: apps/web
-        run: npm install
-
-      - name: Check Installed Packages
-        working-directory: apps/web
-        run: |
-          npm list --depth=0 || true
-
-      - name: Build Next.js
-        working-directory: apps/web
-        run: npm run build
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.3"
-
-      - name: Install Laravel Dependencies
-        working-directory: services/api
-        run: composer install --no-dev --optimize-autoloader
-
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -59,7 +5,35 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -e
+
             cd ${{ secrets.APP_PATH }}
+
+            echo "Updating repository..."
             git fetch origin
             git reset --hard origin/main
+
+            echo "Installing Next.js dependencies..."
+            cd apps/web
+            npm install --production=false
+
+            echo "Building Next.js..."
+            npm run build
+
+            echo "Installing Laravel dependencies..."
+            cd ../../services/api
+            composer install --no-dev --optimize-autoloader
+
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            echo "Restarting services..."
+
             sudo systemctl reload nginx || true
+
+            if command -v pm2 >/dev/null 2>&1; then
+              pm2 restart all
+            fi
+
+            echo "Deployment completed successfully."

@@ -1,32 +1,57 @@
+"use client";
+
 import NotificationItem from "./NotificationItem";
 
-const notifications = [
-  {
-    title: "GST Registration Approved",
-    description: "Your GST registration has been approved.",
-    time: "2 hours ago",
-  },
-  {
-    title: "Payment Received",
-    description: "Payment for Invoice INV-1003 received.",
-    time: "Yesterday",
-  },
-  {
-    title: "Document Verified",
-    description: "PAN Card has been verified successfully.",
-    time: "2 days ago",
-  },
-];
+export interface Notification {
+        id: number;
+        title: string;
+        description: string;
+        time: string;
+        read: boolean;
+}
 
-export default function NotificationList() {
-  return (
-    <div className="space-y-5">
-      {notifications.map((item) => (
-        <NotificationItem
-          key={item.title}
-          {...item}
-        />
-      ))}
-    </div>
-  );
+interface Props {
+        notifications: Notification[];
+        filter: "all" | "unread" | "read";
+        onMarkAsRead: (id: number) => void;
+}
+
+export default function NotificationList({
+        notifications,
+        filter,
+        onMarkAsRead,
+}: Props) {
+        const filteredNotifications = notifications.filter((notification) => {
+                if (filter === "unread") {
+                        return !notification.read;
+                }
+
+                if (filter === "read") {
+                        return notification.read;
+                }
+
+                return true;
+        });
+
+        if (filteredNotifications.length === 0) {
+                return (
+                        <div className="rounded-xl border border-dashed p-8 text-center text-sm text-slate-500">
+                                No notifications found.
+                        </div>
+                );
+        }
+
+        return (
+                <div className="space-y-5">
+                        {filteredNotifications.map((notification) => (
+                                <NotificationItem
+                                        key={notification.id}
+                                        {...notification}
+                                        onRead={() =>
+                                                onMarkAsRead(notification.id)
+                                        }
+                                />
+                        ))}
+                </div>
+        );
 }

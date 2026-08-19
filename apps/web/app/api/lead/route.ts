@@ -1,42 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
+export async function POST(request: NextRequest) {
+	try {
+		const body = await request.json();
 
-export async function POST(
-  request: NextRequest
-) {
+		const { name, email, phone, service, message } = body;
 
-  try {
+		if (!name || !phone) {
+			return NextResponse.json(
+				{
+					success: false,
+					message: "Name and phone are required",
+				},
+				{
+					status: 400,
+				},
+			);
+		}
 
-    const body = await request.json();
-
-
-    const {
-      name,
-      email,
-      phone,
-      service,
-      message,
-    } = body;
-
-
-
-    if (!name || !phone) {
-
-      return NextResponse.json(
-        {
-          success:false,
-          message:"Name and phone are required"
-        },
-        {
-          status:400
-        }
-      );
-
-    }
-
-
-
-    /*
+		/*
       TODO:
       Connect Laravel API
 
@@ -45,46 +27,35 @@ export async function POST(
 
     */
 
+		return NextResponse.json(
+			{
+				success: true,
 
-    return NextResponse.json(
-      {
+				message: "Lead submitted successfully",
 
-        success:true,
+				data: {
+					name,
+					email,
+					phone,
+					service,
+					message,
+				},
+			},
+			{
+				status: 200,
+			},
+		);
+	} catch (error) {
+		return NextResponse.json(
+			{
+				success: false,
+				message: "Unable to submit lead",
+			},
 
-        message:
-          "Lead submitted successfully",
-
-        data:{
-          name,
-          email,
-          phone,
-          service,
-          message
-        }
-
-      },
-      {
-        status:200
-      }
-    );
-
-
-  } catch(error){
-
-
-    return NextResponse.json(
-
-      {
-        success:false,
-        message:"Unable to submit lead"
-      },
-
-      {
-        status:500
-      }
-
-    );
-
-  }
-
+			{
+				status: 500,
+			},
+		);
+	}
 }
+

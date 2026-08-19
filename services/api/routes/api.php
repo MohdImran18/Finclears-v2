@@ -2,26 +2,47 @@
 
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| Controllers
+|--------------------------------------------------------------------------
+*/
+
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\BlogController;
+use App\Http\Controllers\Api\BlogAdminController;
 use App\Http\Controllers\Api\CompanyController;
+use App\Http\Controllers\Api\CompanyDirectorController;
+use App\Http\Controllers\Api\CompanyDocumentController;
+use App\Http\Controllers\Api\CompanyShareholderController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\FAQController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\NewsletterController;
 use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\CompanyPaymentController;
 use App\Http\Controllers\Api\ServiceController;
+use App\Http\Controllers\Api\ServiceAdminController;
+use App\Http\Controllers\Api\ServiceBenefitAdminController;
+use App\Http\Controllers\Api\ServiceProcessAdminController;
+use App\Http\Controllers\Api\ServicePricingAdminController;
+use App\Http\Controllers\Api\ServiceDocumentAdminController;
+use App\Http\Controllers\Api\ServiceFaqAdminController;
 use App\Http\Controllers\Api\TestimonialController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\V1\KycController;
+use App\Http\Controllers\Api\V1\ItrReturnController;
+use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\ReviewController;
+use App\Http\Controllers\Api\V1\TaxController;
 
 Route::prefix('v1')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Health Check
+    | Health
     |--------------------------------------------------------------------------
     */
 
@@ -29,7 +50,7 @@ Route::prefix('v1')->group(function () {
         return response()->json([
             'success' => true,
             'message' => 'API is running.',
-            'timestamp' => now()->toDateTimeString(),
+            'timestamp' => now(),
         ]);
     });
 
@@ -55,62 +76,15 @@ Route::prefix('v1')->group(function () {
 
     });
 
-
-
-    /*
-|--------------------------------------------------------------------------
-| Newsletter
-|--------------------------------------------------------------------------
-*/
-
-Route::post(
-    '/newsletter/subscribe',
-    [NewsletterController::class, 'subscribe']
-);
-
-Route::get(
-    '/newsletters',
-    [NewsletterController::class, 'index']
-);
-
-Route::get(
-    '/newsletters/{newsletter}',
-    [NewsletterController::class, 'show']
-);
-
-Route::get(
-    "documents/{document}/timeline",
-    [DocumentController::class, "timeline"]
-);
-
-Route::delete(
-    '/newsletters/{newsletter}',
-    [NewsletterController::class, 'destroy']
-);
-
     /*
     |--------------------------------------------------------------------------
-    | Contact
+    | Public APIs
     |--------------------------------------------------------------------------
     */
 
-    // Public Contact Form
+    Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe']);
+
     Route::post('/contact', [ContactController::class, 'store']);
-
-    // Admin Contact Management
-    Route::middleware('auth:sanctum')->group(function () {
-
-        Route::get('/contacts', [ContactController::class, 'index']);
-        Route::get('/contacts/{contact}', [ContactController::class, 'show']);
-        Route::delete('/contacts/{contact}', [ContactController::class, 'destroy']);
-
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | Services
-    |--------------------------------------------------------------------------
-    */
 
     Route::get('/services', [ServiceController::class, 'index']);
     Route::get('/services/featured', [ServiceController::class, 'featured']);
@@ -118,19 +92,518 @@ Route::delete(
     Route::get('/services/search', [ServiceController::class, 'search']);
     Route::get('/services/{slug}', [ServiceController::class, 'show']);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Blogs
-    |--------------------------------------------------------------------------
-    */
-
     Route::get('/blogs', [BlogController::class, 'index']);
     Route::get('/blogs/featured', [BlogController::class, 'featured']);
     Route::get('/blogs/categories', [BlogController::class, 'categories']);
     Route::get('/blogs/search', [BlogController::class, 'search']);
     Route::get('/blogs/{slug}', [BlogController::class, 'show']);
 
+    /*
+    |--------------------------------------------------------------------------
+    | Protected APIs
+    |--------------------------------------------------------------------------
+    */
 
-    
+    Route::middleware('auth:sanctum')->group(function () {
 
+        /*
+        |--------------------------------------------------------------------------
+        | Newsletters
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/newsletters', [NewsletterController::class, 'index']);
+        Route::get('/newsletters/{newsletter}', [NewsletterController::class, 'show']);
+        Route::delete('/newsletters/{newsletter}', [NewsletterController::class, 'destroy']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Contacts
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/contacts', [ContactController::class, 'index']);
+        Route::get('/contacts/{contact}', [ContactController::class, 'show']);
+        Route::delete('/contacts/{contact}', [ContactController::class, 'destroy']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Service Admin CMS
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('admin/services')
+            ->middleware('admin')
+            ->group(function () {
+
+                Route::get('/', [
+                    ServiceAdminController::class,
+                    'index',
+                ]);
+
+                Route::post('/', [
+                    ServiceAdminController::class,
+                    'store',
+                ]);
+
+                Route::get('/{service}', [
+                    ServiceAdminController::class,
+                    'show',
+                ]);
+
+                Route::put('/{service}', [
+                    ServiceAdminController::class,
+                    'update',
+                ]);
+
+                Route::delete('/{service}', [
+                    ServiceAdminController::class,
+                    'destroy',
+                ]);
+            });
+        /*
+        |--------------------------------------------------------------------------
+        | Companies
+        |--------------------------------------------------------------------------
+        */
+
+        /*
+        |--------------------------------------------------------------------------
+        | Service Benefits Admin CMS
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('admin/services/{service}/benefits')
+            ->middleware('admin')
+            ->group(function () {
+
+                Route::get('/', [
+                    ServiceBenefitAdminController::class,
+                    'index',
+                ]);
+
+                Route::post('/', [
+                    ServiceBenefitAdminController::class,
+                    'store',
+                ]);
+
+                Route::get('/{benefit}', [
+                    ServiceBenefitAdminController::class,
+                    'show',
+                ]);
+
+                Route::put('/{benefit}', [
+                    ServiceBenefitAdminController::class,
+                    'update',
+                ]);
+
+                Route::delete('/{benefit}', [
+                    ServiceBenefitAdminController::class,
+                    'destroy',
+                ]);
+            });
+        /*
+        |--------------------------------------------------------------------------
+        | Service Processes Admin CMS
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('admin/services/{service}/processes')
+            ->middleware('admin')
+            ->group(function () {
+
+                Route::get('/', [
+                    ServiceProcessAdminController::class,
+                    'index',
+                ]);
+
+                Route::post('/', [
+                    ServiceProcessAdminController::class,
+                    'store',
+                ]);
+
+                Route::get('/{process}', [
+                    ServiceProcessAdminController::class,
+                    'show',
+                ]);
+
+                Route::put('/{process}', [
+                    ServiceProcessAdminController::class,
+                    'update',
+                ]);
+
+                Route::delete('/{process}', [
+                    ServiceProcessAdminController::class,
+                    'destroy',
+                ]);
+            });
+        /*
+        |--------------------------------------------------------------------------
+        | Service Documents Admin CMS
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('admin/services/{service}/documents')
+            ->middleware('admin')
+            ->group(function () {
+
+                Route::get('/', [
+                    ServiceDocumentAdminController::class,
+                    'index',
+                ]);
+
+                Route::post('/', [
+                    ServiceDocumentAdminController::class,
+                    'store',
+                ]);
+
+                Route::get('/{document}', [
+                    ServiceDocumentAdminController::class,
+                    'show',
+                ]);
+
+                Route::put('/{document}', [
+                    ServiceDocumentAdminController::class,
+                    'update',
+                ]);
+
+                Route::delete('/{document}', [
+                    ServiceDocumentAdminController::class,
+                    'destroy',
+                ]);
+            });
+        /*
+        |--------------------------------------------------------------------------
+        | Service Pricing Admin CMS
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('admin/services/{service}/pricing')
+            ->middleware('admin')
+            ->group(function () {
+
+                Route::get('/', [
+                    ServicePricingAdminController::class,
+                    'index',
+                ]);
+
+                Route::post('/', [
+                    ServicePricingAdminController::class,
+                    'store',
+                ]);
+
+                Route::get('/{pricing}', [
+                    ServicePricingAdminController::class,
+                    'show',
+                ]);
+
+                Route::put('/{pricing}', [
+                    ServicePricingAdminController::class,
+                    'update',
+                ]);
+
+                Route::delete('/{pricing}', [
+                    ServicePricingAdminController::class,
+                    'destroy',
+                ]);
+            });
+        /*
+         |--------------------------------------------------------------------------
+         | Service FAQs Admin CMS
+         |--------------------------------------------------------------------------
+         */
+
+        Route::prefix('admin/services/{service}/faqs')
+            ->middleware('admin')
+            ->group(function () {
+
+                Route::get('/', [
+                    ServiceFaqAdminController::class,
+                    'index',
+                ]);
+
+                Route::post('/', [
+                    ServiceFaqAdminController::class,
+                    'store',
+                ]);
+
+                Route::get('/{faq}', [
+                    ServiceFaqAdminController::class,
+                    'show',
+                ]);
+
+                Route::put('/{faq}', [
+                    ServiceFaqAdminController::class,
+                    'update',
+                ]);
+
+                Route::delete('/{faq}', [
+                    ServiceFaqAdminController::class,
+                    'destroy',
+                ]);
+            });
+        Route::apiResource('companies', CompanyController::class);
+
+        Route::post(
+            'companies/{company}/submit',
+            [CompanyController::class, 'submit']
+        );
+
+        Route::post(
+            'companies/{company}/documents',
+            [CompanyDocumentController::class, 'store']
+        );
+
+        Route::get(
+            'companies/{company}/directors',
+            [CompanyDirectorController::class, 'index']
+        );
+
+        Route::post(
+            'companies/{company}/directors',
+            [CompanyDirectorController::class, 'store']
+        );
+        Route::get(
+            'companies/{company}/shareholders',
+            [CompanyShareholderController::class, 'index']
+        );
+
+        Route::post(
+            'companies/{company}/shareholders',
+            [CompanyShareholderController::class, 'store']
+        );
+
+        Route::put(
+            'shareholders/{shareholder}',
+            [CompanyShareholderController::class, 'update']
+        );
+
+        Route::delete(
+            'shareholders/{shareholder}',
+            [CompanyShareholderController::class, 'destroy']
+        );
+
+        Route::put(
+            'directors/{director}',
+            [CompanyDirectorController::class, 'update']
+        );
+
+        Route::delete(
+            'directors/{director}',
+            [CompanyDirectorController::class, 'destroy']
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Documents
+        |--------------------------------------------------------------------------
+        */
+Route::apiResource('documents', DocumentController::class);
+
+        Route::get(
+            'documents/{document}/timeline',
+            [DocumentController::class, 'timeline']
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Orders
+        |--------------------------------------------------------------------------
+        */
+Route::apiResource('orders', OrderController::class);
+
+Route::patch(
+    'orders/{order}/assign',
+    [OrderController::class, 'assign']
+);
+
+Route::patch(
+    'orders/{order}/status',
+    [OrderController::class, 'changeStatus']
+);
+
+Route::post(
+    'orders/{order}/timeline',
+    [OrderController::class, 'addTimeline']
+);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Payments
+        |--------------------------------------------------------------------------
+        */
+Route::apiResource('payments', PaymentController::class);
+
+Route::post(
+    'company-payments',
+    [CompanyPaymentController::class, 'store']
+);
+
+Route::post(
+    'company-payments/cashfree/webhook',
+    [CompanyPaymentController::class, 'cashfreeWebhook']
+);
+Route::get(
+    'company-payments/cashfree/return',
+    [CompanyPaymentController::class, 'cashfreeReturn']
+)->withoutMiddleware('auth:sanctum');
+
+Route::get(
+    'company-payments/{payment}',
+    [CompanyPaymentController::class, 'show']
+);
+
+Route::post(
+    'company-payments/{payment}/verify',
+    [CompanyPaymentController::class, 'verify']
+);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Users
+        |--------------------------------------------------------------------------
+        */
+Route::apiResource('users', UserController::class);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tax Calculator
+        |--------------------------------------------------------------------------
+        */
+
+        Route::post(
+            'tax/calculate',
+            [TaxController::class, 'calculate']
+        );
+
+
+/*
+        |--------------------------------------------------------------------------
+        | KYC  Summary
+        |--------------------------------------------------------------------------
+        */
+
+             Route::post(
+                'kyc/pan/verify',
+                 [KycController::class, 'verifyPan']
+               )->name('kyc.pan.verify');
+
+           Route::post('kyc/aadhaar/send-otp', [KycController::class, 'sendAadhaarOtp'])->name('kyc.aadhaar.send-otp');
+
+           Route::post('kyc/aadhaar/verify-otp', [KycController::class, 'verifyAadhaarOtp'])->name('kyc.aadhaar.verify-otp');
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Review Summary
+        |--------------------------------------------------------------------------
+        */
+
+        Route::post(
+            'review',
+            [ReviewController::class, 'index']
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | ITR Returns
+        |--------------------------------------------------------------------------
+        */
+      Route::post(
+          'itr-returns/check-existing',
+          [ItrReturnController::class, 'existing']
+      );
+
+Route::apiResource(
+            'itr-returns',
+            ItrReturnController::class
+        );
+
+        Route::post(
+            'itr-returns/{uuid}/calculate-tax',
+            [ItrReturnController::class, 'calculateTax']
+        );
+         Route::post(
+    'itr-returns/{uuid}/validate',
+    [ItrReturnController::class, 'validate']
+);
+        Route::post(
+            'itr-returns/{uuid}/submit',
+            [ItrReturnController::class, 'submit']
+        );
+Route::get(
+    'itr-returns/{uuid}/download',
+    [ItrReturnController::class, 'download']
+);
+     
+Route::get(
+    'payments/cashfree/return',
+    [PaymentController::class, 'cashfreeReturn']
+);
+
+Route::post(
+    'payments/verify',
+    [PaymentController::class, 'verify']
+);
+    /*
+    |--------------------------------------------------------------------------
+    | Blog Admin CMS
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('admin/blogs')
+        ->middleware('admin')
+        ->group(function () {
+
+            Route::get('/', [
+                BlogAdminController::class,
+                'index',
+            ]);
+
+            Route::get('/{blog}', [
+                BlogAdminController::class,
+                'show',
+            ]);
+
+            Route::post('/', [
+                BlogAdminController::class,
+                'store',
+            ]);
+
+            Route::put('/{blog}', [
+                BlogAdminController::class,
+                'update',
+            ]);
+
+            Route::delete('/{blog}', [
+                BlogAdminController::class,
+                'destroy',
+            ]);
+            Route::patch('/{blog}', [
+                BlogAdminController::class,
+                'patch',
+            ]);
+
+            Route::post('/{blog}/publish', [
+                BlogAdminController::class,
+                'publish',
+            ]);
+
+            Route::post('/{blog}/unpublish', [
+                BlogAdminController::class,
+                'unpublish',
+            ]);
+
+            Route::post('/{blog}/feature', [
+                BlogAdminController::class,
+                'feature',
+            ]);
+
+            Route::post('/{blog}/unfeature', [
+                BlogAdminController::class,
+                'unfeature',
+            ]);
+            });
+    });
 });

@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
 
-
 export async function GET() {
+	return NextResponse.json({
+		success: true,
 
-  return NextResponse.json({
+		status: "ok",
 
-    success: true,
+		service: "FinClears Web",
 
-    status: "ok",
-
-    service: "FinClears Web",
-
-    timestamp: new Date().toISOString(),
-
-  });
-
+		timestamp: new Date().toISOString(),
+	});
 }
+

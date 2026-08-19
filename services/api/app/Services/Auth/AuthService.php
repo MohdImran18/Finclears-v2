@@ -2,129 +2,88 @@
 
 namespace App\Services\Auth;
 
-use App\Contracts\AuthServiceInterface;
-use App\Contracts\UserRepositoryInterface;
-use App\Http\Requests\Auth\LoginRequest;
-use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Symfony\Component\HttpKernel\Exception\HttpException;
+use Illuminate\Validation\ValidationException;
 
-class AuthService implements AuthServiceInterface
+class AuthService extends BaseService
 {
-    private const TOKEN_NAME = 'auth_token';
-
-    public function __construct(
-        protected UserRepositoryInterface $users
-    ) {
-    }
-
     /**
-     * Register new user.
+     * Register User
      */
-    public function register(RegisterRequest $request): array
+    public function register(array $data): array
     {
-        return DB::transaction(function () use ($request) {
+        $user = User::create([
 
-            $user = $this->users->create([
-                'name'     => $request->name,
-                'email'    => $request->email,
-                'phone'    => $request->phone,
-                'password' => Hash::make($request->password),
-                'status'   => User::STATUS_ACTIVE,
-            ]);
+            'name' => $data['name'],
 
-            // If using Spatie Permission
-            $user->assignRole('client');
+            'email' => $data['email'],
 
-            $token = $user
-                ->createToken(self::TOKEN_NAME)
-                ->plainTextToken;
+            'mobile' => $data['mobile'],
 
-            return [
-                'token' => $token,
-                'user'  => $user,
-            ];
-        });
-    }
+            'password' => Hash::make($data['password']),
 
-    /**
-     * Login.
-     */
-    public function login(LoginRequest $request): array
-    {
-        $user = $this->users->findByEmail(
-            $request->email
-        );
-
-        if (
-            ! $user ||
-            ! Hash::check(
-                $request->password,
-                $user->password
-            )
-        ) {
-            throw new HttpException(
-                401,
-                'Invalid email or password.'
-            );
-        }
-
-        if ($user->isBlocked()) {
-            throw new HttpException(
-                403,
-                'Your account has been blocked.'
-            );
-        }
-
-        if (! $user->isActive()) {
-            throw new HttpException(
-                403,
-                'Your account is inactive.'
-            );
-        }
-
-        // Business rule:
-        // Keep only one active login.
-
-        $user->tokens()->delete();
-
-        $user->update([
-            'last_login_at' => now(),
         ]);
 
-        $token = $user
-            ->createToken(self::TOKEN_NAME)
-            ->plainTextToken;
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return [
+
+            'user' => new UserResource($user),
+
             'token' => $token,
-            'user'  => $user,
+
         ];
     }
 
     /**
-     * Current user.
+     * Login User
      */
-    public function me(
-        Request $request
-    ): User
+    public function login(array $credentials): array
     {
-        return $request->user();
+        if (! Auth::attempt([
+            'email' => $credentials['email'],
+            'password' => $credentials['password'],
+        ])) {
+
+            throw ValidationException::withMessages([
+                'email' => ['Invalid credentials.'],
+            ]);
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+
+        $user->tokens()->delete();
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return [
+
+            'user' => new UserResource($user),
+
+            'token' => $token,
+
+        ];
     }
 
     /**
-     * Logout.
+     * Logout User
      */
-    public function logout(
-        Request $request
-    ): void
+    public function logout(User $user): bool
     {
-        $request
-            ->user()
-            ?->currentAccessToken()
-            ?->delete();
+        $user->currentAccessToken()?->delete();
+
+        return true;
+    }
+
+    /**
+     * Current User
+     */
+    public function me(User $user): UserResource
+    {
+        return new UserResource($user);
     }
 }

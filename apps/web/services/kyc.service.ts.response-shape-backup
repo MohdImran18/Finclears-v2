@@ -1,0 +1,46 @@
+﻿import api from "@/lib/api";
+
+export interface VerifyPanPayload {
+    itr_return_uuid: string;
+    pan: string;
+    name: string;
+    date_of_birth: string;
+}
+
+export interface VerifyPanData {
+    id?: number;
+    pan: string;
+    name_as_per_pan?: string;
+    date_of_birth?: string;
+    verification_status:
+        | "verified"
+        | "failed"
+        | "pending";
+    name_match?: boolean;
+    date_of_birth_match?: boolean;
+    aadhaar_seeding_status?: string;
+    transaction_id?: string;
+    provider?: string;
+    verified_at?: string;
+}
+
+export interface VerifyPanResponse {
+    message?: string;
+    data?: VerifyPanData;
+}
+
+class KycService {
+    async verifyPan(
+        payload: VerifyPanPayload
+    ) {
+        return api.post<VerifyPanResponse>(
+            "/kyc/pan/verify",
+            payload
+        );
+    }
+}
+
+const kycService =
+    new KycService();
+
+export default kycService;

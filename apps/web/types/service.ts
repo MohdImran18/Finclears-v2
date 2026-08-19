@@ -1,6 +1,6 @@
 /* ==========================================================
  | Category
- * ========================================================= */
+ * ========================================================== */
 
 export interface ServiceCategory {
   id: number;
@@ -10,145 +10,167 @@ export interface ServiceCategory {
 
 /* ==========================================================
  | Benefits
- * ========================================================= */
+ * ========================================================== */
 
 export interface ServiceBenefit {
   id: number;
+  service_id?: number;
   title: string;
-  description: string;
+  description?: string | null;
+  icon?: string | null;
+  sort_order?: number;
+  status?: boolean;
 }
 
 /* ==========================================================
  | Process
- * ========================================================= */
+ * ========================================================== */
 
 export interface ServiceProcess {
   id: number;
+  service_id?: number;
+  step_number?: number;
   title: string;
-  description: string;
+  description?: string | null;
+  icon?: string | null;
   sort_order?: number;
+  status?: boolean;
 }
 
 /* ==========================================================
  | Documents
- * ========================================================= */
+ * ========================================================== */
 
 export interface ServiceDocument {
   id: number;
-  title: string;
-  description?: string;
+  service_id?: number;
+  document_name: string;
+  description?: string | null;
+  is_required?: boolean;
+  sort_order?: number;
+  status?: boolean;
 }
 
 /* ==========================================================
  | Pricing
- * ========================================================= */
+ * ========================================================== */
 
 export interface ServicePricing {
   id: number;
-  title: string;
-  price: number;
-  description?: string;
+  service_id?: number;
+  plan_name: string;
+  price: string | number;
+  original_price?: string | number | null;
+  currency?: string | null;
+  features?: string[] | Record<string, unknown> | null;
+  is_popular?: boolean;
+  is_recommended?: boolean;
+  status?: boolean;
+  sort_order?: number;
 }
 
 /* ==========================================================
  | FAQ
- * ========================================================= */
+ * ========================================================== */
 
 export interface ServiceFaq {
   id: number;
+  service_id?: number;
   question: string;
   answer: string;
+  sort_order?: number;
+  status?: boolean;
 }
 
 /* ==========================================================
  | Service
- * ========================================================= */
+ * ========================================================== */
 
 export interface Service {
   id: number;
 
-  category?: ServiceCategory;
-
+  // Basic Information
+  name?: string;
   title: string;
-
   slug: string;
+  code?: string | null;
 
-  code?: string;
+  // Category
+  category?: ServiceCategory | null;
 
-  icon?: string;
-
+  // Media
+  icon?: string | null;
+  image?: string | null;
   featured_image?: string | null;
-
   banner_image?: string | null;
 
-  short_description: string;
+  // Description
+  short_description?: string | null;
+  description?: string | null;
 
-  description: string;
+  // Pricing
+  starting_price?: string | number | null;
+  price_label?: string | null;
 
-  starting_price: number;
+  // Processing
+  processing_days?: number | null;
+  processing_time?: string | null;
 
-  price_label?: string;
+  // SEO
+  seo_keywords?: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  meta_keywords?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
 
-  processing_days?: number;
-
-  processing_time?: string;
-
-  meta_title?: string;
-
-  meta_description?: string;
-
-  meta_keywords?: string;
-
-  seo_title?: string;
-
-  seo_description?: string;
-
+  // Status
   is_featured: boolean;
-
   is_popular: boolean;
-
   status?: boolean;
-
   sort_order?: number;
 
+  // Analytics
   views?: number;
-
   orders?: number;
 
+  // Relations
   benefits?: ServiceBenefit[];
-
   processes?: ServiceProcess[];
-
   documents?: ServiceDocument[];
-
   pricing?: ServicePricing[];
-
   faqs?: ServiceFaq[];
 
+  // Timestamps
   created_at?: string;
-
   updated_at?: string;
 }
 
 /* ==========================================================
  | API Responses
- * ========================================================= */
+ * ========================================================== */
 
 export interface ServiceResponse {
   success: boolean;
   message: string;
-  data: Service;
+  data: {
+    service: Service;
+  };
+  meta?: Record<string, unknown>;
 }
 
 export interface ServiceListResponse {
   success: boolean;
   message: string;
-  data: Service[];
+  data: {
+    services: Service[];
+  };
+  meta?: Record<string, unknown>;
 }
 
 /* ==========================================================
  | Filters
- * ========================================================= */
+ * ========================================================== */
 
 export interface ServiceFilters {
   search?: string;

@@ -2,25 +2,61 @@
 
 namespace App\Http\Requests\Company;
 
-class UpdateCompanyRequest extends StoreCompanyRequest
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class UpdateCompanyRequest extends FormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
-        $rules = parent::rules();
+        return [
+            'service_type' => ['sometimes', 'required', 'string', 'max:100'],
+            'company_name' => ['sometimes', 'required', 'string', 'max:255'],
+            'company_type' => ['sometimes', 'required', 'string', 'max:100'],
 
-        foreach ($rules as $key => $rule) {
+            'business_activity' => ['nullable', 'string'],
 
-            if (is_array($rule)) {
+            'authorized_capital' => ['nullable', 'numeric', 'min:0'],
+            'paid_up_capital' => ['nullable', 'numeric', 'min:0'],
 
-                $rules[$key] = array_map(
-                    fn ($item) => $item === 'required' ? 'sometimes' : $item,
-                    $rule
-                );
+            'state' => ['sometimes', 'required', 'string', 'max:100'],
+            'city' => ['sometimes', 'required', 'string', 'max:100'],
+            'address' => ['sometimes', 'required', 'string'],
+            'pin_code' => ['sometimes', 'required', 'string', 'max:10'],
 
-            }
+            'cin' => ['nullable', 'string', 'max:255'],
+            'llpin' => ['nullable', 'string', 'max:255'],
+            'pan_number' => ['nullable', 'string', 'max:255'],
+            'tan_number' => ['nullable', 'string', 'max:255'],
+            'gst_number' => ['nullable', 'string', 'max:255'],
 
-        }
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'website' => ['nullable', 'url', 'max:255'],
 
-        return $rules;
+            'status' => [
+                'sometimes',
+                Rule::in([
+                    'draft',
+                    'pending',
+                    'approved',
+                    'rejected',
+                    'completed',
+                ]),
+            ],
+
+            'payment_status' => [
+                'sometimes',
+                Rule::in(['pending', 'paid', 'failed', 'refunded']),
+            ],
+
+            'incorporation_date' => ['nullable', 'date'],
+            'remarks' => ['nullable', 'string'],
+        ];
     }
 }

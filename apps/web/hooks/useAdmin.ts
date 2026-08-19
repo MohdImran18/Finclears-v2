@@ -7,35 +7,35 @@ import { useQuery } from "@tanstack/react-query";
  * ========================================================== */
 
 export function useDashboard() {
-  return useQuery({
-    queryKey: ["admin", "dashboard"],
-    queryFn: async () => ({
-      data: {
-        users: 0,
-        companies: 0,
-        orders: 0,
-        revenue: 0,
-      },
-    }),
-  });
+	return useQuery({
+		queryKey: ["admin", "dashboard"],
+		queryFn: async () => ({
+			data: {
+				users: 0,
+				companies: 0,
+				orders: 0,
+				revenue: 0,
+			},
+		}),
+	});
 }
 
 export function useRevenueChart() {
-  return useQuery({
-    queryKey: ["admin", "revenue-chart"],
-    queryFn: async () => ({
-      data: [],
-    }),
-  });
+	return useQuery({
+		queryKey: ["admin", "revenue-chart"],
+		queryFn: async () => ({
+			data: [],
+		}),
+	});
 }
 
 export function useActivities() {
-  return useQuery({
-    queryKey: ["admin", "activities"],
-    queryFn: async () => ({
-      data: [],
-    }),
-  });
+	return useQuery({
+		queryKey: ["admin", "activities"],
+		queryFn: async () => ({
+			data: [],
+		}),
+	});
 }
 
 /* ==========================================================
@@ -43,12 +43,12 @@ export function useActivities() {
  * ========================================================== */
 
 export function useAdminCompanies() {
-  return useQuery({
-    queryKey: ["admin", "companies"],
-    queryFn: async () => ({
-      data: [],
-    }),
-  });
+	return useQuery({
+		queryKey: ["admin", "companies"],
+		queryFn: async () => ({
+			data: [],
+		}),
+	});
 }
 
 /* ==========================================================
@@ -56,12 +56,12 @@ export function useAdminCompanies() {
  * ========================================================== */
 
 export function useAdminUsers() {
-  return useQuery({
-    queryKey: ["admin", "users"],
-    queryFn: async () => ({
-      data: [],
-    }),
-  });
+	return useQuery({
+		queryKey: ["admin", "users"],
+		queryFn: async () => ({
+			data: [],
+		}),
+	});
 }
 
 /* ==========================================================
@@ -69,12 +69,12 @@ export function useAdminUsers() {
  * ========================================================== */
 
 export function useAdminDocuments() {
-  return useQuery({
-    queryKey: ["admin", "documents"],
-    queryFn: async () => ({
-      data: [],
-    }),
-  });
+	return useQuery({
+		queryKey: ["admin", "documents"],
+		queryFn: async () => ({
+			data: [],
+		}),
+	});
 }
 
 /* ==========================================================
@@ -82,12 +82,12 @@ export function useAdminDocuments() {
  * ========================================================== */
 
 export function useAdminOrders() {
-  return useQuery({
-    queryKey: ["admin", "orders"],
-    queryFn: async () => ({
-      data: [],
-    }),
-  });
+	return useQuery({
+		queryKey: ["admin", "orders"],
+		queryFn: async () => ({
+			data: [],
+		}),
+	});
 }
 
 /* ==========================================================
@@ -95,12 +95,12 @@ export function useAdminOrders() {
  * ========================================================== */
 
 export function useAdminPayments() {
-  return useQuery({
-    queryKey: ["admin", "payments"],
-    queryFn: async () => ({
-      data: [],
-    }),
-  });
+	return useQuery({
+		queryKey: ["admin", "payments"],
+		queryFn: async () => ({
+			data: [],
+		}),
+	});
 }
 
 /* ==========================================================
@@ -108,12 +108,12 @@ export function useAdminPayments() {
  * ========================================================== */
 
 export function useAdminServices() {
-  return useQuery({
-    queryKey: ["admin", "services"],
-    queryFn: async () => ({
-      data: [],
-    }),
-  });
+	return useQuery({
+		queryKey: ["admin", "services"],
+		queryFn: async () => ({
+			data: [],
+		}),
+	});
 }
 
 /* ==========================================================
@@ -121,12 +121,12 @@ export function useAdminServices() {
  * ========================================================== */
 
 export function useAdminBlogs() {
-  return useQuery({
-    queryKey: ["admin", "blogs"],
-    queryFn: async () => ({
-      data: [],
-    }),
-  });
+	return useQuery({
+		queryKey: ["admin", "blogs"],
+		queryFn: async () => ({
+			data: [],
+		}),
+	});
 }
 
 /* ==========================================================
@@ -134,12 +134,12 @@ export function useAdminBlogs() {
  * ========================================================== */
 
 export function useAdminLeads() {
-  return useQuery({
-    queryKey: ["admin", "leads"],
-    queryFn: async () => ({
-      data: [],
-    }),
-  });
+	return useQuery({
+		queryKey: ["admin", "leads"],
+		queryFn: async () => ({
+			data: [],
+		}),
+	});
 }
 
 /* ==========================================================
@@ -147,12 +147,12 @@ export function useAdminLeads() {
  * ========================================================== */
 
 export function useAdminContacts() {
-  return useQuery({
-    queryKey: ["admin", "contacts"],
-    queryFn: async () => ({
-      data: [],
-    }),
-  });
+	return useQuery({
+		queryKey: ["admin", "contacts"],
+		queryFn: async () => ({
+			data: [],
+		}),
+	});
 }
 
 /* ==========================================================
@@ -160,12 +160,12 @@ export function useAdminContacts() {
  * ========================================================== */
 
 export function useAdminNewsletter() {
-  return useQuery({
-    queryKey: ["admin", "newsletter"],
-    queryFn: async () => ({
-      data: [],
-    }),
-  });
+	return useQuery({
+		queryKey: ["admin", "newsletter"],
+		queryFn: async () => ({
+			data: [],
+		}),
+	});
 }
 
 /* ==========================================================
@@ -173,3 +173,4 @@ export function useAdminNewsletter() {
  * ========================================================== */
 
 export const useAdminDashboard = useDashboard;
+

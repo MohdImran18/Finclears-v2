@@ -1,0 +1,225 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\ApiController;
+use App\Models\ItrKycVerification;
+use App\Models\ItrReturn;
+use App\Services\Sandbox\SandboxService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
+
+class KycController extends ApiController
+{
+    public function __construct(
+        protected SandboxService $sandbox
+    ) {
+    }
+
+    public function verifyPan(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'itr_return_uuid' => [
+                'required',
+                'uuid',
+            ],
+
+            'pan' => [
+                'required',
+                'string',
+                'size:10',
+                'regex:/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/',
+            ],
+
+            'name' => [
+                'required',
+                'string',
+                'max:150',
+            ],
+
+            'date_of_birth' => [
+                'required',
+                'date_format:d/m/Y',
+            ],
+        ]);
+
+        $user = $request->user();
+
+        if (!$user) {
+            return $this->error(
+                'Authentication required.',
+                401
+            );
+        }
+
+        $itrReturn = ItrReturn::where(
+            'uuid',
+            $validated['itr_return_uuid']
+        )->first();
+
+        if (!$itrReturn) {
+            return $this->error(
+                'ITR Return not found.',
+                404
+            );
+        }
+
+        if ((int) $itrReturn->user_id !== (int) $user->id) {
+            return $this->error(
+                'You are not authorized to access this ITR Return.',
+                403
+            );
+        }
+
+        try {
+
+            $result = $this->sandbox->verifyPan(
+                strtoupper($validated['pan']),
+                $validated['name'],
+                $validated['date_of_birth'],
+                'For onboarding customers'
+            );
+
+            $data = $result['data'] ?? [];
+
+            $panStatus = strtolower(
+                (string) ($data['status'] ?? '')
+            );
+
+            $nameMatch = (bool) (
+                $data['name_as_per_pan_match'] ?? false
+            );
+
+            $dobMatch = (bool) (
+                $data['date_of_birth_match'] ?? false
+            );
+
+            $isVerified =
+                $panStatus === 'valid'
+                && $nameMatch
+                && $dobMatch;
+
+            $kyc = DB::transaction(function () use (
+                $validated,
+                $user,
+                $itrReturn,
+                $result,
+                $data,
+                $isVerified
+            ) {
+
+                $dateOfBirth = \DateTime::createFromFormat(
+                    'd/m/Y',
+                    $validated['date_of_birth']
+                );
+
+                $pan = strtoupper($validated['pan']);
+
+                $kyc = ItrKycVerification::updateOrCreate(
+                    [
+                        'itr_return_id' => $itrReturn->id,
+                        'pan' => $pan,
+                    ],
+                    [
+                        'user_id' => $user->id,
+
+                        'name_as_per_pan' => $validated['name'],
+
+                        'date_of_birth' => $dateOfBirth
+                            ? $dateOfBirth->format('Y-m-d')
+                            : null,
+
+                        'verification_status' => $isVerified
+                            ? 'verified'
+                            : 'failed',
+
+                        'name_match' => $data[
+                            'name_as_per_pan_match'
+                        ] ?? null,
+
+                        'date_of_birth_match' => $data[
+                            'date_of_birth_match'
+                        ] ?? null,
+
+                        'aadhaar_seeding_status' => $data[
+                            'aadhaar_seeding_status'
+                        ] ?? null,
+
+                        'transaction_id' => $result[
+                            'transaction_id'
+                        ] ?? null,
+
+                        'provider' => 'sandbox',
+
+                        'provider_response' => $result,
+
+                        'verified_at' => $isVerified
+                            ? now()
+                            : null,
+                    ]
+                );
+
+                $itrReturn->update([
+                    'pan' => $pan,
+
+                    'pan_verification_status' => $isVerified
+                        ? 'verified'
+                        : 'failed',
+
+                    'pan_verified_at' => $isVerified
+                        ? now()
+                        : null,
+
+                    'pan_transaction_id' => $result[
+                        'transaction_id'
+                    ] ?? null,
+                ]);
+
+                return $kyc;
+            });
+
+            return $this->success(
+                [
+                    'verification' => [
+                        'id' => $kyc->id,
+                        'status' => $kyc->verification_status,
+                        'pan' => $kyc->pan,
+                        'name_match' => $kyc->name_match,
+                        'date_of_birth_match' =>
+                            $kyc->date_of_birth_match,
+                        'aadhaar_seeding_status' =>
+                            $kyc->aadhaar_seeding_status,
+                        'transaction_id' =>
+                            $kyc->transaction_id,
+                        'verified_at' =>
+                            $kyc->verified_at,
+                    ],
+
+                    'provider' => $result,
+                ],
+                $isVerified
+                    ? 'PAN verified successfully.'
+                    : 'PAN verification completed but could not be verified.'
+            );
+
+        } catch (Throwable $e) {
+
+            Log::error(
+                'Sandbox PAN verification failed.',
+                [
+                    'user_id' => $user->id,
+                    'itr_return_id' => $itrReturn->id,
+                    'message' => $e->getMessage(),
+                ]
+            );
+
+            return $this->error(
+                'Unable to verify PAN at this time.',
+                502
+            );
+        }
+    }
+}

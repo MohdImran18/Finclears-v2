@@ -1,30 +1,29 @@
-import SettingsLayout from "@/components/dashboard/settings/SettingsLayout";
 import AccountSettings from "@/components/dashboard/settings/AccountSettings";
-import SecuritySettings from "@/components/dashboard/settings/SecuritySettings";
+import DangerZone from "@/components/dashboard/settings/DangerZone";
+import LanguageSettings from "@/components/dashboard/settings/LanguageSettings";
 import NotificationSettings from "@/components/dashboard/settings/NotificationSettings";
 import PreferenceSettings from "@/components/dashboard/settings/PreferenceSettings";
+import SecuritySettings from "@/components/dashboard/settings/SecuritySettings";
+import SettingsLayout from "@/components/dashboard/settings/SettingsLayout";
 import ThemeSettings from "@/components/dashboard/settings/ThemeSettings";
-import LanguageSettings from "@/components/dashboard/settings/LanguageSettings";
-import DangerZone from "@/components/dashboard/settings/DangerZone";
 
 export default function SettingsPage() {
-  return (
-    <SettingsLayout>
+	return (
+		<SettingsLayout>
+			<AccountSettings />
 
-      <AccountSettings />
+			<SecuritySettings />
 
-      <SecuritySettings />
+			<NotificationSettings />
 
-      <NotificationSettings />
+			<PreferenceSettings />
 
-      <PreferenceSettings />
+			<ThemeSettings />
 
-      <ThemeSettings />
+			<LanguageSettings />
 
-      <LanguageSettings />
-
-      <DangerZone />
-
-    </SettingsLayout>
-  );
+			<DangerZone />
+		</SettingsLayout>
+	);
 }
+

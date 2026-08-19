@@ -1,17 +1,13 @@
 "use client";
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import * as PaymentService from "@/services/payments/payment.service";
 
 import type {
-  CreatePaymentRequest,
-  PaymentFilters,
-  VerifyPaymentRequest,
+	CreatePaymentRequest,
+	PaymentFilters,
+	VerifyPaymentRequest,
 } from "@/types/payment";
 
 /* ==========================================================
@@ -19,52 +15,42 @@ import type {
  * ========================================================= */
 
 export const paymentKeys = {
-  all: ["payments"] as const,
+	all: ["payments"] as const,
 
-  lists: () =>
-    [...paymentKeys.all, "list"] as const,
+	lists: () => [...paymentKeys.all, "list"] as const,
 
-  list: (filters?: PaymentFilters) =>
-    [...paymentKeys.lists(), filters] as const,
+	list: (filters?: PaymentFilters) =>
+		[...paymentKeys.lists(), filters] as const,
 
-  details: () =>
-    [...paymentKeys.all, "detail"] as const,
+	details: () => [...paymentKeys.all, "detail"] as const,
 
-  detail: (id: number) =>
-    [...paymentKeys.details(), id] as const,
+	detail: (id: number) => [...paymentKeys.details(), id] as const,
 
-  invoices: ["invoices"] as const,
+	invoices: ["invoices"] as const,
 
-  invoice: (id: number) =>
-    [...paymentKeys.invoices, id] as const,
+	invoice: (id: number) => [...paymentKeys.invoices, id] as const,
 };
 
 /* ==========================================================
  | Payments
  * ========================================================= */
 
-export function usePayments(
-  filters?: PaymentFilters
-) {
-  return useQuery({
-    queryKey: paymentKeys.list(filters),
+export function usePayments(filters?: PaymentFilters) {
+	return useQuery({
+		queryKey: paymentKeys.list(filters),
 
-    queryFn: () =>
-      PaymentService.getPayments(filters),
-  });
+		queryFn: () => PaymentService.getPayments(filters),
+	});
 }
 
-export function usePayment(
-  id: number
-) {
-  return useQuery({
-    enabled: !!id,
+export function usePayment(id: number) {
+	return useQuery({
+		enabled: !!id,
 
-    queryKey: paymentKeys.detail(id),
+		queryKey: paymentKeys.detail(id),
 
-    queryFn: () =>
-      PaymentService.getPayment(id),
-  });
+		queryFn: () => PaymentService.getPayment(id),
+	});
 }
 
 /* ==========================================================
@@ -72,24 +58,18 @@ export function usePayment(
  * ========================================================= */
 
 export function useCreatePayment() {
-  const queryClient =
-    useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (
-      data: CreatePaymentRequest
-    ) =>
-      PaymentService.createPayment(
-        data
-      ),
+	return useMutation({
+		mutationFn: (data: CreatePaymentRequest) =>
+			PaymentService.createPayment(data),
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey:
-          paymentKeys.lists(),
-      });
-    },
-  });
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: paymentKeys.lists(),
+			});
+		},
+	});
 }
 
 /* ==========================================================
@@ -97,24 +77,18 @@ export function useCreatePayment() {
  * ========================================================= */
 
 export function useVerifyPayment() {
-  const queryClient =
-    useQueryClient();
+        const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (
-      data: VerifyPaymentRequest
-    ) =>
-      PaymentService.verifyPayment(
-        data
-      ),
+        return useMutation({
+                mutationFn: (id: number) =>
+                        PaymentService.verifyPayment(id),
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey:
-          paymentKeys.lists(),
-      });
-    },
-  });
+                onSuccess: () => {
+                        queryClient.invalidateQueries({
+                                queryKey: paymentKeys.lists(),
+                        });
+                },
+        });
 }
 
 /* ==========================================================
@@ -122,24 +96,17 @@ export function useVerifyPayment() {
  * ========================================================= */
 
 export function useRefundPayment() {
-  const queryClient =
-    useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (
-      id: number
-    ) =>
-      PaymentService.refundPayment(
-        id
-      ),
+	return useMutation({
+		mutationFn: (id: number) => PaymentService.refundPayment(id),
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey:
-          paymentKeys.lists(),
-      });
-    },
-  });
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: paymentKeys.lists(),
+			});
+		},
+	});
 }
 
 /* ==========================================================
@@ -147,27 +114,21 @@ export function useRefundPayment() {
  * ========================================================= */
 
 export function useInvoices() {
-  return useQuery({
-    queryKey:
-      paymentKeys.invoices,
+	return useQuery({
+		queryKey: paymentKeys.invoices,
 
-    queryFn: () =>
-      PaymentService.getInvoices(),
-  });
+		queryFn: () => PaymentService.getInvoices(),
+	});
 }
 
-export function useInvoice(
-  id: number
-) {
-  return useQuery({
-    enabled: !!id,
+export function useInvoice(id: number) {
+	return useQuery({
+		enabled: !!id,
 
-    queryKey:
-      paymentKeys.invoice(id),
+		queryKey: paymentKeys.invoice(id),
 
-    queryFn: () =>
-      PaymentService.getInvoice(id),
-  });
+		queryFn: () => PaymentService.getInvoice(id),
+	});
 }
 
 /* ==========================================================
@@ -175,12 +136,8 @@ export function useInvoice(
  * ========================================================= */
 
 export function useDownloadInvoice() {
-  return useMutation({
-    mutationFn: (
-      id: number
-    ) =>
-      PaymentService.downloadInvoice(
-        id
-      ),
-  });
+	return useMutation({
+		mutationFn: (id: number) => PaymentService.downloadInvoice(id),
+	});
 }
+

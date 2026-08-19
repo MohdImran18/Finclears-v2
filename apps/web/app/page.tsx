@@ -1,78 +1,70 @@
 import type { Metadata } from "next";
-
-import Navbar from "@/components/home/Navbar";
+import CTA from "@/components/home/CTA";
+import FAQ from "@/components/home/FAQ";
+import FeaturedServices from "@/components/home/FeaturedServices";
 import Hero from "@/components/home/Hero";
 import LogoCloud from "@/components/home/LogoCloud";
-import Stats from "@/components/home/Stats";
-import FeaturedServices from "@/components/home/FeaturedServices";
-import WhyChoose from "@/components/home/WhyChoose";
-import Process from "@/components/home/Process";
-import Pricing from "@/components/home/Pricing";
-import Testimonials from "@/components/home/Testimonials";
-import FAQ from "@/components/home/FAQ";
+import Navbar from "@/components/home/Navbar";
 import Newsletter from "@/components/home/Newsletter";
-import CTA from "@/components/home/CTA";
+import Pricing from "@/components/home/Pricing";
+import Process from "@/components/home/Process";
+import Stats from "@/components/home/Stats";
+import Testimonials from "@/components/home/Testimonials";
+import WhyChoose from "@/components/home/WhyChoose";
 
 export const metadata: Metadata = {
-  title:
-    "FinClears | Company Registration, GST, Trademark & Compliance",
+	title: "FinClears | Company Registration, GST, Trademark & Compliance",
 
-  description:
-    "Start and grow your business with FinClears. Company Registration, GST Registration, Trademark Registration, Accounting, ROC Compliance and Tax Filing.",
+	description:
+		"Start and grow your business with FinClears. Company Registration, GST Registration, Trademark Registration, Accounting, ROC Compliance and Tax Filing.",
 
-  openGraph: {
-    title:
-      "FinClears | Business Registration & Compliance",
+	openGraph: {
+		title: "FinClears | Business Registration & Compliance",
 
-    description:
-      "Trusted platform for Company Registration, GST, Trademark and Tax Compliance.",
+		description:
+			"Trusted platform for Company Registration, GST, Trademark and Tax Compliance.",
 
-    images: [
-      "/images/og/home.jpg",
-    ],
-  },
+		images: ["/images/og/home.jpg"],
+	},
 
-  twitter: {
-    card: "summary_large_image",
+	twitter: {
+		card: "summary_large_image",
 
-    title:
-      "FinClears",
+		title: "FinClears",
 
-    description:
-      "Business Registration & Compliance Platform",
-  },
+		description: "Business Registration & Compliance Platform",
+	},
 };
 
 export default function HomePage() {
-  return (
-    <>
-      <Navbar />
+	return (
+		<>
+			<Navbar />
 
-      <main className="bg-slate-50">
+			<main className="bg-slate-50">
+				<Hero />
 
-        <Hero />
+				<LogoCloud />
 
-        <LogoCloud />
+				<Stats />
 
-        <Stats />
+				<FeaturedServices />
 
-        <FeaturedServices />
+				<WhyChoose />
 
-        <WhyChoose />
+				<Process />
 
-        <Process />
+				<Pricing />
 
-        <Pricing />
+				<Testimonials />
 
-        <Testimonials />
+				<FAQ />
 
-        <FAQ />
+				<Newsletter />
 
-        <Newsletter />
-
-        <CTA />
-
-      </main>
-    </>
-  );
+				<CTA />
+			</main>
+		</>
+	);
 }
+

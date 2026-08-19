@@ -3,81 +3,81 @@
  * ========================================================= */
 
 export type DocumentStatus =
-  | "pending"
-  | "uploaded"
-  | "under_review"
-  | "verified"
-  | "rejected";
+	| "pending"
+	| "uploaded"
+	| "under_review"
+	| "verified"
+	| "rejected";
 
 /* ==========================================================
  | Document Type
  * ========================================================= */
 
 export type DocumentType =
-  | "pan"
-  | "aadhaar"
-  | "passport"
-  | "photo"
-  | "driving_license"
-  | "electricity_bill"
-  | "bank_statement"
-  | "cancelled_cheque"
-  | "gst"
-  | "gst_certificate"
-  | "iec_certificate"
-  | "incorporation_certificate"
-  | "financial_statement"
-  | "itr"
-  | "trademark_certificate"
-  | "rent_agreement"
-  | "noc"
-  | "moa"
-  | "aoa"
-  | "spice_plus"
-  | "inc9"
-  | "agile"
-  | "other";
+	| "pan"
+	| "aadhaar"
+	| "passport"
+	| "photo"
+	| "driving_license"
+	| "electricity_bill"
+	| "bank_statement"
+	| "cancelled_cheque"
+	| "gst"
+	| "gst_certificate"
+	| "iec_certificate"
+	| "incorporation_certificate"
+	| "financial_statement"
+	| "itr"
+	| "trademark_certificate"
+	| "rent_agreement"
+	| "noc"
+	| "moa"
+	| "aoa"
+	| "spice_plus"
+	| "inc9"
+	| "agile"
+	| "other";
 
 /* ==========================================================
  | Document
  * ========================================================= */
 
 export interface Document {
-  id: number;
+	id: number;
 
-  company_id?: number | null;
+	company_id?: number | null;
 
-  order_id?: number | null;
+	order_id?: number | null;
 
-  title: string;
+	title: string;
 
-  document_type?: DocumentType;
+	document_type?: DocumentType;
 
-  type: DocumentType;
+	type: DocumentType;
 
-  file_name: string;
+	file_name: string;
 
-  file_url: string;
+	file_url: string;
 
-  mime_type: string;
+	mime_type: string;
 
-  extension: string;
+	extension: string;
 
-  size: number;
+	size: number;
 
-  status: DocumentStatus;
+	status: DocumentStatus;
 
-  remarks?: string | null;
+	remarks?: string | null;
 
-  uploaded_by?: number | null;
+	uploaded_by?: number | null;
 
-  verified_by?: number | null;
+	verified_by?: number | null;
 
-  verified_at?: string | null;
+	verified_at?: string | null;
 
-  created_at: string;
+	created_at: string;
 
-  updated_at: string;
+	updated_at: string;
 }
 
 /* ==========================================================
@@ -85,19 +85,19 @@ export interface Document {
  * ========================================================= */
 
 export interface DocumentFilters {
-  search?: string;
+	search?: string;
 
-  status?: DocumentStatus;
+	status?: DocumentStatus;
 
-  type?: DocumentType;
+	type?: DocumentType;
 
-  company_id?: number;
+	company_id?: number;
 
-  order_id?: number;
+	order_id?: number;
 
-  page?: number;
+	page?: number;
 
-  per_page?: number;
+	per_page?: number;
 }
 
 /* ==========================================================
@@ -105,17 +105,17 @@ export interface DocumentFilters {
  * ========================================================= */
 
 export interface UploadDocumentRequest {
-  title: string;
+	title: string;
 
-  document_type: DocumentType;
+	document_type: DocumentType;
 
-  company_id?: number;
+	company_id?: number;
 
-  order_id?: number;
+	order_id?: number;
 
-  remarks?: string;
+	remarks?: string;
 
-  file: File;
+	file: File;
 }
 
 /* ==========================================================
@@ -123,13 +123,13 @@ export interface UploadDocumentRequest {
  * ========================================================= */
 
 export interface UpdateDocumentRequest {
-  title?: string;
+	title?: string;
 
-  document_type?: DocumentType;
+	document_type?: DocumentType;
 
-  remarks?: string;
+	remarks?: string;
 
-  file?: File;
+	file?: File;
 }
 
 /* ==========================================================
@@ -137,15 +137,15 @@ export interface UpdateDocumentRequest {
  * ========================================================= */
 
 export interface DocumentTimelineItem {
-  id: number;
+	id: number;
 
-  action: string;
+	action: string;
 
-  user: string;
+	user: string;
 
-  remarks?: string | null;
+	remarks?: string | null;
 
-  created_at: string;
+	created_at: string;
 }
 
 /* ==========================================================
@@ -153,27 +153,27 @@ export interface DocumentTimelineItem {
  * ========================================================= */
 
 export interface DocumentResponse {
-  success: boolean;
+	success: boolean;
 
-  message: string;
+	message: string;
 
-  data: Document;
+	data: Document;
 }
 
 export interface DocumentListResponse {
-  success: boolean;
+	success: boolean;
 
-  message: string;
+	message: string;
 
-  data: Document[];
+	data: Document[];
 
-  meta?: {
-    current_page: number;
+	meta?: {
+		current_page: number;
 
-    last_page: number;
+		last_page: number;
 
-    per_page: number;
+		per_page: number;
 
-    total: number;
-  };
+		total: number;
+	};
 }

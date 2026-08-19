@@ -1,32 +1,33 @@
 "use client";
 
-import DirectorForm from "./forms/DirectorForm";
+import DirectorForm, { type Director } from "./forms/DirectorForm";
+import { useCompanyWizard } from "@/hooks/useCompanyWizard";
 
 interface Props {
-  next: () => void;
-  previous: () => void;
+    next: () => void;
+    previous: () => void;
 }
 
-export default function DirectorsStep({
-  next,
-  previous,
-}: Props) {
-  function handleNext() {
-    // TODO:
-    // Save directors in Company Wizard Store
-    next();
-  }
+export default function DirectorsStep({ next, previous }: Props) {
+    const { data, updateData } = useCompanyWizard();
 
-  return (
-    <>
-      <h2 className="mb-6 text-2xl font-bold">
-        Company Directors
-      </h2>
+    function handleNext(directors: Director[]) {
+        updateData({
+            promoters: directors,
+        });
 
-      <DirectorForm
-        onPrevious={previous}
-        onNext={handleNext}
-      />
-    </>
-  );
+        next();
+    }
+
+    return (
+        <>
+            <h2 className="mb-6 text-2xl font-bold">Company Directors</h2>
+
+            <DirectorForm
+                defaultValues={data.promoters ?? []}
+                onPrevious={previous}
+                onNext={handleNext}
+            />
+        </>
+    );
 }

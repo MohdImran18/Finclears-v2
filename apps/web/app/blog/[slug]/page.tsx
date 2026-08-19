@@ -1,237 +1,162 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-
-import {
-  getBlogBySlug,
-  getRelatedBlogs,
-} from "@/services/blogs";
-
+import { notFound } from "next/navigation";
+import ArticleContent from "@/components/blog/ArticleContent";
+import ArticleCTA from "@/components/blog/ArticleCTA";
+import ArticleHero from "@/components/blog/ArticleHero";
+import AuthorCard from "@/components/blog/AuthorCard";
+import Comments from "@/components/blog/Comments";
+import RelatedPosts from "@/components/blog/RelatedPosts";
+import ShareButtons from "@/components/blog/ShareButtons";
+import TableOfContents from "@/components/blog/TableOfContents";
+import StructuredData from "@/components/seo/StructuredData";
+import { articleSchema } from "@/lib/seo/articleSchema";
+import { getBlogBySlug, getRelatedBlogs } from "@/services/blogs";
 import type { Blog } from "@/types/blog";
 
-import StructuredData from "@/components/seo/StructuredData";
-
-import {
-  articleSchema,
-} from "@/lib/seo/articleSchema";
-
-import ArticleHero from "@/components/blog/ArticleHero";
-import TableOfContents from "@/components/blog/TableOfContents";
-import ArticleContent from "@/components/blog/ArticleContent";
-import ShareButtons from "@/components/blog/ShareButtons";
-import AuthorCard from "@/components/blog/AuthorCard";
-import RelatedPosts from "@/components/blog/RelatedPosts";
-import Comments from "@/components/blog/Comments";
-import ArticleCTA from "@/components/blog/ArticleCTA";
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  "https://finclears.com";
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://finclears.com";
 
 interface Props {
-  params: Promise<{
-    slug: string;
-  }>;
+	params: Promise<{
+		slug: string;
+	}>;
 }
 
-export async function generateMetadata({
-  params,
-}: Props): Promise<Metadata> {
-  const { slug } = await params;
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+	const { slug } = await params;
 
-  try {
-    const article = await getBlogBySlug(slug);
+	try {
+		const article = await getBlogBySlug(slug);
 
-    return {
-      title:
-        article.meta_title ??
-        article.title,
+		return {
+			title: article.meta_title ?? article.title,
 
-      description:
-        article.meta_description ??
-        article.excerpt,
+			description: article.meta_description ?? article.excerpt,
 
-      keywords:
-        article.meta_keywords,
+			keywords: article.meta_keywords,
 
-      alternates: {
-        canonical: `${SITE_URL}/blog/${slug}`,
-      },
+			alternates: {
+				canonical: `${SITE_URL}/blog/${slug}`,
+			},
 
-      openGraph: {
-        type: "article",
+			openGraph: {
+				type: "article",
 
-        title:
-          article.meta_title ??
-          article.title,
+				title: article.meta_title ?? article.title,
 
-        description:
-          article.meta_description ??
-          article.excerpt,
+				description: article.meta_description ?? article.excerpt,
 
-        images: article.featured_image
-          ? [article.featured_image]
-          : [],
-      },
+				images: article.featured_image ? [article.featured_image] : [],
+			},
 
-      twitter: {
-        card: "summary_large_image",
+			twitter: {
+				card: "summary_large_image",
 
-        title:
-          article.meta_title ??
-          article.title,
+				title: article.meta_title ?? article.title,
 
-        description:
-          article.meta_description ??
-          article.excerpt,
+				description: article.meta_description ?? article.excerpt,
 
-        images: article.featured_image
-          ? [article.featured_image]
-          : [],
-      },
-    };
-  } catch (error) {
-    console.error(
-      "Metadata generation failed:",
-      error
-    );
+				images: article.featured_image ? [article.featured_image] : [],
+			},
+		};
+	} catch (error) {
+		console.error("Metadata generation failed:", error);
 
-    return {
-      title: "Article Not Found",
-    };
-  }
+		return {
+			title: "Article Not Found",
+		};
+	}
 }
 
-export default async function BlogArticle({
-  params,
-}: Props) {
-  const { slug } = await params;
+export default async function BlogArticle({ params }: Props) {
+	const { slug } = await params;
 
-  let article: Blog;
-  let related: Blog[] = [];
+	let article: Blog;
+	let related: Blog[] = [];
 
-  try {
-    article = await getBlogBySlug(slug);
+	try {
+		article = await getBlogBySlug(slug);
 
-    const relatedBlogs =
-      await getRelatedBlogs(slug);
+		const relatedBlogs = await getRelatedBlogs(slug);
 
-    related = relatedBlogs ?? [];
-  } catch {
-    notFound();
-  }
+		related = relatedBlogs ?? [];
+	} catch {
+		notFound();
+	}
 
-  const schema = articleSchema({
-    title: article.title,
+	const schema = articleSchema({
+		title: article.title,
 
-    description:
-      article.excerpt,
+		description: article.excerpt,
 
-    image:
-      article.featured_image ??
-      undefined,
+		image: article.featured_image ?? undefined,
 
-    url:
-      `${SITE_URL}/blog/${article.slug}`,
+		url: `${SITE_URL}/blog/${article.slug}`,
 
-    author:
-      article.author_name ??
-      "FinClears Editorial Team",
+		author: article.author_name ?? "FinClears Editorial Team",
 
-    publishedAt:
-      article.published_at,
+		publishedAt: article.published_at,
 
-    updatedAt:
-      article.updated_at ??
-      undefined,
-  });
+		updatedAt: article.updated_at ?? undefined,
+	});
 
-  return (
-    <main>
-      <StructuredData
-        data={schema}
-      />
+	return (
+		<main>
+			<StructuredData data={schema} />
 
-      <ArticleHero
-        category={
-          article.category?.name ??
-          "Business"
-        }
-        title={article.title}
-        excerpt={article.excerpt}
-        image={
-          article.featured_image ??
-          undefined
-        }
-        author={
-          article.author_name ??
-          "FinClears Editorial Team"
-        }
-        publishedAt={
-          article.published_at
-        }
-        updatedAt={
-          article.updated_at ??
-          undefined
-        }
-        readingTime={
-          article.reading_time ??
-          "5 min read"
-        }
-      />
+			<ArticleHero
+				category={article.category?.name ?? "Business"}
+				title={article.title}
+				excerpt={article.excerpt}
+				image={article.featured_image ?? undefined}
+				author={article.author_name ?? "FinClears Editorial Team"}
+				publishedAt={article.published_at}
+				updatedAt={article.updated_at ?? undefined}
+				readingTime={article.reading_time ?? "5 min read"}
+			/>
 
-      <section className="bg-white py-20">
-        <div className="container mx-auto px-6">
-          <div className="grid gap-12 lg:grid-cols-[280px_1fr_250px]">
-            <aside>
-              <TableOfContents
-                headings={[]}
-              />
-            </aside>
+			<section className="bg-white py-20">
+				<div className="container mx-auto px-6">
+					<div className="grid gap-12 lg:grid-cols-[280px_1fr_250px]">
+						<aside>
+							<TableOfContents headings={[]} />
+						</aside>
 
-            <article>
-              <ArticleContent
-                content={
-                  article.content
-                }
-              />
+						<article>
+							<ArticleContent content={article.content} />
 
-              <AuthorCard
-                name={
-                  article.author_name ??
-                  "FinClears Editorial Team"
-                }
-                role="FinClears Editorial Team"
-                avatar=""
-                bio="Expert content written and reviewed by FinClears professionals."
-                articles={0}
-                expertise={[
-                  "Company Registration",
-                  "GST",
-                  "Income Tax",
-                  "Trademark",
-                  "ROC Compliance",
-                ]}
-                website={SITE_URL}
-              />
+							<AuthorCard
+								name={article.author_name ?? "FinClears Editorial Team"}
+								role="FinClears Editorial Team"
+								avatar=""
+								bio="Expert content written and reviewed by FinClears professionals."
+								articles={0}
+								expertise={[
+									"Company Registration",
+									"GST",
+									"Income Tax",
+									"Trademark",
+									"ROC Compliance",
+								]}
+								website={SITE_URL}
+							/>
 
-              <RelatedPosts
-                posts={related}
-              />
+							<RelatedPosts posts={related} />
 
-              <Comments />
+							<Comments />
 
-              <ArticleCTA />
-            </article>
+							<ArticleCTA />
+						</article>
 
-            <aside>
-              <ShareButtons
-                title={article.title}
-                url={`${SITE_URL}/blog/${article.slug}`}
-              />
-            </aside>
-          </div>
-        </div>
-      </section>
-    </main>
-  );
+						<aside>
+							<ShareButtons
+								title={article.title}
+								url={`${SITE_URL}/blog/${article.slug}`}
+							/>
+						</aside>
+					</div>
+				</div>
+			</section>
+		</main>
+	);
 }
+
