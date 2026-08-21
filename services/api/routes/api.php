@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\FAQController;
 use App\Http\Controllers\Api\LeadController;
+use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\NewsletterController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\CompanyPaymentController;
@@ -342,6 +343,10 @@ Route::prefix('v1')->group(function () {
                     'destroy',
                 ]);
             });
+        // CRM - Leads
+        Route::apiResource('leads', LeadController::class);
+        Route::apiResource('customers', CustomerController::class);
+
         Route::apiResource('companies', CompanyController::class);
 
         Route::post(
