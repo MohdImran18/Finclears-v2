@@ -59,7 +59,7 @@ export default function LoginPage() {
         JSON.stringify(user)
       );
 
-      router.replace("/blogs");
+      router.replace("/");
     } catch (error: any) {
       console.error(error);
 
