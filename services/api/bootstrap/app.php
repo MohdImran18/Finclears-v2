@@ -22,12 +22,6 @@ return Application::configure(
         Middleware $middleware
     ): void {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Guest Redirect
-        |--------------------------------------------------------------------------
-        */
-
         $middleware->redirectGuestsTo(
             fn (Request $request) =>
                 $request->is('api/*')
@@ -35,31 +29,21 @@ return Application::configure(
                     : '/login'
         );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Middleware Aliases
-        |--------------------------------------------------------------------------
-        */
-
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
-
     })
 
     ->withExceptions(function (
         Exceptions $exceptions
     ): void {
 
-        //
-        // Global API exception handling
-        // (We'll customize this later.)
-        //
-
+        $exceptions->shouldRenderJsonWhen(
+            fn (Request $request) => $request->is('api/*')
+        );
     })
 
     ->create();

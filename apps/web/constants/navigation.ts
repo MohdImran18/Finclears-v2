@@ -50,6 +50,13 @@ export const CUSTOMER_NAVIGATION: NavigationItem[] = [
     roles: [ROLES.CLIENT],
   },
   {
+    label: "Income Tax / ITR",
+    href: "/dashboard/itr",
+    icon: FileText,
+    group: "Business",
+    roles: [ROLES.CLIENT],
+  },
+  {
     label: "Orders",
     href: ROUTES.ORDERS,
     icon: ShoppingCart,

@@ -50,7 +50,10 @@ export default function BlogForm({
     featured_image: initial?.featured_image ?? "",
     excerpt: initial?.excerpt ?? "",
     content: initial?.content ?? "",
-    reading_time: initial?.reading_time ?? null,
+    reading_time:
+      initial?.reading_time != null
+        ? Number(initial.reading_time)
+        : null,
     author_name: initial?.author_name ?? "FinClears",
     published_at: initial?.published_at ?? "",
     meta_title: initial?.meta_title ?? "",
@@ -147,7 +150,7 @@ export default function BlogForm({
       meta_description: form.meta_description?.trim() || "",
       meta_keywords: form.meta_keywords?.trim() || "",
       reading_time:
-        form.reading_time || calculatedReadingTime,
+        Number(form.reading_time || calculatedReadingTime),
       published_at:
         form.status && !form.published_at
           ? new Date().toISOString()
