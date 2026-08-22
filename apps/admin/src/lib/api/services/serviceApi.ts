@@ -1,7 +1,8 @@
-import axios from "axios";
+﻿import axios from "axios";
 
 import type {
   Service,
+  ServiceCategory,
   ServiceListResponse,
   ServicePayload,
   ServiceResponse,
@@ -42,6 +43,22 @@ client.interceptors.request.use((config) => {
 
   return config;
 });
+
+/* Service Categories */
+
+export async function getServiceCategories() {
+  const response = await client.get<{
+    success: boolean;
+    message: string;
+    data: {
+      categories: ServiceCategory[];
+    };
+  }>("/services/categories");
+
+  return response.data;
+}
+
+/* Services */
 
 export async function getServices(params?: {
   page?: number;
@@ -298,6 +315,7 @@ export async function getServiceFaqs(serviceId: number) {
 
   return response.data;
 }
+
 export async function createServiceFaq(
   serviceId: number,
   payload: ServiceFaqPayload

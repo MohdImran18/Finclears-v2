@@ -48,9 +48,9 @@ export interface LeadPayload {
   company_name?: string;
   service_id?: number | null;
   source_id?: number | null;
+  assigned_to?: number | null;
   status?: string;
   priority?: string;
-  assigned_to?: number | null;
   estimated_value?: number | null;
   notes?: string;
   next_follow_up_at?: string;
@@ -67,3 +67,8 @@ export interface LeadListResponse {
     last_page: number;
   };
 }
+
+
+
+
+

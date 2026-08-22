@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\ServiceDocumentAdminController;
 use App\Http\Controllers\Api\ServiceFaqAdminController;
 use App\Http\Controllers\Api\TestimonialController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\V1\KycController;
 use App\Http\Controllers\Api\V1\ItrReturnController;
 use App\Http\Controllers\Api\V1\PaymentController;
@@ -439,6 +440,11 @@ Route::post(
         */
 Route::apiResource('payments', PaymentController::class);
 
+Route::get(
+    'company-payments',
+    [CompanyPaymentController::class, 'index']
+);
+
 Route::post(
     'company-payments',
     [CompanyPaymentController::class, 'store']
@@ -463,12 +469,24 @@ Route::post(
     [CompanyPaymentController::class, 'verify']
 );
 
+Route::apiResource('settings', SettingController::class)
+    ->only([
+        'index',
+        'show',
+        'update',
+        'destroy',
+    ]);
+
+
+
         /*
         |--------------------------------------------------------------------------
         | Users
         |--------------------------------------------------------------------------
         */
 Route::apiResource('users', UserController::class);
+
+
 
         /*
         |--------------------------------------------------------------------------
@@ -612,3 +630,4 @@ Route::post(
             });
     });
 });
+

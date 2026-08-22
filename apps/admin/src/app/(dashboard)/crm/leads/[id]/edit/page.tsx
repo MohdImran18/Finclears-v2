@@ -5,10 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 
 import {
   getLead,
+  getLeadAssignees,
   updateLead,
 } from "@/lib/api/leads/leadApi";
 
 import type { Lead } from "@/types/lead/lead";
+import type { LeadAssignee } from "@/lib/api/leads/leadApi";
 
 export default function EditLeadPage() {
   const router = useRouter();
@@ -19,6 +21,18 @@ export default function EditLeadPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [assignees, setAssignees] = useState<LeadAssignee[]>([]);
+
+  useEffect(() => {
+    getLeadAssignees()
+      .then((response) => {
+        const users = response.data?.data || response.data?.users || [];
+        setAssignees(users);
+      })
+      .catch((error) => {
+        console.error("Unable to load assignees.", error);
+      });
+  }, []);
 
   const [form, setForm] = useState({
     name: "",
@@ -28,6 +42,7 @@ export default function EditLeadPage() {
     company_name: "",
     service_id: "",
     source_id: "",
+    assigned_to: "",
     status: "new",
     priority: "medium",
     estimated_value: "",
@@ -59,6 +74,9 @@ export default function EditLeadPage() {
             : "",
           source_id: lead.source_id
             ? String(lead.source_id)
+            : "",
+          assigned_to: lead.assigned_to
+            ? String(lead.assigned_to)
             : "",
           status: lead.status || "new",
           priority: lead.priority || "medium",
@@ -122,6 +140,9 @@ export default function EditLeadPage() {
         source_id: form.source_id
           ? Number(form.source_id)
           : null,
+        assigned_to: form.assigned_to
+          ? Number(form.assigned_to)
+          : null,
         status: form.status,
         priority: form.priority,
         estimated_value: form.estimated_value
@@ -181,7 +202,7 @@ export default function EditLeadPage() {
             }
             style={secondaryButtonStyle}
           >
-            ← Back to Leads
+            Ã¢â€ Â Back to Leads
           </button>
         </div>
 
@@ -274,6 +295,18 @@ export default function EditLeadPage() {
               ]}
             />
 
+            <SelectField
+              label="Assign To"
+              value={form.assigned_to}
+              onChange={(value) => setField("assigned_to", value)}
+              options={[
+                ["", "Unassigned"],
+                ...assignees.map((user) => [
+                  String(user.id),
+                  user.name + (user.role ? ` (${user.role})` : "")
+                ] as [string, string])
+              ]}
+            />
             <SelectField
               label="Status"
               value={form.status}
@@ -597,4 +630,21 @@ const loadingStyle: React.CSSProperties = {
   placeItems: "center",
   color: "#64748b",
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

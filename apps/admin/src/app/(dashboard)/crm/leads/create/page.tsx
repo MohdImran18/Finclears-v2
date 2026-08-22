@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { createLead } from "@/lib/api/leads/leadApi";
+import { createLead, getLeadAssignees } from "@/lib/api/leads/leadApi";
+import type { LeadAssignee } from "@/lib/api/leads/leadApi";
 
 export default function CreateLeadPage() {
   const router = useRouter();
@@ -25,6 +26,19 @@ export default function CreateLeadPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [assignees, setAssignees] = useState<LeadAssignee[]>([]);
+
+  useEffect(() => {
+    getLeadAssignees()
+      .then((response) => {
+        const users = response.data?.data || response.data?.users || [];
+        setAssignees(users);
+      })
+      .catch((error) => {
+        console.error("Unable to load assignees.", error);
+      });
+  }, []);
 
   function setField(
     field: string,

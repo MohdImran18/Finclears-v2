@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 
@@ -23,36 +23,44 @@ interface Props {
 export default function ServiceFaqEditor({
   serviceId,
 }: Props) {
-  const [items, setItems] = useState<ServiceFaq[]>([]);
+  const [faqs, setFaqs] = useState<ServiceFaq[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<ServiceFaq | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState("");
 
-  async function load() {
+  async function loadFaqs() {
     try {
       setLoading(true);
+      setError("");
 
       const response = await getServiceFaqs(serviceId);
 
-      setItems(response.data.faqs || []);
-    } catch (error) {
+      setFaqs(response.data?.faqs || []);
+    } catch (error: any) {
       console.error(error);
-      alert("Unable to load FAQs.");
+
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to load FAQs."
+      );
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    if (serviceId) {
-      load();
-    }
+    loadFaqs();
   }, [serviceId]);
 
-  async function submit(payload: ServiceFaqPayload) {
+  async function handleSubmit(
+    payload: ServiceFaqPayload
+  ) {
     try {
       setSaving(true);
+      setError("");
 
       if (editing) {
         await updateServiceFaq(
@@ -60,71 +68,71 @@ export default function ServiceFaqEditor({
           editing.id,
           payload
         );
-
-        alert("FAQ updated successfully.");
       } else {
         await createServiceFaq(
           serviceId,
           payload
         );
-
-        alert("FAQ created successfully.");
       }
 
       setEditing(null);
       setShowForm(false);
 
-      await load();
+      await loadFaqs();
     } catch (error: any) {
       console.error(error);
 
-      alert(
+      setError(
         error?.response?.data?.message ||
+          error?.message ||
           "Unable to save FAQ."
       );
+
+      throw error;
     } finally {
       setSaving(false);
     }
   }
 
-  async function remove(item: ServiceFaq) {
-    const confirmed = window.confirm(
-      `Delete this FAQ?\n\n${item.question}`
-    );
-
-    if (!confirmed) {
+  async function handleDelete(faq: ServiceFaq) {
+    if (
+      !window.confirm(
+        `Delete this FAQ?\n\n${faq.question}`
+      )
+    ) {
       return;
     }
 
     try {
-      setSaving(true);
+      setError("");
 
       await deleteServiceFaq(
         serviceId,
-        item.id
+        faq.id
       );
 
-      await load();
+      await loadFaqs();
     } catch (error: any) {
       console.error(error);
 
-      alert(
+      setError(
         error?.response?.data?.message ||
+          error?.message ||
           "Unable to delete FAQ."
       );
-    } finally {
-      setSaving(false);
     }
   }
 
   function startCreate() {
     setEditing(null);
     setShowForm(true);
+    setError("");
   }
 
-  function startEdit(item: ServiceFaq) {
-    setEditing(item);
+  function startEdit(faq: ServiceFaq) {
+    setEditing(faq);
     setShowForm(true);
+    setError("");
   }
 
   function cancelForm() {
@@ -135,40 +143,41 @@ export default function ServiceFaqEditor({
   return (
     <section
       style={{
-        marginTop: 28,
-        padding: 20,
+        marginTop: 24,
+        padding: 18,
+        background: "#fff",
         border: "1px solid #e2e8f0",
         borderRadius: 14,
-        background: "#f8fafc",
       }}
     >
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
-          gap: 16,
-          marginBottom: 18,
+          justifyContent: "space-between",
+          gap: 12,
+          marginBottom: 16,
         }}
       >
         <div>
           <h2
             style={{
               margin: 0,
-              fontSize: 20,
+              fontSize: 17,
+              color: "#0f172a",
             }}
           >
-            FAQs
+            Frequently Asked Questions
           </h2>
 
           <p
             style={{
               margin: "5px 0 0",
+              fontSize: 12,
               color: "#64748b",
-              fontSize: 13,
             }}
           >
-            Manage frequently asked questions for this service.
+            Manage questions and answers for this service.
           </p>
         </div>
 
@@ -177,12 +186,14 @@ export default function ServiceFaqEditor({
             type="button"
             onClick={startCreate}
             style={{
-              padding: "10px 14px",
+              height: 38,
+              padding: "0 14px",
               border: 0,
               borderRadius: 8,
-              background: "#111827",
+              background: "#0f766e",
               color: "#fff",
-              fontWeight: 600,
+              fontSize: 12,
+              fontWeight: 700,
               cursor: "pointer",
             }}
           >
@@ -191,30 +202,53 @@ export default function ServiceFaqEditor({
         )}
       </div>
 
+      {error && (
+        <div
+          style={{
+            marginBottom: 14,
+            padding: 12,
+            borderRadius: 8,
+            background: "#fef2f2",
+            border: "1px solid #fecaca",
+            color: "#b91c1c",
+            fontSize: 13,
+          }}
+        >
+          {error}
+        </div>
+      )}
+
       {showForm && (
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 18 }}>
           <ServiceFaqForm
-            initial={editing}
+            initial={editing || undefined}
             loading={saving}
-            onSubmit={submit}
+            onSubmit={handleSubmit}
             onCancel={cancelForm}
           />
         </div>
       )}
 
       {loading ? (
-        <p style={{ color: "#64748b" }}>
-          Loading FAQs...
-        </p>
-      ) : items.length === 0 ? (
         <div
           style={{
-            padding: 22,
+            padding: 20,
             textAlign: "center",
+            color: "#64748b",
+            fontSize: 13,
+          }}
+        >
+          Loading FAQs...
+        </div>
+      ) : faqs.length === 0 ? (
+        <div
+          style={{
+            padding: 20,
+            textAlign: "center",
+            color: "#64748b",
             border: "1px dashed #cbd5e1",
             borderRadius: 10,
-            background: "#fff",
-            color: "#64748b",
+            fontSize: 13,
           }}
         >
           No FAQs added yet.
@@ -223,131 +257,142 @@ export default function ServiceFaqEditor({
         <div
           style={{
             display: "grid",
-            gap: 12,
+            gap: 10,
           }}
         >
-          {items.map((item, index) => (
-            <article
-              key={item.id}
-              style={{
-                padding: 16,
-                border: "1px solid #e2e8f0",
-                borderRadius: 10,
-                background: "#fff",
-              }}
-            >
+          {faqs
+            .slice()
+            .sort(
+              (a, b) =>
+                a.sort_order - b.sort_order
+            )
+            .map((faq) => (
               <div
+                key={faq.id}
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 16,
+                  padding: 14,
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 10,
+                  background: "#f8fafc",
                 }}
               >
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      marginBottom: 8,
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: "#64748b",
-                      }}
-                    >
-                      #{index + 1}
-                    </span>
-
-                    <span
-                      style={{
-                        padding: "3px 8px",
-                        borderRadius: 999,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        background: item.status
-                          ? "#dcfce7"
-                          : "#fee2e2",
-                        color: item.status
-                          ? "#166534"
-                          : "#991b1b",
-                      }}
-                    >
-                      {item.status
-                        ? "Active"
-                        : "Inactive"}
-                    </span>
-                  </div>
-
-                  <h3
-                    style={{
-                      margin: "0 0 7px",
-                      fontSize: 15,
-                      color: "#0f172a",
-                    }}
-                  >
-                    {item.question}
-                  </h3>
-
-                  <p
-                    style={{
-                      margin: 0,
-                      whiteSpace: "pre-wrap",
-                      color: "#64748b",
-                      fontSize: 14,
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {item.answer}
-                  </p>
-                </div>
-
                 <div
                   style={{
                     display: "flex",
-                    gap: 8,
-                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: 14,
                   }}
                 >
-                  <button
-                    type="button"
-                    onClick={() => startEdit(item)}
-                    disabled={saving}
-                    style={{
-                      padding: "7px 11px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 7,
-                      background: "#fff",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Edit
-                  </button>
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: "#0f172a",
+                      }}
+                    >
+                      {faq.question}
+                    </div>
 
-                  <button
-                    type="button"
-                    onClick={() => remove(item)}
-                    disabled={saving}
+                    <div
+                      style={{
+                        marginTop: 7,
+                        fontSize: 13,
+                        lineHeight: 1.55,
+                        color: "#64748b",
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {faq.answer}
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        marginTop: 10,
+                        fontSize: 11,
+                      }}
+                    >
+                      <span
+                        style={{
+                          padding: "3px 7px",
+                          borderRadius: 999,
+                          background: faq.status
+                            ? "#dcfce7"
+                            : "#f1f5f9",
+                          color: faq.status
+                            ? "#166534"
+                            : "#64748b",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {faq.status
+                          ? "Active"
+                          : "Inactive"}
+                      </span>
+
+                      <span
+                        style={{
+                          padding: "3px 7px",
+                          borderRadius: 999,
+                          background: "#e2e8f0",
+                          color: "#475569",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Order {faq.sort_order}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
                     style={{
-                      padding: "7px 11px",
-                      border: "1px solid #fecaca",
-                      borderRadius: 7,
-                      background: "#fff",
-                      color: "#b91c1c",
-                      cursor: "pointer",
+                      display: "flex",
+                      gap: 7,
+                      alignItems: "flex-start",
                     }}
                   >
-                    Delete
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        startEdit(faq)
+                      }
+                      style={smallButtonStyle}
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDelete(faq)
+                      }
+                      style={{
+                        ...smallButtonStyle,
+                        color: "#b91c1c",
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
-            </article>
-          ))}
+            ))}
         </div>
       )}
     </section>
   );
 }
+
+const smallButtonStyle: React.CSSProperties = {
+  height: 32,
+  padding: "0 10px",
+  border: "1px solid #cbd5e1",
+  borderRadius: 7,
+  background: "#fff",
+  color: "#334155",
+  fontSize: 11,
+  fontWeight: 700,
+  cursor: "pointer",
+};

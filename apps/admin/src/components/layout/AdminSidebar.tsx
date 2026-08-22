@@ -14,18 +14,18 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
-const items = [
+const items: Array<{ label: string; href: string; icon: any; coming?: boolean }> = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Leads", href: "/crm/leads", icon: Users },
   { label: "Customers", href: "/crm/customers", icon: Users },
   { label: "Services", href: "/services", icon: BriefcaseBusiness },
   { label: "Blogs", href: "/blogs", icon: FileText },
-  { label: "Orders", href: "#", icon: ShoppingCart, coming: true },
-  { label: "Payments", href: "#", icon: CreditCard, coming: true },
-  { label: "Support", href: "#", icon: Headphones, coming: true },
-  { label: "Reports", href: "#", icon: BarChart3, coming: true },
-  { label: "Users & Roles", href: "#", icon: ShieldCheck, coming: true },
-  { label: "Settings", href: "#", icon: Settings, coming: true },
+  { label: "Orders", href: "/crm/orders", icon: ShoppingCart },
+  { label: "Payments", href: "/crm/payments", icon: CreditCard },
+  { label: "Support", href: "/support", icon: Headphones },
+  { label: "Reports", href: "/reports", icon: BarChart3 },
+  { label: "Users & Roles", href: "/users", icon: ShieldCheck },
+  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 export default function AdminSidebar() {
@@ -104,4 +104,11 @@ export default function AdminSidebar() {
     </aside>
   );
 }
+
+
+
+
+
+
+
 

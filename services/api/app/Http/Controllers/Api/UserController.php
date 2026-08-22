@@ -17,9 +17,6 @@ class UserController extends BaseController
         protected UserService $service
     ) {}
 
-    /**
-     * List Users
-     */
     public function index(Request $request)
     {
         $users = $this->service->paginate(
@@ -32,47 +29,31 @@ class UserController extends BaseController
         );
 
         return $this->success(
-
             new UserCollection($users),
-
             'Users fetched successfully.'
-
         );
     }
 
-    /**
-     * Create User
-     */
     public function store(StoreUserRequest $request)
     {
         $user = $this->service->create(
             $request->validated()
         );
 
-        return $this->created(
-
+        return $this->success(
             new UserResource($user),
-
-            'User created successfully.'
-
+            'User created successfully.',
+            201
         );
     }
 
-    /**
-     * Show User
-     */
     public function show(User $user)
     {
         return $this->success(
-
             new UserResource($user)
-
         );
     }
 
-    /**
-     * Update User
-     */
     public function update(
         UpdateUserRequest $request,
         User $user
@@ -83,42 +64,28 @@ class UserController extends BaseController
         );
 
         return $this->success(
-
             new UserResource($user),
-
             'User updated successfully.'
-
         );
     }
 
-    /**
-     * Delete User
-     */
     public function destroy(User $user)
     {
         try {
-
             $this->service->delete(
                 $user,
                 request()->user()
             );
 
             return $this->success(
-
                 null,
-
                 'User deleted successfully.'
-
             );
 
         } catch (RuntimeException $e) {
-
             return $this->error(
-
                 $e->getMessage(),
-
                 422
-
             );
         }
     }

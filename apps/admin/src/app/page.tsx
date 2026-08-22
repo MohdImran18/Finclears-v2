@@ -32,6 +32,8 @@ import { getServices } from "@/lib/api/services/serviceApi";
 import { getLeads } from "@/lib/api/leads/leadApi";
 import type { Lead } from "@/types/lead/lead";
 import { getCustomers } from "@/lib/api/customers/customerApi";
+import { getOrders } from "@/lib/api/orders/orderApi";
+import { getCompanyPayments } from "@/lib/api/payments/paymentApi";
 
 import AdminShell from "@/components/layout/AdminShell";
 
@@ -42,6 +44,9 @@ export default function HomePage() {
   const [customers, setCustomers] = useState(0);
   const [services, setServices] = useState(0);
   const [blogs, setBlogs] = useState(0);
+  const [orders, setOrders] = useState(0);
+  const [payments, setPayments] = useState(0);
+  const [revenue, setRevenue] = useState(0);
   const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +54,7 @@ export default function HomePage() {
     setLoading(true);
 
     try {
-      const [leadRes, customerRes, serviceRes, blogRes] =
+      const [leadRes, customerRes, serviceRes, blogRes, orderRes, paymentRes] =
         await Promise.all([
           getLeads({
             page: 1,
@@ -61,17 +66,32 @@ export default function HomePage() {
           }),
           getServices({}),
           getBlogs({}),
+          getOrders({ page: 1, per_page: 1 }),
+          getCompanyPayments({ page: 1, per_page: 100 }),
         ]);
 
       const leadData = leadRes?.data;
       const customerData = customerRes?.data;
       const serviceData = serviceRes?.data;
       const blogData = blogRes?.data;
+      const orderData = orderRes?.data;
+      const paymentData = paymentRes?.data;
 
       setLeads(leadData?.total ?? 0);
       setCustomers(customerData?.total ?? 0);
       setServices(serviceData?.services?.length ?? 0);
       setBlogs(blogData?.blogs?.length ?? 0);
+      setOrders(orderRes?.meta?.total ?? 0);
+      setPayments(paymentData?.length ?? 0);
+      setRevenue(
+        (paymentData ?? []).reduce(
+          (sum, payment) =>
+            payment.payment_status === "success"
+              ? sum + Number(payment.amount || 0)
+              : sum,
+          0
+        )
+      );
       setRecentLeads(leadData?.data ?? []);
     } catch (error) {
       console.error("Dashboard loading error:", error);
@@ -218,7 +238,7 @@ export default function HomePage() {
 
           .kpis {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(7, minmax(0, 1fr));
             gap: 14px;
             margin-bottom: 16px;
           }
@@ -794,6 +814,40 @@ export default function HomePage() {
               }
             />
 
+            <KpiCard
+              title="Orders"
+              value={loading ? "—" : orders}
+              hint="Total orders"
+              icon={<ShoppingCart size={18} />}
+              onClick={() =>
+                router.push("/crm/orders")
+              }
+            />
+
+            <KpiCard
+              title="Payments"
+              value={loading ? "—" : payments}
+              hint="Payment transactions"
+              icon={<CreditCard size={18} />}
+              onClick={() =>
+                router.push("/crm/payments")
+              }
+            />
+
+            <KpiCard
+              title="Revenue"
+              value={
+                loading
+                  ? "—"
+                  : `₹${revenue.toLocaleString("en-IN")}`
+              }
+              hint="Successful payments"
+              icon={<CreditCard size={18} />}
+              onClick={() =>
+                router.push("/crm/payments")
+              }
+            />
+
           </section>
 
           {/* MAIN */}
@@ -1055,14 +1109,20 @@ export default function HomePage() {
 
               <Module
                 name="Orders"
-                status="Coming soon"
+                status="Order management"
                 icon={<ShoppingCart size={15} />}
+                onClick={() =>
+                  router.push("/crm/orders")
+                }
               />
 
               <Module
                 name="Payments"
-                status="Coming soon"
+                status="Payment management"
                 icon={<CreditCard size={15} />}
+                onClick={() =>
+                  router.push("/crm/payments")
+                }
               />
 
               <Module
@@ -1258,6 +1318,15 @@ function Module({
     </button>
   );
 }
+
+
+
+
+
+
+
+
+
 
 
 

@@ -85,3 +85,33 @@ export async function deleteLead(id: number) {
 
   return response.data;
 }
+
+export interface LeadAssignee {
+  id: number;
+  uuid?: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  role?: string | null;
+  status?: string | null;
+}
+
+export async function getLeadAssignees() {
+  const response = await client.get<{
+    success: boolean;
+    message: string;
+    data: {
+      data?: LeadAssignee[];
+      users?: LeadAssignee[];
+    };
+  }>("/users", {
+    params: {
+      role: "employee",
+      status: "active",
+      per_page: 100,
+    },
+  });
+
+  return response.data;
+}

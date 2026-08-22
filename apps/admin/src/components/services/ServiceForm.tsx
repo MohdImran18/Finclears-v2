@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 
@@ -22,7 +22,7 @@ export default function ServiceForm({
   onSubmit,
 }: Props) {
   const [form, setForm] = useState<ServicePayload>({
-    service_category_id: 1,
+    service_category_id: 0,
     title: "",
     slug: "",
     code: "",
@@ -294,7 +294,7 @@ export default function ServiceForm({
               }
               disabled={!!loading}
               style={inputStyle}
-              placeholder="Starting from ₹4,999"
+              placeholder="Starting from â‚¹4,999"
             />
           </Field>
 
@@ -537,3 +537,4 @@ const textareaStyle: React.CSSProperties = {
   resize: "vertical",
   lineHeight: 1.5,
 };
+

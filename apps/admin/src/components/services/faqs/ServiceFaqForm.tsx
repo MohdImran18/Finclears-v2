@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import type {
   ServiceFaq,
@@ -8,7 +8,7 @@ import type {
 } from "@/types/service/serviceFaq";
 
 interface Props {
-  initial?: ServiceFaq | null;
+  initial?: ServiceFaq;
   loading?: boolean;
   onSubmit: (payload: ServiceFaqPayload) => Promise<void>;
   onCancel?: () => void;
@@ -16,194 +16,147 @@ interface Props {
 
 export default function ServiceFaqForm({
   initial,
-  loading,
+  loading = false,
   onSubmit,
   onCancel,
 }: Props) {
-  const [form, setForm] = useState<ServiceFaqPayload>({
-    question: "",
-    answer: "",
-    sort_order: 0,
-    status: true,
-  });
+  const [question, setQuestion] = useState(
+    initial?.question || ""
+  );
 
-  useEffect(() => {
-    if (initial) {
-      setForm({
-        question: initial.question,
-        answer: initial.answer,
-        sort_order: initial.sort_order ?? 0,
-        status: initial.status,
-      });
-    } else {
-      setForm({
-        question: "",
-        answer: "",
-        sort_order: 0,
-        status: true,
-      });
-    }
-  }, [initial]);
+  const [answer, setAnswer] = useState(
+    initial?.answer || ""
+  );
 
-  function set<K extends keyof ServiceFaqPayload>(
-    key: K,
-    value: ServiceFaqPayload[K]
+  const [sortOrder, setSortOrder] = useState(
+    String(initial?.sort_order ?? 0)
+  );
+
+  const [status, setStatus] = useState(
+    initial?.status ?? true
+  );
+
+  const [error, setError] = useState("");
+
+  async function handleSubmit(
+    event: React.FormEvent<HTMLFormElement>
   ) {
-    setForm((current) => ({
-      ...current,
-      [key]: value,
-    }));
-  }
-
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!form.question.trim()) {
-      alert("Please enter a question.");
+    setError("");
+
+    if (!question.trim()) {
+      setError("Question is required.");
       return;
     }
 
-    if (!form.answer.trim()) {
-      alert("Please enter an answer.");
+    if (!answer.trim()) {
+      setError("Answer is required.");
       return;
     }
 
-    await onSubmit({
-      question: form.question.trim(),
-      answer: form.answer.trim(),
-      sort_order: Number(form.sort_order) || 0,
-      status: !!form.status,
-    });
+    try {
+      await onSubmit({
+        question: question.trim(),
+        answer: answer.trim(),
+        sort_order: Number(sortOrder) || 0,
+        status,
+      });
+    } catch (error: any) {
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to save FAQ."
+      );
+    }
   }
 
   return (
     <form
-      onSubmit={submit}
+      onSubmit={handleSubmit}
       style={{
         display: "grid",
-        gap: 16,
-        padding: 18,
+        gap: 14,
+        padding: 16,
         border: "1px solid #e2e8f0",
         borderRadius: 12,
         background: "#fff",
       }}
     >
-      <div>
-        <label
+      {error && (
+        <div
           style={{
-            display: "block",
-            marginBottom: 6,
-            fontWeight: 600,
+            padding: 12,
+            borderRadius: 8,
+            background: "#fef2f2",
+            border: "1px solid #fecaca",
+            color: "#b91c1c",
+            fontSize: 13,
           }}
         >
-          Question
-        </label>
+          {error}
+        </div>
+      )}
+
+      <label>
+        <div style={labelStyle}>Question *</div>
 
         <input
-          value={form.question}
-          onChange={(event) =>
-            set("question", event.target.value)
-          }
-          placeholder="e.g. What documents are required?"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="Enter frequently asked question"
+          style={inputStyle}
           disabled={loading}
-          required
-          style={{
-            width: "100%",
-            boxSizing: "border-box",
-            padding: "11px 12px",
-            border: "1px solid #cbd5e1",
-            borderRadius: 8,
-            fontSize: 14,
-          }}
         />
-      </div>
+      </label>
 
-      <div>
-        <label
-          style={{
-            display: "block",
-            marginBottom: 6,
-            fontWeight: 600,
-          }}
-        >
-          Answer
-        </label>
+      <label>
+        <div style={labelStyle}>Answer *</div>
 
         <textarea
-          value={form.answer}
-          onChange={(event) =>
-            set("answer", event.target.value)
-          }
-          placeholder="Enter the answer..."
-          disabled={loading}
-          required
+          value={answer}
+          onChange={(e) => setAnswer(e.target.value)}
+          placeholder="Enter answer"
           rows={5}
-          style={{
-            width: "100%",
-            boxSizing: "border-box",
-            padding: "11px 12px",
-            border: "1px solid #cbd5e1",
-            borderRadius: 8,
-            fontSize: 14,
-            resize: "vertical",
-          }}
+          style={textareaStyle}
+          disabled={loading}
         />
-      </div>
+      </label>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "180px 1fr",
           gap: 14,
         }}
       >
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 6,
-              fontWeight: 600,
-            }}
-          >
-            Sort Order
-          </label>
+        <label>
+          <div style={labelStyle}>Sort Order</div>
 
           <input
             type="number"
             min={0}
-            value={form.sort_order}
-            onChange={(event) =>
-              set(
-                "sort_order",
-                Number(event.target.value) || 0
-              )
-            }
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            style={inputStyle}
             disabled={loading}
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              padding: "11px 12px",
-              border: "1px solid #cbd5e1",
-              borderRadius: 8,
-            }}
           />
-        </div>
+        </label>
 
         <label
           style={{
             display: "flex",
             alignItems: "center",
             gap: 9,
-            marginTop: 28,
+            paddingTop: 27,
+            fontSize: 13,
             fontWeight: 600,
           }}
         >
           <input
             type="checkbox"
-            checked={!!form.status}
-            onChange={(event) =>
-              set("status", event.target.checked)
-            }
+            checked={status}
+            onChange={(e) => setStatus(e.target.checked)}
             disabled={loading}
           />
 
@@ -216,6 +169,7 @@ export default function ServiceFaqForm({
           display: "flex",
           justifyContent: "flex-end",
           gap: 10,
+          marginTop: 4,
         }}
       >
         {onCancel && (
@@ -223,13 +177,7 @@ export default function ServiceFaqForm({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            style={{
-              padding: "10px 16px",
-              border: "1px solid #cbd5e1",
-              borderRadius: 8,
-              background: "#fff",
-              cursor: "pointer",
-            }}
+            style={secondaryButtonStyle}
           >
             Cancel
           </button>
@@ -238,16 +186,7 @@ export default function ServiceFaqForm({
         <button
           type="submit"
           disabled={loading}
-          style={{
-            padding: "10px 18px",
-            border: 0,
-            borderRadius: 8,
-            background: "#111827",
-            color: "#fff",
-            fontWeight: 600,
-            cursor: loading ? "not-allowed" : "pointer",
-            opacity: loading ? 0.7 : 1,
-          }}
+          style={primaryButtonStyle}
         >
           {loading
             ? "Saving..."
@@ -259,3 +198,55 @@ export default function ServiceFaqForm({
     </form>
   );
 }
+
+const labelStyle: React.CSSProperties = {
+  marginBottom: 6,
+  fontSize: 12,
+  fontWeight: 700,
+  color: "#334155",
+};
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  boxSizing: "border-box",
+  height: 40,
+  padding: "0 11px",
+  border: "1px solid #cbd5e1",
+  borderRadius: 8,
+  fontSize: 13,
+  outline: "none",
+};
+
+const textareaStyle: React.CSSProperties = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "10px 11px",
+  border: "1px solid #cbd5e1",
+  borderRadius: 8,
+  fontSize: 13,
+  resize: "vertical",
+};
+
+const primaryButtonStyle: React.CSSProperties = {
+  height: 40,
+  padding: "0 16px",
+  border: 0,
+  borderRadius: 8,
+  background: "#0f766e",
+  color: "#fff",
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const secondaryButtonStyle: React.CSSProperties = {
+  height: 40,
+  padding: "0 16px",
+  border: "1px solid #cbd5e1",
+  borderRadius: 8,
+  background: "#fff",
+  color: "#334155",
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: "pointer",
+};

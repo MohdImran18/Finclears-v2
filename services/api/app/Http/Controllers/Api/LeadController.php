@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Lead\StoreLeadRequest;
 use App\Http\Requests\Lead\UpdateLeadRequest;
 use App\Models\Lead;
 use Illuminate\Http\Request;
@@ -56,23 +57,9 @@ class LeadController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreLeadRequest $request)
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['required', 'string', 'max:30'],
-            'alternate_phone' => ['nullable', 'string', 'max:30'],
-            'company_name' => ['nullable', 'string', 'max:255'],
-            'service_id' => ['nullable', 'exists:services,id'],
-            'source_id' => ['nullable', 'exists:lead_sources,id'],
-            'status' => ['nullable', 'string', 'max:30'],
-            'priority' => ['nullable', 'string', 'max:20'],
-            'assigned_to' => ['nullable', 'exists:users,id'],
-            'estimated_value' => ['nullable', 'numeric', 'min:0'],
-            'notes' => ['nullable', 'string'],
-            'next_follow_up_at' => ['nullable', 'date'],
-        ]);
+        $validated = $request->validated();
 
         $lead = Lead::create($validated);
 
@@ -88,7 +75,6 @@ class LeadController extends Controller
             ],
         ], 201);
     }
-
     public function show(Lead $lead)
     {
         $lead->load([
@@ -133,3 +119,4 @@ class LeadController extends Controller
         ]);
     }
 }
+

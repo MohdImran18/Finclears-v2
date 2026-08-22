@@ -21,6 +21,69 @@ class CompanyPaymentController extends Controller
     }
 
     /**
+     * List company payments for Admin.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $payments = CompanyPayment::query()
+            ->with([
+                'company:id,company_name',
+                'order:id,order_no,service_name',
+            ])
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->string('search')->toString();
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('gateway_order_id', 'like', "%{$search}%")
+                        ->orWhere('gateway_transaction_id', 'like', "%{$search}%")
+                        ->orWhereHas('company', function ($companyQuery) use ($search) {
+                            $companyQuery->where(
+                                'company_name',
+                                'like',
+                                "%{$search}%"
+                            );
+                        })
+                        ->orWhereHas('order', function ($orderQuery) use ($search) {
+                            $orderQuery->where(
+                                'order_no',
+                                'like',
+                                "%{$search}%"
+                            );
+                        });
+                });
+            })
+            ->when(
+                $request->filled('status'),
+                fn ($q) => $q->where(
+                    'payment_status',
+                    $request->string('status')->toString()
+                )
+            )
+            ->when(
+                $request->filled('gateway'),
+                fn ($q) => $q->where(
+                    'payment_gateway',
+                    $request->string('gateway')->toString()
+                )
+            )
+            ->latest()
+            ->paginate((int) ($request->per_page ?? 20));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payments fetched successfully.',
+            'data' => $payments->items(),
+            'meta' => [
+                'current_page' => $payments->currentPage(),
+                'last_page' => $payments->lastPage(),
+                'per_page' => $payments->perPage(),
+                'total' => $payments->total(),
+            ],
+        ]);
+    }
+
+
+    /**
      * Create a company payment and Cashfree order.
      */
     public function store(Request $request): JsonResponse

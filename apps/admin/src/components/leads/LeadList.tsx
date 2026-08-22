@@ -1,5 +1,14 @@
 ﻿"use client";
 
+import {
+  Edit3,
+  Trash2,
+  Mail,
+  Phone,
+  CalendarDays,
+  IndianRupee,
+} from "lucide-react";
+
 import type { Lead } from "@/types/lead/lead";
 
 interface LeadListProps {
@@ -15,244 +24,493 @@ export default function LeadList({
   onEdit,
   onDelete,
 }: LeadListProps) {
+
   if (loading) {
     return (
-      <div style={cardStyle}>
-        <div style={loadingStyle}>Loading leads...</div>
+      <div className="stateBox">
+        <div className="loader" />
+        <strong>Loading leads...</strong>
+        <span>Fetching latest CRM data</span>
+
+        <style jsx>{`
+          .stateBox {
+            min-height: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            color: #627d98;
+            font-size: 11px;
+          }
+
+          .stateBox strong {
+            color: #334e68;
+            font-size: 13px;
+          }
+
+          .loader {
+            width: 27px;
+            height: 27px;
+            margin-bottom: 5px;
+            border: 3px solid #dbeaf5;
+            border-top-color: #1769aa;
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+          }
+
+          @keyframes spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+        `}</style>
       </div>
     );
   }
 
   if (!leads.length) {
     return (
-      <div style={cardStyle}>
-        <div style={emptyStyle}>No leads found.</div>
+      <div className="stateBox">
+        <div className="emptyIcon">+</div>
+        <strong>No leads found</strong>
+        <span>Try changing your search or filters.</span>
+
+        <style jsx>{`
+          .stateBox {
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: #829ab1;
+            font-size: 11px;
+          }
+
+          .stateBox strong {
+            color: #334e68;
+            font-size: 13px;
+          }
+
+          .emptyIcon {
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 3px;
+            border-radius: 10px;
+            background: #eaf3fb;
+            color: #1769aa;
+            font-size: 21px;
+          }
+        `}</style>
       </div>
     );
   }
 
   return (
-    <div style={cardStyle}>
-      <div style={tableWrapStyle}>
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th style={thStyle}>Lead</th>
-              <th style={thStyle}>Phone</th>
-              <th style={thStyle}>Source</th>
-              <th style={thStyle}>Status</th>
-              <th style={thStyle}>Priority</th>
-              <th style={thStyle}>Value</th>
-              <th style={thStyle}>Follow-up</th>
-              <th style={thStyle}>Action</th>
-            </tr>
-          </thead>
+    <div className="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Lead</th>
+            <th>Contact</th>
+            <th>Source</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Value</th>
+            <th>Follow-up</th>
+            <th className="actionHeader">Action</th>
+          </tr>
+        </thead>
 
-          <tbody>
-            {leads.map((lead) => (
-              <tr key={lead.id}>
-                <td style={tdStyle}>
-                  <div style={nameStyle}>{lead.name}</div>
+        <tbody>
+          {leads.map((lead) => (
+            <tr key={lead.id}>
 
-                  {lead.company_name && (
-                    <div style={mutedStyle}>{lead.company_name}</div>
+              <td>
+                <div className="leadCell">
+                  <div className="avatar">
+                    {(lead.name || "L")
+                      .trim()
+                      .charAt(0)
+                      .toUpperCase()}
+                  </div>
+
+                  <div className="leadInfo">
+                    <strong>
+                      {lead.name || "Unnamed Lead"}
+                    </strong>
+
+                    {lead.company_name && (
+                      <span>{lead.company_name}</span>
+                    )}
+                  </div>
+                </div>
+              </td>
+
+              <td>
+                <div className="contactCell">
+                  {lead.phone && (
+                    <span>
+                      <Phone size={12} />
+                      {lead.phone}
+                    </span>
                   )}
 
                   {lead.email && (
-                    <div style={mutedStyle}>{lead.email}</div>
+                    <span>
+                      <Mail size={12} />
+                      {lead.email}
+                    </span>
                   )}
-                </td>
 
-                <td style={tdStyle}>{lead.phone}</td>
+                  {!lead.phone && !lead.email && (
+                    <span className="muted">No contact</span>
+                  )}
+                </div>
+              </td>
 
-                <td style={tdStyle}>
-                  {lead.source?.name || "—"}
-                </td>
+              <td>
+                <span className="source">
+                  {lead.source?.name || "Direct"}
+                </span>
+              </td>
 
-                <td style={tdStyle}>
-                  <span style={statusStyle(lead.status)}>
-                    {lead.status}
-                  </span>
-                </td>
+              <td>
+                <StatusBadge status={lead.status} />
+              </td>
 
-                <td style={tdStyle}>
-                  <span style={priorityStyle(lead.priority)}>
-                    {lead.priority}
-                  </span>
-                </td>
+              <td>
+                <PriorityBadge priority={lead.priority} />
+              </td>
 
-                <td style={tdStyle}>
-                  {lead.estimated_value
-                    ? `₹${Number(
+              <td>
+                <div className="valueCell">
+                  {lead.estimated_value ? (
+                    <>
+                      <IndianRupee size={12} />
+                      {Number(
                         lead.estimated_value
-                      ).toLocaleString("en-IN")}`
-                    : "—"}
-                </td>
+                      ).toLocaleString("en-IN")}
+                    </>
+                  ) : (
+                    "—"
+                  )}
+                </div>
+              </td>
 
-                <td style={tdStyle}>
+              <td>
+                <div className="followUp">
+                  <CalendarDays size={12} />
+
                   {lead.next_follow_up_at
                     ? new Date(
                         lead.next_follow_up_at
                       ).toLocaleDateString("en-IN")
                     : "—"}
-                </td>
+                </div>
+              </td>
 
-                <td style={tdStyle}>
-                  <div style={actionStyle}>
-                    <button
-                      type="button"
-                      onClick={() => onEdit(lead)}
-                      style={editButtonStyle}
-                    >
-                      Edit
-                    </button>
+              <td>
+                <div className="actions">
 
-                    <button
-                      type="button"
-                      onClick={() => onDelete(lead)}
-                      style={deleteButtonStyle}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  <button
+                    type="button"
+                    className="editButton"
+                    onClick={() => onEdit(lead)}
+                    title="Edit lead"
+                  >
+                    <Edit3 size={14} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="deleteButton"
+                    onClick={() => onDelete(lead)}
+                    title="Delete lead"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+
+                </div>
+              </td>
+
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <style jsx>{`
+        .tableWrap {
+          width: 100%;
+          overflow-x: auto;
+        }
+
+        table {
+          width: 100%;
+          min-width: 1100px;
+          border-collapse: collapse;
+        }
+
+        th {
+          height: 43px;
+          padding: 0 14px;
+          text-align: left;
+          background: #f8fafc;
+          border-bottom: 1px solid #e3ebf3;
+          color: #829ab1;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: .045em;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+
+        td {
+          padding: 13px 14px;
+          border-bottom: 1px solid #edf2f7;
+          color: #486581;
+          font-size: 11px;
+          vertical-align: middle;
+          white-space: nowrap;
+        }
+
+        tbody tr {
+          transition: background .15s ease;
+        }
+
+        tbody tr:hover {
+          background: #f8fbfd;
+        }
+
+        tbody tr:last-child td {
+          border-bottom: 0;
+        }
+
+        .actionHeader {
+          text-align: right;
+        }
+
+        .leadCell {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          min-width: 185px;
+        }
+
+        .avatar {
+          width: 31px;
+          height: 31px;
+          flex: 0 0 31px;
+          display: grid;
+          place-items: center;
+          border-radius: 8px;
+          background: #e8f2fb;
+          color: #1769aa;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .leadInfo {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+
+        .leadInfo strong {
+          color: #243b53;
+          font-size: 12px;
+          font-weight: 750;
+        }
+
+        .leadInfo span {
+          max-width: 170px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          color: #9fb3c8;
+          font-size: 10px;
+        }
+
+        .contactCell {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .contactCell span {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          color: #627d98;
+        }
+
+        .muted {
+          color: #a5b5c5 !important;
+        }
+
+        .source {
+          color: #627d98;
+        }
+
+        .valueCell,
+        .followUp {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          color: #486581;
+        }
+
+        .actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 6px;
+        }
+
+        .editButton,
+        .deleteButton {
+          width: 30px;
+          height: 30px;
+          display: grid;
+          place-items: center;
+          border-radius: 7px;
+          cursor: pointer;
+          transition: .15s ease;
+        }
+
+        .editButton {
+          border: 1px solid #d6e3ee;
+          background: white;
+          color: #1769aa;
+        }
+
+        .editButton:hover {
+          background: #edf6fc;
+          border-color: #a9c7df;
+        }
+
+        .deleteButton {
+          border: 1px solid #f1d1d1;
+          background: white;
+          color: #c24141;
+        }
+
+        .deleteButton:hover {
+          background: #fff5f5;
+          border-color: #e8aaaa;
+        }
+      `}</style>
     </div>
   );
 }
 
-const cardStyle: React.CSSProperties = {
-  background: "#fff",
-  border: "1px solid #e2e8f0",
-  borderRadius: 13,
-  overflow: "hidden",
-};
+function StatusBadge({
+  status,
+}: {
+  status: string;
+}) {
+  const normalized = (status || "new").toLowerCase();
 
-const tableWrapStyle: React.CSSProperties = {
-  width: "100%",
-  overflowX: "auto",
-};
+  const config: Record<
+    string,
+    { label: string; bg: string; color: string }
+  > = {
+    new: {
+      label: "New",
+      bg: "#e8f2fb",
+      color: "#1769aa",
+    },
+    contacted: {
+      label: "Contacted",
+      bg: "#e8f0ff",
+      color: "#365fba",
+    },
+    qualified: {
+      label: "Qualified",
+      bg: "#edf7f0",
+      color: "#237a4b",
+    },
+    converted: {
+      label: "Converted",
+      bg: "#e5f7ed",
+      color: "#167044",
+    },
+    lost: {
+      label: "Lost",
+      bg: "#fff0f0",
+      color: "#b42318",
+    },
+  };
 
-const tableStyle: React.CSSProperties = {
-  width: "100%",
-  borderCollapse: "collapse",
-  minWidth: 1050,
-};
+  const item = config[normalized] || {
+    label: normalized || "New",
+    bg: "#f1f5f9",
+    color: "#627d98",
+  };
 
-const thStyle: React.CSSProperties = {
-  padding: "13px 14px",
-  textAlign: "left",
-  background: "#f8fafc",
-  borderBottom: "1px solid #e2e8f0",
-  color: "#64748b",
-  fontSize: 11,
-  fontWeight: 800,
-  textTransform: "uppercase",
-};
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "5px 9px",
+        borderRadius: 999,
+        background: item.bg,
+        color: item.color,
+        fontSize: 10,
+        fontWeight: 800,
+      }}
+    >
+      {item.label}
+    </span>
+  );
+}
 
-const tdStyle: React.CSSProperties = {
-  padding: "14px",
-  borderBottom: "1px solid #f1f5f9",
-  color: "#334155",
-  fontSize: 13,
-  verticalAlign: "middle",
-};
+function PriorityBadge({
+  priority,
+}: {
+  priority: string;
+}) {
+  const normalized = (priority || "medium").toLowerCase();
 
-const nameStyle: React.CSSProperties = {
-  color: "#0f172a",
-  fontWeight: 750,
-  marginBottom: 3,
-};
+  const config: Record<
+    string,
+    { label: string; bg: string; color: string }
+  > = {
+    high: {
+      label: "High",
+      bg: "#fff0f0",
+      color: "#b42318",
+    },
+    medium: {
+      label: "Medium",
+      bg: "#fff7e6",
+      color: "#9a6700",
+    },
+    low: {
+      label: "Low",
+      bg: "#f1f5f9",
+      color: "#627d98",
+    },
+  };
 
-const mutedStyle: React.CSSProperties = {
-  color: "#94a3b8",
-  fontSize: 11,
-  marginTop: 2,
-};
+  const item = config[normalized] || config.medium;
 
-const loadingStyle: React.CSSProperties = {
-  padding: 50,
-  textAlign: "center",
-  color: "#64748b",
-};
-
-const emptyStyle: React.CSSProperties = {
-  padding: 50,
-  textAlign: "center",
-  color: "#64748b",
-};
-
-const statusStyle = (status: string): React.CSSProperties => ({
-  display: "inline-block",
-  padding: "5px 9px",
-  borderRadius: 999,
-  background:
-    status === "converted"
-      ? "#dcfce7"
-      : status === "lost"
-        ? "#fee2e2"
-        : status === "contacted"
-          ? "#dbeafe"
-          : "#f1f5f9",
-  color:
-    status === "converted"
-      ? "#166534"
-      : status === "lost"
-        ? "#991b1b"
-        : status === "contacted"
-          ? "#1d4ed8"
-          : "#475569",
-  fontSize: 11,
-  fontWeight: 750,
-});
-
-const priorityStyle = (priority: string): React.CSSProperties => ({
-  display: "inline-block",
-  padding: "5px 9px",
-  borderRadius: 999,
-  background:
-    priority === "high"
-      ? "#fee2e2"
-      : priority === "low"
-        ? "#f1f5f9"
-        : "#fef3c7",
-  color:
-    priority === "high"
-      ? "#b91c1c"
-      : priority === "low"
-        ? "#64748b"
-        : "#92400e",
-  fontSize: 11,
-  fontWeight: 750,
-});
-
-const actionStyle: React.CSSProperties = {
-  display: "flex",
-  gap: 7,
-};
-
-const editButtonStyle: React.CSSProperties = {
-  border: "1px solid #cbd5e1",
-  background: "#fff",
-  color: "#334155",
-  borderRadius: 7,
-  padding: "6px 10px",
-  cursor: "pointer",
-  fontSize: 11,
-  fontWeight: 700,
-};
-
-const deleteButtonStyle: React.CSSProperties = {
-  border: "1px solid #fecaca",
-  background: "#fff",
-  color: "#dc2626",
-  borderRadius: 7,
-  padding: "6px 10px",
-  cursor: "pointer",
-  fontSize: 11,
-  fontWeight: 700,
-};
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "5px 9px",
+        borderRadius: 999,
+        background: item.bg,
+        color: item.color,
+        fontSize: 10,
+        fontWeight: 800,
+      }}
+    >
+      {item.label}
+    </span>
+  );
+}
