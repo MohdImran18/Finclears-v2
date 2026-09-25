@@ -1,0 +1,517 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  CalendarDays,
+  Clock3,
+  CheckCircle2,
+  XCircle,
+  Ban,
+  RefreshCw,
+  AlertCircle,
+} from "lucide-react";
+
+import {
+  getLeaveApplications,
+  getLeaveBalances,
+  getLeaveTypes,
+} from "@/lib/api/leave/leaveApi";
+
+import type {
+  EmployeeLeaveBalance,
+  LeaveApplication,
+  LeaveType,
+} from "@/types/leave/leave";
+
+type Tab = "applications" | "balances" | "types";
+
+function formatDate(value: string) {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function statusLabel(status: LeaveApplication["status"]) {
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function statusClass(status: LeaveApplication["status"]) {
+  return `statusBadge status-${status}`;
+}
+
+export default function LeavePage() {
+  const [activeTab, setActiveTab] =
+    useState<Tab>("applications");
+
+  const [applications, setApplications] = useState<
+    LeaveApplication[]
+  >([]);
+
+  const [balances, setBalances] = useState<
+    EmployeeLeaveBalance[]
+  >([]);
+
+  const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const [
+        applicationsResponse,
+        balancesResponse,
+        leaveTypesResponse,
+      ] = await Promise.all([
+        getLeaveApplications({
+          per_page: 100,
+        }),
+        getLeaveBalances({
+          per_page: 100,
+        }),
+        getLeaveTypes(),
+      ]);
+
+      setApplications(applicationsResponse.data.data || []);
+      setBalances(balancesResponse.data.data || []);
+      setLeaveTypes(leaveTypesResponse.data || []);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Unable to load leave data.";
+
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const counts = useMemo(() => {
+    return {
+      total: applications.length,
+      pending: applications.filter(
+        (item) => item.status === "pending"
+      ).length,
+      approved: applications.filter(
+        (item) => item.status === "approved"
+      ).length,
+      rejected: applications.filter(
+        (item) => item.status === "rejected"
+      ).length,
+      cancelled: applications.filter(
+        (item) => item.status === "cancelled"
+      ).length,
+    };
+  }, [applications]);
+
+  return (
+    <div className="pageContainer">
+      <div className="pageHeader">
+        <div>
+          <h1>Leave Management</h1>
+          <p>
+            Manage employee leave applications, balances and
+            leave types.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="secondaryButton"
+          onClick={loadData}
+          disabled={loading}
+        >
+          <RefreshCw
+            size={16}
+            className={loading ? "spin" : ""}
+          />
+          Refresh
+        </button>
+      </div>
+
+      {error && (
+        <div className="errorBanner">
+          <AlertCircle size={18} />
+          <div>
+            <strong>Unable to load leave data</strong>
+            <span>{error}</span>
+          </div>
+        </div>
+      )}
+
+      <div className="statsGrid">
+        <div className="statCard">
+          <div className="statIcon">
+            <CalendarDays size={19} />
+          </div>
+
+          <div>
+            <span>Total Applications</span>
+            <strong>
+              {loading ? "—" : counts.total}
+            </strong>
+          </div>
+        </div>
+
+        <div className="statCard">
+          <div className="statIcon">
+            <Clock3 size={19} />
+          </div>
+
+          <div>
+            <span>Pending</span>
+            <strong>
+              {loading ? "—" : counts.pending}
+            </strong>
+          </div>
+        </div>
+
+        <div className="statCard">
+          <div className="statIcon">
+            <CheckCircle2 size={19} />
+          </div>
+
+          <div>
+            <span>Approved</span>
+            <strong>
+              {loading ? "—" : counts.approved}
+            </strong>
+          </div>
+        </div>
+
+        <div className="statCard">
+          <div className="statIcon">
+            <XCircle size={19} />
+          </div>
+
+          <div>
+            <span>Rejected</span>
+            <strong>
+              {loading ? "—" : counts.rejected}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="leaveTabs">
+        <button
+          type="button"
+          className={
+            activeTab === "applications" ? "active" : ""
+          }
+          onClick={() => setActiveTab("applications")}
+        >
+          Applications
+        </button>
+
+        <button
+          type="button"
+          className={
+            activeTab === "balances" ? "active" : ""
+          }
+          onClick={() => setActiveTab("balances")}
+        >
+          Leave Balances
+        </button>
+
+        <button
+          type="button"
+          className={
+            activeTab === "types" ? "active" : ""
+          }
+          onClick={() => setActiveTab("types")}
+        >
+          Leave Types
+        </button>
+      </div>
+
+      <div className="contentCard">
+        {loading ? (
+          <div className="emptyState">
+            <RefreshCw size={32} className="spin" />
+            <h3>Loading leave data</h3>
+            <p>
+              Fetching the latest information from the HRM
+              system.
+            </p>
+          </div>
+        ) : (
+          <>
+            {activeTab === "applications" && (
+              <>
+                <div className="cardHeader">
+                  <div>
+                    <h2>Leave Applications</h2>
+                    <p>
+                      Review employee leave requests and their
+                      current status.
+                    </p>
+                  </div>
+                </div>
+
+                {applications.length === 0 ? (
+                  <div className="emptyState">
+                    <CalendarDays size={34} />
+                    <h3>No leave applications</h3>
+                    <p>
+                      There are currently no leave applications.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="tableWrapper">
+                    <table className="leaveTable">
+                      <thead>
+                        <tr>
+                          <th>Employee</th>
+                          <th>Leave Type</th>
+                          <th>Dates</th>
+                          <th>Days</th>
+                          <th>Status</th>
+                          <th>Reason</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {applications.map((application) => (
+                          <tr key={application.id}>
+                            <td>
+                              <strong>
+                                {application.employee_profile
+                                  ?.employee_code ||
+                                  `Employee #${application.employee_profile_id}`}
+                              </strong>
+                            </td>
+
+                            <td>
+                              {application.leave_type?.name ||
+                                "-"}
+                            </td>
+
+                            <td>
+                              <div className="dateRange">
+                                <span>
+                                  {formatDate(
+                                    application.from_date
+                                  )}
+                                </span>
+                                <span>→</span>
+                                <span>
+                                  {formatDate(
+                                    application.to_date
+                                  )}
+                                </span>
+                              </div>
+                            </td>
+
+                            <td>
+                              {application.total_days}
+                            </td>
+
+                            <td>
+                              <span
+                                className={statusClass(
+                                  application.status
+                                )}
+                              >
+                                {statusLabel(
+                                  application.status
+                                )}
+                              </span>
+                            </td>
+
+                            <td>
+                              {application.reason || "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeTab === "balances" && (
+              <>
+                <div className="cardHeader">
+                  <div>
+                    <h2>Leave Balances</h2>
+                    <p>
+                      Track allocated, used, pending and
+                      available leave.
+                    </p>
+                  </div>
+                </div>
+
+                {balances.length === 0 ? (
+                  <div className="emptyState">
+                    <Clock3 size={34} />
+                    <h3>No balance records</h3>
+                    <p>
+                      No employee leave balances have been
+                      configured.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="tableWrapper">
+                    <table className="leaveTable">
+                      <thead>
+                        <tr>
+                          <th>Employee</th>
+                          <th>Leave Type</th>
+                          <th>Year</th>
+                          <th>Allocated</th>
+                          <th>Used</th>
+                          <th>Pending</th>
+                          <th>Available</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {balances.map((balance) => (
+                          <tr key={balance.id}>
+                            <td>
+                              <strong>
+                                {balance.employee_profile
+                                  ?.employee_code ||
+                                  `Employee #${balance.employee_profile_id}`}
+                              </strong>
+                            </td>
+
+                            <td>
+                              {balance.leave_type?.name || "-"}
+                            </td>
+
+                            <td>{balance.year}</td>
+
+                            <td>{balance.allocated}</td>
+
+                            <td>{balance.used}</td>
+
+                            <td>{balance.pending}</td>
+
+                            <td>
+                              <strong>
+                                {balance.available_balance ??
+                                  Number(balance.allocated) +
+                                    Number(
+                                      balance.opening_balance
+                                    ) +
+                                    Number(
+                                      balance.adjusted
+                                    ) -
+                                    Number(balance.used) -
+                                    Number(balance.pending)}
+                              </strong>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeTab === "types" && (
+              <>
+                <div className="cardHeader">
+                  <div>
+                    <h2>Leave Types</h2>
+                    <p>
+                      Leave categories configured in the HRM
+                      system.
+                    </p>
+                  </div>
+                </div>
+
+                {leaveTypes.length === 0 ? (
+                  <div className="emptyState">
+                    <CalendarDays size={34} />
+                    <h3>No leave types</h3>
+                    <p>
+                      No leave types are currently configured.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="tableWrapper">
+                    <table className="leaveTable">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Code</th>
+                          <th>Annual Quota</th>
+                          <th>Paid</th>
+                          <th>Approval</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {leaveTypes.map((type) => (
+                          <tr key={type.id}>
+                            <td>
+                              <strong>{type.name}</strong>
+                            </td>
+
+                            <td>{type.code}</td>
+
+                            <td>
+                              {type.annual_quota}
+                            </td>
+
+                            <td>
+                              {type.is_paid ? "Paid" : "Unpaid"}
+                            </td>
+
+                            <td>
+                              {type.requires_approval
+                                ? "Required"
+                                : "Automatic"}
+                            </td>
+
+                            <td>
+                              <span
+                                className={
+                                  type.is_active
+                                    ? "statusBadge status-approved"
+                                    : "statusBadge status-rejected"
+                                }
+                              >
+                                {type.is_active
+                                  ? "Active"
+                                  : "Inactive"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

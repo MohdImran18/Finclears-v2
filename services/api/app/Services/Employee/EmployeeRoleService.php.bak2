@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Services\Employee;
+
+use App\Models\EmployeeProfile;
+use InvalidArgumentException;
+
+class EmployeeRoleService
+{
+    /**
+     * Synchronize Spatie roles from employee department/designation.
+     */
+    public function sync(EmployeeProfile $employee): void
+    {
+        $employee->loadMissing([
+            'department:id,name,code',
+            'designation:id,name,code,department_id',
+            'user',
+        ]);
+
+        if (!$employee->user) {
+            throw new InvalidArgumentException(
+                'Employee must have an associated user.'
+            );
+        }
+
+        $department = $employee->department?->code;
+        $designation = $employee->designation?->name;
+
+        if (!$department || !$designation) {
+            $employee->user->syncRoles(['employee']);
+
+            return;
+        }
+
+        $roles = $this->resolveRoles($department, $designation);
+
+        $employee->user->syncRoles($roles);
+    }
+
+    /**
+     * Resolve Spatie roles for a department/designation combination.
+     */
+    protected function resolveRoles(
+        string $department,
+        string $designation
+    ): array {
+        return match ($department) {
+            'BUSINESS' => match ($designation) {
+                'Business Executive',
+                'Senior Business Executive'
+                    => ['employee'],
+
+                'Business Manager',
+                'Senior Business Manager'
+                    => ['team-lead'],
+
+                'Regional Business Manager',
+                'Area Business Manager',
+                'Territory Business Manager'
+                    => ['department-manager'],
+
+                default
+                    => ['employee'],
+            },
+
+            'HR' => match ($designation) {
+                'HR Executive',
+                'Senior HR Executive'
+                    => ['hr-executive'],
+
+                'HR Manager'
+                    => ['hr-manager'],
+
+                default
+                    => ['employee'],
+            },
+
+            'ACCOUNTING' => match ($designation) {
+                'Accountant',
+                'Senior Accountant'
+                    => ['accountant'],
+
+                'Accounts Manager'
+                    => ['finance-manager'],
+
+                default
+                    => ['employee'],
+            },
+
+            'SUPPORT' => match ($designation) {
+                'Support Executive'
+                    => ['employee'],
+
+                'Senior Support Executive'
+                    => ['team-lead'],
+
+                'Support Manager'
+                    => ['department-manager'],
+
+                default
+                    => ['employee'],
+            },
+
+            default => ['employee'],
+        };
+    }
+}
+

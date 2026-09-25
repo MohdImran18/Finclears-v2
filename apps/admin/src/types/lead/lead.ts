@@ -1,4 +1,4 @@
-﻿export interface LeadSource {
+export interface LeadSource {
   id: number;
   name: string;
   slug: string;
@@ -38,6 +38,9 @@ export interface Lead {
   service?: LeadService | null;
   source?: LeadSource | null;
   assignedUser?: AssignedUser | null;
+  ownership_started_at?: string | null;
+  ownership_expires_at?: string | null;
+  ownership_status?: "unassigned" | "active" | "expired" | string | null;
 }
 
 export interface LeadPayload {

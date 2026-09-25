@@ -1,6 +1,12 @@
 <?php
 
 return [
+    'whatsapp' => [
+        'url' => env('WHATSAPP_API_URL'),
+        'token' => env('WHATSAPP_API_TOKEN'),
+        'timeout' => (int) env('WHATSAPP_TIMEOUT', 30),
+    ],
+
 
     /*
     |--------------------------------------------------------------------------

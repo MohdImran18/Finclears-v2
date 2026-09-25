@@ -1,0 +1,613 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\EmployeeProfile;
+use App\Models\EmployeeSalaryStructure;
+use App\Models\EmployeeSalaryStructureItem;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+
+class EmployeeSalaryStructureController extends Controller
+{
+    /**
+     * List employee salary structures.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $query = EmployeeSalaryStructure::query()
+            ->with([
+                'employeeProfile:id,user_id,employee_code',
+                'employeeProfile.user:id,name,email',
+                'items.salaryComponent',
+            ]);
+
+        if ($request->filled('employee_profile_id')) {
+            $query->where(
+                'employee_profile_id',
+                $request->integer('employee_profile_id')
+            );
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->has('is_current')) {
+            $query->where(
+                'is_current',
+                $request->boolean('is_current')
+            );
+        }
+
+        $perPage = min(
+            max((int) $request->input('per_page', 20), 1),
+            100
+        );
+
+        $structures = $query
+            ->orderByDesc('effective_from')
+            ->orderByDesc('id')
+            ->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Employee salary structures fetched successfully.',
+            'data' => $structures,
+        ]);
+    }
+
+    /**
+     * Show one employee salary structure.
+     */
+    public function show(
+        EmployeeSalaryStructure $employeeSalaryStructure
+    ): JsonResponse {
+        $employeeSalaryStructure->load([
+            'employeeProfile:id,user_id,employee_code',
+            'employeeProfile.user:id,name,email',
+            'items.salaryComponent',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Employee salary structure fetched successfully.',
+            'data' => [
+                'salary_structure' => $employeeSalaryStructure,
+            ],
+        ]);
+    }
+
+    /**
+     * Create employee salary structure with items.
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'employee_profile_id' => [
+                'required',
+                'integer',
+                'exists:employee_profiles,id',
+            ],
+
+            'structure_name' => [
+                'required',
+                'string',
+                'max:150',
+            ],
+
+            'salary_type' => [
+                'required',
+                'string',
+                'max:30',
+            ],
+
+            'pay_frequency' => [
+                'required',
+                'string',
+                'max:30',
+            ],
+
+            'currency' => [
+                'required',
+                'string',
+                'max:10',
+            ],
+
+            'effective_from' => [
+                'required',
+                'date',
+            ],
+
+            'effective_to' => [
+                'nullable',
+                'date',
+                'after_or_equal:effective_from',
+            ],
+
+            'basic_salary' => [
+                'required',
+                'numeric',
+                'min:0',
+            ],
+
+            'gross_salary' => [
+                'required',
+                'numeric',
+                'min:0',
+            ],
+
+            'monthly_ctc' => [
+                'required',
+                'numeric',
+                'min:0',
+            ],
+
+            'annual_ctc' => [
+                'required',
+                'numeric',
+                'min:0',
+            ],
+
+            'monthly_variable_target' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'annual_variable_target' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'status' => [
+                'required',
+                'in:draft,active,inactive',
+            ],
+
+            'is_current' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'notes' => [
+                'nullable',
+                'string',
+            ],
+
+            'items' => [
+                'nullable',
+                'array',
+            ],
+
+            'items.*.salary_component_id' => [
+                'required',
+                'integer',
+                'exists:salary_components,id',
+            ],
+
+            'items.*.calculation_type' => [
+                'required',
+                'string',
+                'max:40',
+            ],
+
+            'items.*.calculation_basis' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+
+            'items.*.amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'items.*.percentage' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'items.*.formula' => [
+                'nullable',
+                'string',
+            ],
+
+            'items.*.rule_config' => [
+                'nullable',
+                'array',
+            ],
+
+            'items.*.minimum_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'items.*.maximum_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'items.*.is_variable' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'items.*.is_taxable' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'items.*.is_statutory' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'items.*.is_reimbursement' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'items.*.is_enabled' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'items.*.display_order' => [
+                'sometimes',
+                'integer',
+                'min:0',
+            ],
+
+            'items.*.notes' => [
+                'nullable',
+                'string',
+            ],
+        ]);
+
+        $structure = DB::transaction(function () use ($validated) {
+            $employee = EmployeeProfile::findOrFail(
+                $validated['employee_profile_id']
+            );
+
+            $isCurrent = (bool) ($validated['is_current'] ?? false);
+
+            if ($isCurrent) {
+                EmployeeSalaryStructure::where(
+                    'employee_profile_id',
+                    $employee->id
+                )->update([
+                    'is_current' => false,
+                ]);
+            }
+
+            $items = $validated['items'] ?? [];
+
+            unset($validated['items']);
+
+            $structure = EmployeeSalaryStructure::create($validated);
+
+            foreach ($items as $item) {
+                $structure->items()->create($item);
+            }
+
+            return $structure;
+        });
+
+        $structure->load([
+            'employeeProfile:id,user_id,employee_code',
+            'employeeProfile.user:id,name,email',
+            'items.salaryComponent',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Employee salary structure created successfully.',
+            'data' => [
+                'salary_structure' => $structure,
+            ],
+        ], 201);
+    }
+
+    /**
+     * Update employee salary structure.
+     */
+    public function update(
+        Request $request,
+        EmployeeSalaryStructure $employeeSalaryStructure
+    ): JsonResponse {
+        $validated = $request->validate([
+            'structure_name' => [
+                'sometimes',
+                'string',
+                'max:150',
+            ],
+
+            'salary_type' => [
+                'sometimes',
+                'string',
+                'max:30',
+            ],
+
+            'pay_frequency' => [
+                'sometimes',
+                'string',
+                'max:30',
+            ],
+
+            'currency' => [
+                'sometimes',
+                'string',
+                'max:10',
+            ],
+
+            'effective_from' => [
+                'sometimes',
+                'date',
+            ],
+
+            'effective_to' => [
+                'nullable',
+                'date',
+                'after_or_equal:effective_from',
+            ],
+
+            'basic_salary' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'gross_salary' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'monthly_ctc' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'annual_ctc' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+            ],
+
+            'monthly_variable_target' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'annual_variable_target' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'status' => [
+                'sometimes',
+                'in:draft,active,inactive',
+            ],
+
+            'is_current' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'notes' => [
+                'nullable',
+                'string',
+            ],
+
+            'items' => [
+                'sometimes',
+                'array',
+            ],
+
+            'items.*.salary_component_id' => [
+                'required',
+                'integer',
+                'exists:salary_components,id',
+            ],
+
+            'items.*.calculation_type' => [
+                'required',
+                'string',
+                'max:40',
+            ],
+
+            'items.*.calculation_basis' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+
+            'items.*.amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'items.*.percentage' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'items.*.formula' => [
+                'nullable',
+                'string',
+            ],
+
+            'items.*.rule_config' => [
+                'nullable',
+                'array',
+            ],
+
+            'items.*.minimum_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'items.*.maximum_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+
+            'items.*.is_variable' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'items.*.is_taxable' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'items.*.is_statutory' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'items.*.is_reimbursement' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'items.*.is_enabled' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'items.*.display_order' => [
+                'sometimes',
+                'integer',
+                'min:0',
+            ],
+
+            'items.*.notes' => [
+                'nullable',
+                'string',
+            ],
+        ]);
+
+        $structure = DB::transaction(function () use (
+            $validated,
+            $employeeSalaryStructure
+        ) {
+            $isCurrent = array_key_exists(
+                'is_current',
+                $validated
+            )
+                ? (bool) $validated['is_current']
+                : $employeeSalaryStructure->is_current;
+
+            if ($isCurrent) {
+                EmployeeSalaryStructure::where(
+                    'employee_profile_id',
+                    $employeeSalaryStructure->employee_profile_id
+                )
+                    ->whereKeyNot(
+                        $employeeSalaryStructure->id
+                    )
+                    ->update([
+                        'is_current' => false,
+                    ]);
+            }
+
+            $items = $validated['items'] ?? null;
+
+            unset($validated['items']);
+
+            $employeeSalaryStructure->update($validated);
+
+            if ($items !== null) {
+                $employeeSalaryStructure->items()->delete();
+
+                foreach ($items as $item) {
+                    $employeeSalaryStructure->items()->create($item);
+                }
+            }
+
+            return $employeeSalaryStructure->refresh();
+        });
+
+        $structure->load([
+            'employeeProfile:id,user_id,employee_code',
+            'employeeProfile.user:id,name,email',
+            'items.salaryComponent',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Employee salary structure updated successfully.',
+            'data' => [
+                'salary_structure' => $structure,
+            ],
+        ]);
+    }
+
+    /**
+     * Delete employee salary structure.
+     */
+    public function destroy(
+        EmployeeSalaryStructure $employeeSalaryStructure
+    ): JsonResponse {
+        $employeeSalaryStructure->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Employee salary structure deleted successfully.',
+        ]);
+    }
+
+    /**
+     * Make a salary structure current.
+     */
+    public function setCurrent(
+        EmployeeSalaryStructure $employeeSalaryStructure
+    ): JsonResponse {
+        DB::transaction(function () use ($employeeSalaryStructure) {
+            EmployeeSalaryStructure::where(
+                'employee_profile_id',
+                $employeeSalaryStructure->employee_profile_id
+            )
+                ->whereKeyNot($employeeSalaryStructure->id)
+                ->update([
+                    'is_current' => false,
+                ]);
+
+            $employeeSalaryStructure->update([
+                'is_current' => true,
+            ]);
+        });
+
+        $employeeSalaryStructure->refresh()->load([
+            'employeeProfile:id,user_id,employee_code',
+            'employeeProfile.user:id,name,email',
+            'items.salaryComponent',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Salary structure marked as current successfully.',
+            'data' => [
+                'salary_structure' => $employeeSalaryStructure,
+            ],
+        ]);
+    }
+}

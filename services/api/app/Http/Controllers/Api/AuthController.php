@@ -110,9 +110,50 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        $user->load([
+            'employeeProfile.department:id,name,code',
+            'employeeProfile.designation:id,name,code,department_id',
+            'employeeProfile.reportingManager:id,name,email',
+        ]);
+
         return response()->json([
             'success' => true,
-            'data' => $request->user(),
+            'data' => [
+                'id' => $user->id,
+                'uuid' => $user->uuid,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role,
+                'spatie_roles' => $user->getRoleNames()->values()->toArray(),
+                'permissions' => $user->getAllPermissions()->pluck('name')->values()->toArray(),
+                'status' => $user->status,
+
+                'employee_profile' => $user->employeeProfile ? [
+                    'id' => $user->employeeProfile->id,
+                    'employee_code' => $user->employeeProfile->employee_code,
+
+                    'department' => $user->employeeProfile->department ? [
+                        'id' => $user->employeeProfile->department->id,
+                        'name' => $user->employeeProfile->department->name,
+                        'code' => $user->employeeProfile->department->code,
+                    ] : null,
+
+                    'designation' => $user->employeeProfile->designation ? [
+                        'id' => $user->employeeProfile->designation->id,
+                        'name' => $user->employeeProfile->designation->name,
+                        'code' => $user->employeeProfile->designation->code,
+                    ] : null,
+
+                    'reporting_manager' => $user->employeeProfile->reportingManager ? [
+                        'id' => $user->employeeProfile->reportingManager->id,
+                        'name' => $user->employeeProfile->reportingManager->name,
+                        'email' => $user->employeeProfile->reportingManager->email,
+                    ] : null,
+                ] : null,
+            ],
         ]);
     }
 

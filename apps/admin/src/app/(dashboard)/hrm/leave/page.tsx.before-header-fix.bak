@@ -1,0 +1,974 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  CalendarDays,
+  Clock3,
+  CheckCircle2,
+  XCircle,
+  Ban,
+  RefreshCw,
+  AlertCircle,
+  Plus,
+  X,
+} from "lucide-react";
+
+import {
+  getLeaveApplications,
+  getLeaveBalances,
+  getLeaveTypes,
+  createLeaveApplication,
+  approveLeaveApplication,
+  rejectLeaveApplication,
+  cancelLeaveApplication,
+} from "@/lib/api/leave/leaveApi";
+
+import type {
+  EmployeeLeaveBalance,
+  LeaveApplication,
+  LeaveType,
+} from "@/types/leave/leave";
+
+type Tab = "applications" | "balances" | "types";
+
+function formatDate(value: string) {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function statusLabel(status: LeaveApplication["status"]) {
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function statusClass(status: LeaveApplication["status"]) {
+  return `statusBadge status-${status}`;
+}
+
+export default function LeavePage() {
+  const [activeTab, setActiveTab] =
+    useState<Tab>("applications");
+
+  const [applications, setApplications] = useState<
+    LeaveApplication[]
+  >([]);
+
+  const [balances, setBalances] = useState<
+    EmployeeLeaveBalance[]
+  >([]);
+
+  const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
+  const [actionError, setActionError] = useState("");
+  const [actionSuccess, setActionSuccess] = useState("");
+  const [rejectingApplication, setRejectingApplication] =
+    useState<LeaveApplication | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+
+  const [form, setForm] = useState({
+    employee_profile_id: "",
+    leave_type_id: "",
+    from_date: "",
+    to_date: "",
+    reason: "",
+  });
+
+  const selectedBalance = useMemo(() => {
+    if (!form.employee_profile_id || !form.leave_type_id) {
+      return null;
+    }
+
+    return (
+      balances.find(
+        (item) =>
+          String(item.employee_profile_id) ===
+            form.employee_profile_id &&
+          String(item.leave_type_id) ===
+            form.leave_type_id
+      ) || null
+    );
+  }, [
+    balances,
+    form.employee_profile_id,
+    form.leave_type_id,
+  ]);
+
+  const calculatedDays = useMemo(() => {
+    if (!form.from_date || !form.to_date) {
+      return 0;
+    }
+
+    const from = new Date(`${form.from_date}T00:00:00`);
+    const to = new Date(`${form.to_date}T00:00:00`);
+
+    if (
+      Number.isNaN(from.getTime()) ||
+      Number.isNaN(to.getTime()) ||
+      to < from
+    ) {
+      return 0;
+    }
+
+    return Math.floor(
+      (to.getTime() - from.getTime()) /
+        (1000 * 60 * 60 * 24)
+    ) + 1;
+  }, [form.from_date, form.to_date]);
+
+  const openCreateForm = () => {
+    setFormError("");
+    setForm({
+      employee_profile_id: "",
+      leave_type_id: "",
+      from_date: "",
+      to_date: "",
+      reason: "",
+    });
+    setShowCreateForm(true);
+  };
+
+  const closeCreateForm = () => {
+    if (saving) return;
+
+    setShowCreateForm(false);
+    setFormError("");
+  };
+
+  const handleCreateApplication = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+    setFormError("");
+
+    if (
+      !form.employee_profile_id ||
+      !form.leave_type_id ||
+      !form.from_date ||
+      !form.to_date
+    ) {
+      setFormError(
+        "Please fill all required fields."
+      );
+      return;
+    }
+
+    if (calculatedDays <= 0) {
+      setFormError(
+        "Please select a valid leave date range."
+      );
+      return;
+    }
+
+    if (
+      selectedBalance &&
+      calculatedDays >
+        Number(
+          selectedBalance.available_balance ??
+            Number(selectedBalance.opening_balance) +
+              Number(selectedBalance.allocated) +
+              Number(selectedBalance.adjusted) -
+              Number(selectedBalance.used) -
+              Number(selectedBalance.pending)
+        )
+    ) {
+      setFormError(
+        `Insufficient leave balance. Available balance: ${
+          selectedBalance.available_balance ??
+          0
+        } days.`
+      );
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      await createLeaveApplication({
+        employee_profile_id: Number(
+          form.employee_profile_id
+        ),
+        leave_type_id: Number(form.leave_type_id),
+        from_date: form.from_date,
+        to_date: form.to_date,
+        reason: form.reason.trim() || undefined,
+      });
+
+      setShowCreateForm(false);
+      setFormError("");
+      await loadData();
+    } catch (err) {
+      setFormError(
+        err instanceof Error
+          ? err.message
+          : "Unable to submit leave application."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleApprove = async (application: LeaveApplication) => {
+    if (actionLoadingId !== null) return;
+
+    setActionError("");
+    setActionSuccess("");
+
+    try {
+      setActionLoadingId(application.id);
+
+      const response = await approveLeaveApplication(application.id);
+
+      setActionSuccess(
+        response.message || "Leave application approved successfully."
+      );
+
+      await loadData();
+    } catch (err) {
+      setActionError(
+        err instanceof Error
+          ? err.message
+          : "Unable to approve leave application."
+      );
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const openRejectModal = (application: LeaveApplication) => {
+    setActionError("");
+    setActionSuccess("");
+    setRejectionReason("");
+    setRejectingApplication(application);
+  };
+
+  const closeRejectModal = () => {
+    if (actionLoadingId !== null) return;
+
+    setRejectingApplication(null);
+    setRejectionReason("");
+  };
+
+  const handleReject = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    if (!rejectingApplication || actionLoadingId !== null) {
+      return;
+    }
+
+    const reason = rejectionReason.trim();
+
+    if (!reason) {
+      setActionError("Please enter a rejection reason.");
+      return;
+    }
+
+    setActionError("");
+    setActionSuccess("");
+
+    try {
+      setActionLoadingId(rejectingApplication.id);
+
+      const response = await rejectLeaveApplication(
+        rejectingApplication.id,
+        reason
+      );
+
+      setRejectingApplication(null);
+      setRejectionReason("");
+
+      setActionSuccess(
+        response.message || "Leave application rejected successfully."
+      );
+
+      await loadData();
+    } catch (err) {
+      setActionError(
+        err instanceof Error
+          ? err.message
+          : "Unable to reject leave application."
+      );
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleCancel = async (application: LeaveApplication) => {
+    if (actionLoadingId !== null) return;
+
+    const confirmed = window.confirm(
+      `Cancel leave application for ${application.employee_profile?.employee_code || `Employee #${application.employee_profile_id}`}?`
+    );
+
+    if (!confirmed) return;
+
+    setActionError("");
+    setActionSuccess("");
+
+    try {
+      setActionLoadingId(application.id);
+
+      const response = await cancelLeaveApplication(application.id);
+
+      setActionSuccess(
+        response.message || "Leave application cancelled successfully."
+      );
+
+      await loadData();
+    } catch (err) {
+      setActionError(
+        err instanceof Error
+          ? err.message
+          : "Unable to cancel leave application."
+      );
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const [
+        applicationsResponse,
+        balancesResponse,
+        leaveTypesResponse,
+      ] = await Promise.all([
+        getLeaveApplications({
+          per_page: 100,
+        }),
+        getLeaveBalances({
+          per_page: 100,
+        }),
+        getLeaveTypes(),
+      ]);
+
+      setApplications(applicationsResponse.data.data || []);
+      setBalances(balancesResponse.data.data || []);
+      setLeaveTypes(leaveTypesResponse.data || []);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Unable to load leave data.";
+
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const counts = useMemo(() => {
+    return {
+      total: applications.length,
+      pending: applications.filter(
+        (item) => item.status === "pending"
+      ).length,
+      approved: applications.filter(
+        (item) => item.status === "approved"
+      ).length,
+      rejected: applications.filter(
+        (item) => item.status === "rejected"
+      ).length,
+      cancelled: applications.filter(
+        (item) => item.status === "cancelled"
+      ).length,
+    };
+  }, [applications]);
+
+  return (
+    <div className="pageContainer">
+      <div className="pageHeader">
+        <div>
+          <h1>Leave Management</h1>
+          <p>
+            Manage employee leave applications, balances and
+            leave types.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="secondaryButton"
+          onClick={loadData}
+          disabled={loading}
+        >
+          <RefreshCw
+            size={16}
+            className={loading ? "..." : counts.rejected}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="leaveTabs">
+        <button
+          type="button"
+          className={
+            activeTab === "applications" ? "active" : ""
+          }
+          onClick={() => setActiveTab("applications")}
+        >
+          Applications
+        </button>
+
+        <button
+          type="button"
+          className={
+            activeTab === "balances" ? "active" : ""
+          }
+          onClick={() => setActiveTab("balances")}
+        >
+          Leave Balances
+        </button>
+
+        <button
+          type="button"
+          className={
+            activeTab === "types" ? "active" : ""
+          }
+          onClick={() => setActiveTab("types")}
+        >
+          Leave Types
+        </button>
+      </div>
+
+
+      {showCreateForm && (
+        <div className="modalOverlay">
+          <div className="modalCard">
+            <div className="modalHeader">
+              <div>
+                <h2>New Leave Application</h2>
+                <p>
+                  Submit a leave request for an employee.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="iconButton"
+                onClick={closeCreateForm}
+                disabled={saving}
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form
+              className="leaveForm"
+              onSubmit={handleCreateApplication}
+            >
+              {formError && (
+                <div className="errorBanner">
+                  <AlertCircle size={18} />
+                  <div>
+                    <strong>Unable to submit leave</strong>
+                    <span>{formError}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="formGrid">
+                <label>
+                  <span>Employee *</span>
+                  <select
+                    value={form.employee_profile_id}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        employee_profile_id:
+                          event.target.value,
+                      }))
+                    }
+                    required
+                  >
+                    <option value="">
+                      Select employee
+                    </option>
+
+                    {balances
+                      .filter(
+                        (balance, index, array) =>
+                          array.findIndex(
+                            (item) =>
+                              item.employee_profile_id ===
+                              balance.employee_profile_id
+                          ) === index
+                      )
+                      .map((balance) => (
+                        <option
+                          key={balance.employee_profile_id}
+                          value={balance.employee_profile_id}
+                        >
+                          {balance.employee_profile
+                            ?.employee_code ||
+                            `Employee #${balance.employee_profile_id}`}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+
+                <label>
+                  <span>Leave Type *</span>
+                  <select
+                    value={form.leave_type_id}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        leave_type_id:
+                          event.target.value,
+                      }))
+                    }
+                    required
+                  >
+                    <option value="">
+                      Select leave type
+                    </option>
+
+                    {leaveTypes
+                      .filter((type) => type.is_active)
+                      .map((type) => (
+                        <option
+                          key={type.id}
+                          value={type.id}
+                        >
+                          {type.name} ({type.code})
+                        </option>
+                      ))}
+                  </select>
+                </label>
+
+                <label>
+                  <span>From Date *</span>
+                  <input
+                    type="date"
+                    value={form.from_date}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        from_date:
+                          event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label>
+                  <span>To Date *</span>
+                  <input
+                    type="date"
+                    min={form.from_date || undefined}
+                    value={form.to_date}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        to_date:
+                          event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+              </div>
+
+              {form.employee_profile_id &&
+                form.leave_type_id && (
+                  <div className="balancePreview">
+                    <span>Available Balance</span>
+                    <strong>
+                      {selectedBalance
+                        ? (
+                            selectedBalance.available_balance ??
+                            Number(
+                              selectedBalance.opening_balance
+                            ) +
+                              Number(
+                                selectedBalance.allocated
+                              ) +
+                              Number(
+                                selectedBalance.adjusted
+                              ) -
+                              Number(
+                                selectedBalance.used
+                              ) -
+                              Number(
+                                selectedBalance.pending
+                              )
+                          ).toFixed(2)
+                        : "0.00"}{" "}
+                      days
+                    </strong>
+                  </div>
+                )}
+
+              <div className="daysPreview">
+                <span>Requested Days</span>
+                <strong>
+                  {calculatedDays}{" "}
+                  {calculatedDays === 1
+                    ? "day"
+                    : "days"}
+                </strong>
+              </div>
+
+              <label>
+                <span>Reason</span>
+                <textarea
+                  rows={4}
+                  maxLength={5000}
+                  placeholder="Enter reason for leave..."
+                  value={form.reason}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      reason: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <div className="modalActions">
+                <button
+                  type="button"
+                  className="secondaryButton"
+                  onClick={closeCreateForm}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="primaryButton"
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <>
+                      <RefreshCw
+                        size={16}
+                        className="spin"
+                      />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={16} />
+                      Submit Leave
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      <div className="contentCard">
+        {loading ? (
+          <div className="emptyState">
+            <RefreshCw size={32} className="spin" />
+            <h3>Loading leave data</h3>
+            <p>
+              Fetching the latest information from the HRM
+              system.
+            </p>
+          </div>
+        ) : (
+          <>
+            {activeTab === "applications" && (
+              <>
+                <div className="cardHeader">
+                  <div>
+                    <h2>Leave Applications</h2>
+                    <p>
+                      Review employee leave requests and their
+                      current status.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="primaryButton"
+                    onClick={openCreateForm}
+                  >
+                    <Plus size={16} />
+                    New Leave Application
+                  </button>
+                </div>
+
+                {applications.length === 0 ? (
+                  <div className="emptyState">
+                    <CalendarDays size={34} />
+                    <h3>No leave applications</h3>
+                    <p>
+                      There are currently no leave applications.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="tableWrapper">
+                    <table className="leaveTable">
+                      <thead>
+                        <tr>
+                          <th>Employee</th>
+                          <th>Leave Type</th>
+                          <th>Dates</th>
+                          <th>Days</th>
+                          <th>Status</th>
+                          <th>Reason</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {applications.map((application) => (
+                          <tr key={application.id}>
+                            <td>
+                              <strong>
+                                {application.employee_profile
+                                  ?.employee_code ||
+                                  `Employee #${application.employee_profile_id}`}
+                              </strong>
+                            </td>
+
+                            <td>
+                              {application.leave_type?.name ||
+                                "-"}
+                            </td>
+
+                            <td>
+                              <div className="dateRange">
+                                <span>
+                                  {formatDate(
+                                    application.from_date
+                                  )}
+                                </span>
+                                <span>- </span>
+                                <span>
+                                  {formatDate(
+                                    application.to_date
+                                  )}
+                                </span>
+                              </div>
+                            </td>
+
+                            <td>
+                              {application.total_days}
+                            </td>
+
+                            <td>
+                              <span
+                                className={statusClass(
+                                  application.status
+                                )}
+                              >
+                                {statusLabel(
+                                  application.status
+                                )}
+                              </span>
+                            </td>
+
+                            <td>
+                              {application.reason || "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeTab === "balances" && (
+              <>
+                <div className="cardHeader">
+                  <div>
+                    <h2>Leave Balances</h2>
+                    <p>
+                      Track allocated, used, pending and
+                      available leave.
+                    </p>
+                  </div>
+                </div>
+
+                {balances.length === 0 ? (
+                  <div className="emptyState">
+                    <Clock3 size={34} />
+                    <h3>No balance records</h3>
+                    <p>
+                      No employee leave balances have been
+                      configured.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="tableWrapper">
+                    <table className="leaveTable">
+                      <thead>
+                        <tr>
+                          <th>Employee</th>
+                          <th>Leave Type</th>
+                          <th>Year</th>
+                          <th>Allocated</th>
+                          <th>Used</th>
+                          <th>Pending</th>
+                          <th>Available</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {balances.map((balance) => (
+                          <tr key={balance.id}>
+                            <td>
+                              <strong>
+                                {balance.employee_profile
+                                  ?.employee_code ||
+                                  `Employee #${balance.employee_profile_id}`}
+                              </strong>
+                            </td>
+
+                            <td>
+                              {balance.leave_type?.name || "-"}
+                            </td>
+
+                            <td>{balance.year}</td>
+
+                            <td>{balance.allocated}</td>
+
+                            <td>{balance.used}</td>
+
+                            <td>{balance.pending}</td>
+
+                            <td>
+                              <strong>
+                                {balance.available_balance ??
+                                  Number(balance.allocated) +
+                                    Number(
+                                      balance.opening_balance
+                                    ) +
+                                    Number(
+                                      balance.adjusted
+                                    ) -
+                                    Number(balance.used) -
+                                    Number(balance.pending)}
+                              </strong>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeTab === "types" && (
+              <>
+                <div className="cardHeader">
+                  <div>
+                    <h2>Leave Types</h2>
+                    <p>
+                      Leave categories configured in the HRM
+                      system.
+                    </p>
+                  </div>
+                </div>
+
+                {leaveTypes.length === 0 ? (
+                  <div className="emptyState">
+                    <CalendarDays size={34} />
+                    <h3>No leave types</h3>
+                    <p>
+                      No leave types are currently configured.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="tableWrapper">
+                    <table className="leaveTable">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Code</th>
+                          <th>Annual Quota</th>
+                          <th>Paid</th>
+                          <th>Approval</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {leaveTypes.map((type) => (
+                          <tr key={type.id}>
+                            <td>
+                              <strong>{type.name}</strong>
+                            </td>
+
+                            <td>{type.code}</td>
+
+                            <td>
+                              {type.annual_quota}
+                            </td>
+
+                            <td>
+                              {type.is_paid ? "Paid" : "Unpaid"}
+                            </td>
+
+                            <td>
+                              {type.requires_approval
+                                ? "Required"
+                                : "Automatic"}
+                            </td>
+
+                            <td>
+                              <span
+                                className={
+                                  type.is_active
+                                    ? "statusBadge status-approved"
+                                    : "statusBadge status-rejected"
+                                }
+                              >
+                                {type.is_active
+                                  ? "Active"
+                                  : "Inactive"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

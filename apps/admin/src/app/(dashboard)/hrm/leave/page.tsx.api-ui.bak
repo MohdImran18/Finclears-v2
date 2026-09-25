@@ -1,0 +1,165 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  CalendarDays,
+  Clock3,
+  CheckCircle2,
+  XCircle,
+  Plus,
+} from "lucide-react";
+
+export default function LeavePage() {
+  const [activeTab, setActiveTab] = useState("applications");
+
+  return (
+    <div className="pageContainer">
+      <div className="pageHeader">
+        <div>
+          <h1>Leave Management</h1>
+          <p>
+            Manage leave applications, balances and approvals.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="primaryButton"
+          onClick={() => setActiveTab("apply")}
+        >
+          <Plus size={17} />
+          Apply Leave
+        </button>
+      </div>
+
+      <div className="statsGrid">
+        <div className="statCard">
+          <div className="statIcon">
+            <CalendarDays size={19} />
+          </div>
+          <div>
+            <span>Total Applications</span>
+            <strong>0</strong>
+          </div>
+        </div>
+
+        <div className="statCard">
+          <div className="statIcon">
+            <Clock3 size={19} />
+          </div>
+          <div>
+            <span>Pending</span>
+            <strong>0</strong>
+          </div>
+        </div>
+
+        <div className="statCard">
+          <div className="statIcon">
+            <CheckCircle2 size={19} />
+          </div>
+          <div>
+            <span>Approved</span>
+            <strong>0</strong>
+          </div>
+        </div>
+
+        <div className="statCard">
+          <div className="statIcon">
+            <XCircle size={19} />
+          </div>
+          <div>
+            <span>Rejected</span>
+            <strong>0</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="leaveTabs">
+        <button
+          type="button"
+          className={activeTab === "applications" ? "active" : ""}
+          onClick={() => setActiveTab("applications")}
+        >
+          Applications
+        </button>
+
+        <button
+          type="button"
+          className={activeTab === "balances" ? "active" : ""}
+          onClick={() => setActiveTab("balances")}
+        >
+          Leave Balances
+        </button>
+
+        <button
+          type="button"
+          className={activeTab === "types" ? "active" : ""}
+          onClick={() => setActiveTab("types")}
+        >
+          Leave Types
+        </button>
+      </div>
+
+      <div className="contentCard">
+        {activeTab === "applications" && (
+          <>
+            <div className="cardHeader">
+              <div>
+                <h2>Leave Applications</h2>
+                <p>Review and manage employee leave requests.</p>
+              </div>
+            </div>
+
+            <div className="emptyState">
+              <CalendarDays size={34} />
+              <h3>No leave applications</h3>
+              <p>
+                Leave applications will appear here once employees
+                submit requests.
+              </p>
+            </div>
+          </>
+        )}
+
+        {activeTab === "balances" && (
+          <>
+            <div className="cardHeader">
+              <div>
+                <h2>Leave Balances</h2>
+                <p>View allocated, used and available leave.</p>
+              </div>
+            </div>
+
+            <div className="emptyState">
+              <Clock3 size={34} />
+              <h3>No balance records</h3>
+              <p>
+                Employee leave balances will appear here.
+              </p>
+            </div>
+          </>
+        )}
+
+        {activeTab === "types" && (
+          <>
+            <div className="cardHeader">
+              <div>
+                <h2>Leave Types</h2>
+                <p>Manage available leave categories.</p>
+              </div>
+            </div>
+
+            <div className="emptyState">
+              <CalendarDays size={34} />
+              <h3>No leave types loaded</h3>
+              <p>
+                Leave types configured in the HRM system will
+                appear here.
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

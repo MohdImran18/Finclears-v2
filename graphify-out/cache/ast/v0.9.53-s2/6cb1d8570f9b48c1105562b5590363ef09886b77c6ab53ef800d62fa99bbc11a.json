@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_services_api_app_repositories_userrepository_php", "label": "UserRepository.php", "file_type": "code", "source_file": "services/api/app/Repositories/UserRepository.php", "source_location": "L1"}], "edges": [], "raw_calls": []}

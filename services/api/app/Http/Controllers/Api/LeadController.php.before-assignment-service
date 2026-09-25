@@ -1,0 +1,390 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Lead\DeleteLeadRequest;
+use App\Http\Requests\Lead\StoreLeadRequest;
+use App\Http\Requests\Lead\UpdateLeadRequest;
+use App\Models\ActivityLog;
+use App\Models\Lead;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class LeadController extends Controller
+{
+    /**
+     * List leads.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $query = Lead::with([
+            'service:id,title',
+            'source:id,name',
+            'assignedUser:id,name,email',
+        ]);
+
+        if ($request->filled('search')) {
+            $search = $request->string('search')->toString();
+
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('company_name', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->priority);
+        }
+
+        if ($request->filled('assigned_to')) {
+            $query->where('assigned_to', $request->assigned_to);
+        }
+
+        $perPage = min(
+            max((int) $request->get('per_page', 20), 1),
+            100
+        );
+
+        $leads = $query
+            ->latest()
+            ->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Leads fetched successfully.',
+            'data' => $leads,
+        ]);
+    }
+
+    /**
+     * Create lead.
+     */
+    public function store(StoreLeadRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $lead = DB::transaction(function () use ($validated, $request) {
+            $lead = Lead::create($validated);
+
+            $this->logActivity(
+                lead: $lead,
+                userId: $request->user()?->id,
+                type: 'created',
+                subject: 'Lead Created',
+                description: $this->buildCreatedDescription($lead)
+            );
+
+            return $lead;
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lead created successfully.',
+            'data' => [
+                'lead' => $lead->load([
+                    'service:id,title',
+                    'source:id,name',
+                    'assignedUser:id,name,email',
+                ]),
+            ],
+        ], 201);
+    }
+
+    /**
+     * Show lead.
+     */
+    public function show(Lead $lead): JsonResponse
+    {
+        $lead->load([
+            'service:id,title',
+            'source:id,name',
+            'assignedUser:id,name,email',
+            'activities.user:id,name,email',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lead fetched successfully.',
+            'data' => [
+                'lead' => $lead,
+            ],
+        ]);
+    }
+
+    /**
+     * Update lead and record changed fields.
+     */
+    public function update(
+        UpdateLeadRequest $request,
+        Lead $lead
+    ): JsonResponse {
+        $validated = $request->validated();
+
+        $original = $lead->getOriginal();
+
+        DB::transaction(function () use (
+            $lead,
+            $validated,
+            $original,
+            $request
+        ): void {
+            $lead->fill($validated);
+
+            $changes = [];
+
+            foreach (array_keys($validated) as $field) {
+                $oldValue = $original[$field] ?? null;
+                $newValue = $lead->getAttribute($field);
+
+                if ($this->valuesDiffer($oldValue, $newValue)) {
+                    $changes[$field] = [
+                        'old' => $oldValue,
+                        'new' => $newValue,
+                    ];
+                }
+            }
+
+            $lead->save();
+
+            if (empty($changes)) {
+                return;
+            }
+
+            foreach ($changes as $field => $change) {
+                $this->logActivity(
+                    lead: $lead,
+                    userId: $request->user()?->id,
+                    type: $this->activityTypeForField($field),
+                    subject: $this->activitySubjectForField($field),
+                    description: $this->buildChangeDescription(
+                        $field,
+                        $change['old'],
+                        $change['new']
+                    )
+                );
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lead updated successfully.',
+            'data' => [
+                'lead' => $lead->fresh()->load([
+                    'service:id,title',
+                    'source:id,name',
+                    'assignedUser:id,name,email',
+                    'activities.user:id,name,email',
+                ]),
+            ],
+        ]);
+    }
+
+    /**
+     * Soft delete lead.
+     *
+     * Requires leads.delete permission through route middleware
+     * and a mandatory deletion reason.
+     */
+    public function destroy(
+        DeleteLeadRequest $request,
+        Lead $lead
+    ): JsonResponse {
+        $reason = trim((string) $request->validated('reason'));
+
+        DB::transaction(function () use (
+            $lead,
+            $request,
+            $reason
+        ): void {
+            $lead->deletion_reason = $reason;
+
+            $this->logActivity(
+                lead: $lead,
+                userId: $request->user()?->id,
+                type: 'deleted',
+                subject: 'Lead Deleted',
+                description: sprintf(
+                    'Lead #%d soft deleted. Reason: %s',
+                    $lead->id,
+                    $reason
+                )
+            );
+
+            $lead->save();
+            $lead->delete();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lead deleted successfully.',
+        ]);
+    }
+
+    /**
+     * Create an activity log entry.
+     */
+    private function logActivity(
+        Lead $lead,
+        ?int $userId,
+        string $type,
+        string $subject,
+        string $description
+    ): void {
+        ActivityLog::create([
+            'lead_id' => $lead->id,
+            'user_id' => $userId,
+            'type' => $type,
+            'subject' => $subject,
+            'description' => $description,
+            'activity_at' => now(),
+        ]);
+    }
+
+    /**
+     * Compare old/new values safely.
+     */
+    private function valuesDiffer(
+        mixed $oldValue,
+        mixed $newValue
+    ): bool {
+        if ($oldValue === null && $newValue === null) {
+            return false;
+        }
+
+        if (
+            is_numeric($oldValue)
+            && is_numeric($newValue)
+        ) {
+            return (string) $oldValue !== (string) $newValue;
+        }
+
+        if ($oldValue instanceof \DateTimeInterface) {
+            $oldValue = $oldValue->format('Y-m-d H:i:s');
+        }
+
+        if ($newValue instanceof \DateTimeInterface) {
+            $newValue = $newValue->format('Y-m-d H:i:s');
+        }
+
+        return (string) $oldValue !== (string) $newValue;
+    }
+
+    /**
+     * Build creation description.
+     */
+    private function buildCreatedDescription(Lead $lead): string
+    {
+        $parts = [
+            "Lead #{$lead->id} created.",
+        ];
+
+        if ($lead->name) {
+            $parts[] = "Name: {$lead->name}.";
+        }
+
+        if ($lead->phone) {
+            $parts[] = "Phone: {$lead->phone}.";
+        }
+
+        if ($lead->email) {
+            $parts[] = "Email: {$lead->email}.";
+        }
+
+        if ($lead->assigned_to) {
+            $parts[] = "Assigned user ID: {$lead->assigned_to}.";
+        }
+
+        if ($lead->status) {
+            $parts[] = "Status: {$lead->status}.";
+        }
+
+        return implode(' ', $parts);
+    }
+
+    /**
+     * Build field-change description.
+     */
+    private function buildChangeDescription(
+        string $field,
+        mixed $oldValue,
+        mixed $newValue
+    ): string {
+        $label = ucwords(
+            str_replace(
+                '_',
+                ' ',
+                $field
+            )
+        );
+
+        return sprintf(
+            '%s changed from "%s" to "%s".',
+            $label,
+            $this->stringifyValue($oldValue),
+            $this->stringifyValue($newValue)
+        );
+    }
+
+    /**
+     * Convert values to readable activity text.
+     */
+    private function stringifyValue(mixed $value): string
+    {
+        if ($value === null) {
+            return 'empty';
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        if (is_array($value)) {
+            return json_encode(
+                $value,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            ) ?: '[]';
+        }
+
+        return (string) $value;
+    }
+
+    /**
+     * Activity type based on field changed.
+     */
+    private function activityTypeForField(string $field): string
+    {
+        return match ($field) {
+            'assigned_to' => 'assigned',
+            'status' => 'status_changed',
+            'priority' => 'priority_changed',
+            'next_follow_up_at' => 'follow_up_changed',
+            default => 'updated',
+        };
+    }
+
+    /**
+     * Activity subject based on field changed.
+     */
+    private function activitySubjectForField(string $field): string
+    {
+        return match ($field) {
+            'assigned_to' => 'Lead Assignment Changed',
+            'status' => 'Lead Status Changed',
+            'priority' => 'Lead Priority Changed',
+            'next_follow_up_at' => 'Lead Follow-up Changed',
+            default => 'Lead Updated',
+        };
+    }
+}

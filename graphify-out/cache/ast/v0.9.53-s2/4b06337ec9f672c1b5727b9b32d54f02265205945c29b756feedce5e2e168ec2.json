@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_services_api_app_http_requests_service_storeservicefaqrequest_php", "label": "StoreServiceFaqRequest.php", "file_type": "code", "source_file": "services/api/app/Http/Requests/Service/StoreServiceFaqRequest.php", "source_location": "L1"}], "edges": [], "raw_calls": []}

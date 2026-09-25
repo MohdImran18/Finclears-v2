@@ -62,6 +62,8 @@ class User extends Authenticatable
     |--------------------------------------------------------------------------
     */
 
+    public const ROLE_SUPER_ADMIN = 'super_admin';
+
     public const ROLE_ADMIN = 'admin';
 
     public const ROLE_EMPLOYEE = 'employee';
@@ -130,4 +132,16 @@ class User extends Authenticatable
 
         return asset('storage/' . $this->avatar);
     }
+
+    public function employeeProfile(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(EmployeeProfile::class);
+    }
+    public function assignedLeads(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\Lead::class, 'assigned_to');
+    }
 }
+
+
+

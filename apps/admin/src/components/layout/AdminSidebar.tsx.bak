@@ -1,0 +1,214 @@
+"use client";
+
+import {
+  LayoutDashboard,
+  Users,
+  BriefcaseBusiness,
+  FileText,
+  ShoppingCart,
+  CreditCard,
+  Headphones,
+  BarChart3,
+  Settings,
+  ShieldCheck,
+  Building2,
+  UserRound,
+  Network,
+  CalendarDays,
+  WalletCards,
+} from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+
+const items: Array<{
+  label: string;
+  href: string;
+  icon: any;
+  coming?: boolean;
+}> = [
+  { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  { label: "Leads", href: "/crm/leads", icon: Users },
+  { label: "Customers", href: "/crm/customers", icon: Users },
+  { label: "Services", href: "/services", icon: BriefcaseBusiness },
+  { label: "Blogs", href: "/blogs", icon: FileText },
+  { label: "Orders", href: "/crm/orders", icon: ShoppingCart },
+  { label: "Payments", href: "/crm/payments", icon: CreditCard },
+  { label: "Support", href: "/support", icon: Headphones },
+  { label: "Reports", href: "/reports", icon: BarChart3 },
+  { label: "Users & Roles", href: "/users", icon: ShieldCheck },
+  { label: "Settings", href: "/settings", icon: Settings },
+];
+
+export default function AdminSidebar() {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const isHrmActive = pathname.startsWith("/hrm");
+
+  return (
+    <aside className="adminSidebar">
+      <div className="sidebarBrand">
+        <div className="brandMark">F</div>
+
+        <div>
+          <div className="brandName">Finclears</div>
+          <div className="brandLabel">ADMIN PANEL</div>
+        </div>
+      </div>
+
+      <nav className="sidebarNav">
+        <div className="navSectionLabel">WORKSPACE</div>
+
+        {items.slice(0, 3).map((item) => {
+          const Icon = item.icon;
+
+          const active =
+            item.href !== "#" &&
+            (pathname === item.href ||
+              (item.href !== "/" &&
+                pathname.startsWith(item.href)));
+
+          return (
+            <button
+              key={item.label}
+              type="button"
+              className={`navItem ${active ? "active" : ""}`}
+              onClick={() =>
+                item.href !== "#" && router.push(item.href)
+              }
+            >
+              <Icon size={17} />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
+
+        {/* HRM */}
+        <button
+          type="button"
+          className={`navItem hrmParentItem ${
+            isHrmActive ? "active" : ""
+          }`}
+          onClick={() => router.push("/hrm/departments")}
+        >
+          <Building2 size={17} />
+          <span>HRM</span>
+        </button>
+
+        <div className="hrmSubNav">
+
+          <button
+            type="button"
+            className={`navItem navSubItem ${
+              pathname.startsWith("/hrm/employees") ? "active" : ""
+            }`}
+            onClick={() => router.push("/hrm/employees")}
+          >
+            <UserRound size={15} />
+            <span>Employees</span>
+          </button>
+
+          <button
+            type="button"
+            className={`navItem navSubItem ${
+              pathname.startsWith("/hrm/departments") ? "active" : ""
+            }`}
+            onClick={() => router.push("/hrm/departments")}
+          >
+            <Building2 size={15} />
+            <span>Departments</span>
+          </button>
+
+          <button
+            type="button"
+            className={`navItem navSubItem ${
+              pathname.startsWith("/hrm/designations") ? "active" : ""
+            }`}
+            onClick={() => router.push("/hrm/designations")}
+          >
+            <Network size={15} />
+            <span>Designations</span>
+          </button>
+          <button
+            type="button"
+            className={`navItem navSubItem ${
+              pathname.startsWith("/hrm/leave") ? "active" : ""
+            }`}
+            onClick={() => router.push("/hrm/leave")}
+          >
+            <CalendarDays size={15} />
+            <span>Leave</span>
+          </button>
+          <button
+            type="button"
+            className={`navItem navSubItem ${
+              pathname.startsWith("/hrm/attendance") ? "active" : ""
+            }`}
+            onClick={() => router.push("/hrm/attendance")}
+          >
+            <CalendarDays size={15} />
+            <span>Attendance</span>
+          </button>
+
+          <button
+            type="button"
+            className={`navItem navSubItem ${
+              pathname.startsWith("/hrm/payroll") ? "active" : ""
+            }`}
+            onClick={() => router.push("/hrm/payroll")}
+          >
+            <WalletCards size={15} />
+            <span>Payroll</span>
+          </button>
+
+          <button
+            type="button"
+            className={`navItem navSubItem ${
+              pathname.startsWith("/hrm/letters") ? "active" : ""
+            }`}
+            onClick={() => router.push("/hrm/letters")}
+          >
+            <FileText size={15} />
+            <span>Letters</span>
+          </button>
+
+        </div>
+
+        <div className="navSectionLabel secondary">
+          OPERATIONS
+        </div>
+
+        {items.slice(3).map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <button
+              key={item.label}
+              type="button"
+              disabled={item.coming}
+              className={`navItem ${item.coming ? "coming" : ""}`}
+              onClick={() =>
+                item.href !== "#" && router.push(item.href)
+              }
+            >
+              <Icon size={17} />
+              <span>{item.label}</span>
+
+              {item.coming && <small>SOON</small>}
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="sidebarFooter">
+        <div className="securityIcon">
+          <ShieldCheck size={16} />
+        </div>
+
+        <div>
+          <strong>Admin Access</strong>
+          <span>Secure workspace</span>
+        </div>
+      </div>
+    </aside>
+  );
+}

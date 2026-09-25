@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 
 import LeadList from "@/components/leads/LeadList";
-import { deleteLead, getLeads } from "@/lib/api/leads/leadApi";
+import LeadAssignmentDialog from "@/components/leads/LeadAssignmentDialog";
+import { deleteLead, getLeadPool, getLeads } from "@/lib/api/leads/leadApi";
 import type { Lead } from "@/types/lead/lead";
 
 export default function LeadsPage() {
@@ -26,6 +27,8 @@ export default function LeadsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
+  const [poolMode, setPoolMode] = useState(false);
+  const [assignmentLead, setAssignmentLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -34,12 +37,18 @@ export default function LeadsPage() {
       setLoading(true);
       setError("");
 
-      const response = await getLeads({
-        per_page: 100,
-        search: search || undefined,
-        status: status || undefined,
-        priority: priority || undefined,
-      });
+      const response = poolMode
+        ? await getLeadPool({
+            per_page: 100,
+            status: status || undefined,
+            priority: priority || undefined,
+          })
+        : await getLeads({
+            per_page: 100,
+            search: search || undefined,
+            status: status || undefined,
+            priority: priority || undefined,
+          });
 
       setLeads(response.data?.data || []);
     } catch (error: any) {
@@ -56,7 +65,7 @@ export default function LeadsPage() {
 
   useEffect(() => {
     loadLeads();
-  }, [search, status, priority]);
+  }, [search, status, priority, poolMode]);
 
   async function handleDelete(lead: Lead) {
     const confirmed = window.confirm(
@@ -100,6 +109,12 @@ export default function LeadsPage() {
 
   const hasFilters = Boolean(search || status || priority);
 
+  function handleAssignmentSuccess() {
+    setAssignmentLead(null);
+    loadLeads();
+  }
+
+
   return (
     <main className="leadsPage">
       <div className="leadsContainer">
@@ -132,6 +147,15 @@ export default function LeadsPage() {
                 className={loading ? "spin" : ""}
               />
               {loading ? "Refreshing..." : "Refresh"}
+            </button>
+
+            <button
+              type="button"
+              className={poolMode ? "poolButton active" : "poolButton"}
+              onClick={() => setPoolMode((value) => !value)}
+            >
+              <UserCheck size={16} />
+              {poolMode ? "All Leads" : "Lead Pool"}
             </button>
 
             <button
@@ -296,6 +320,7 @@ export default function LeadsPage() {
               router.push(`/crm/leads/${lead.id}/edit`)
             }
             onDelete={handleDelete}
+            onAssign={(lead) => setAssignmentLead(lead)}
           />
 
         </section>
@@ -404,6 +429,32 @@ export default function LeadsPage() {
         .secondaryButton:hover {
           border-color: #a9c2d8;
           background: #f8fbfd;
+        }
+
+        .poolButton {
+          height: 40px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 0 15px;
+          border-radius: 8px;
+          border: 1px solid #d6e3ee;
+          background: white;
+          color: #1769aa;
+          font-size: 12px;
+          font-weight: 750;
+          cursor: pointer;
+        }
+
+        .poolButton:hover {
+          background: #edf6fc;
+          border-color: #a9c7df;
+        }
+
+        .poolButton.active {
+          background: #e8f2fb;
+          border-color: #1769aa;
         }
 
         .secondaryButton:disabled {
@@ -693,6 +744,14 @@ export default function LeadsPage() {
           }
         }
       `}</style>
+
+        <LeadAssignmentDialog
+          lead={assignmentLead}
+          open={Boolean(assignmentLead)}
+          onClose={() => setAssignmentLead(null)}
+          onSuccess={handleAssignmentSuccess}
+        />
+
     </main>
   );
 }

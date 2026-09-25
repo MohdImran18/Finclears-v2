@@ -66,12 +66,15 @@ class UserService
             );
         }
 
-        if ($user->role === User::ROLE_ADMIN) {
+        if (in_array($user->role, [
+            User::ROLE_ADMIN,
+            User::ROLE_SUPER_ADMIN,
+        ], true)) {
 
-            $adminCount = User::where(
-                'role',
-                User::ROLE_ADMIN
-            )->count();
+            $adminCount = User::whereIn('role', [
+                User::ROLE_ADMIN,
+                User::ROLE_SUPER_ADMIN,
+            ])->count();
 
             if ($adminCount <= 1) {
                 throw new RuntimeException(

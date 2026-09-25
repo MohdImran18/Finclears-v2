@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,8 @@ import {
   Plus,
   ArrowUpRight,
   UserPlus,
+  UserCheck,
+  UserX,
   UserRoundPlus,
   PackagePlus,
   PenLine,
@@ -21,6 +23,7 @@ import {
   BarChart3,
   Settings,
   ShieldCheck,
+  Building2,
   Phone,
   Mail,
   ArrowRight,
@@ -34,6 +37,11 @@ import type { Lead } from "@/types/lead/lead";
 import { getCustomers } from "@/lib/api/customers/customerApi";
 import { getOrders } from "@/lib/api/orders/orderApi";
 import { getCompanyPayments } from "@/lib/api/payments/paymentApi";
+import { getEmployees } from "@/lib/api/employees/employeeApi";
+import {
+  getDepartments,
+  getDesignations,
+} from "@/lib/api/hrm/hrmApi";
 
 import AdminShell from "@/components/layout/AdminShell";
 
@@ -47,6 +55,14 @@ export default function HomePage() {
   const [orders, setOrders] = useState(0);
   const [payments, setPayments] = useState(0);
   const [revenue, setRevenue] = useState(0);
+
+  const [activeEmployees, setActiveEmployees] = useState(0);
+  const [inactiveEmployees, setInactiveEmployees] = useState(0);
+  const [totalEmployees, setTotalEmployees] = useState(0);
+  const [departmentCount, setDepartmentCount] = useState(0);
+  const [designationCount, setDesignationCount] = useState(0);
+  const [recentEmployees, setRecentEmployees] = useState<any[]>([]);
+
   const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,21 +70,64 @@ export default function HomePage() {
     setLoading(true);
 
     try {
-      const [leadRes, customerRes, serviceRes, blogRes, orderRes, paymentRes] =
-        await Promise.all([
-          getLeads({
-            page: 1,
-            per_page: 5,
-          }),
-          getCustomers({
-            page: 1,
-            per_page: 1,
-          }),
-          getServices({}),
-          getBlogs({}),
-          getOrders({ page: 1, per_page: 1 }),
-          getCompanyPayments({ page: 1, per_page: 100 }),
-        ]);
+      const [
+        leadRes,
+        customerRes,
+        serviceRes,
+        blogRes,
+        orderRes,
+        paymentRes,
+        employeeRes,
+        activeEmployeeRes,
+        inactiveEmployeeRes,
+        departmentRes,
+        designationRes,
+      ] = await Promise.all([
+        getLeads({
+          page: 1,
+          per_page: 5,
+        }),
+
+        getCustomers({
+          page: 1,
+          per_page: 1,
+        }),
+
+        getServices({}),
+
+        getBlogs({}),
+
+        getOrders({
+          page: 1,
+          per_page: 1,
+        }),
+
+        getCompanyPayments({
+          page: 1,
+          per_page: 100,
+        }),
+
+        getEmployees({
+          page: 1,
+          per_page: 5,
+        }),
+
+        getEmployees({
+          page: 1,
+          per_page: 1,
+          status: "active",
+        }),
+
+        getEmployees({
+          page: 1,
+          per_page: 1,
+          status: "inactive",
+        }),
+
+        getDepartments(),
+
+        getDesignations(),
+      ]);
 
       const leadData = leadRes?.data;
       const customerData = customerRes?.data;
@@ -76,6 +135,22 @@ export default function HomePage() {
       const blogData = blogRes?.data;
       const orderData = orderRes?.data;
       const paymentData = paymentRes?.data;
+
+      const employeeData = employeeRes?.data;
+      const activeEmployeeData = activeEmployeeRes?.data;
+      const inactiveEmployeeData = inactiveEmployeeRes?.data;
+
+      const departmentData = departmentRes?.data ?? [];
+      const designationData = designationRes?.data ?? [];
+
+      setTotalEmployees(employeeData?.total ?? 0);
+      setActiveEmployees(activeEmployeeData?.total ?? 0);
+      setInactiveEmployees(inactiveEmployeeData?.total ?? 0);
+
+      setDepartmentCount(departmentData.length);
+      setDesignationCount(designationData.length);
+
+      setRecentEmployees(employeeData?.data ?? []);
 
       setLeads(leadData?.total ?? 0);
       setCustomers(customerData?.total ?? 0);
@@ -554,6 +629,274 @@ export default function HomePage() {
             font-size: 8px;
           }
 
+          /* HRM OVERVIEW */
+
+          .recentEmployeesCard {
+            margin-top: 14px;
+            overflow: hidden;
+          }
+
+          .recentEmployeesTableWrap {
+            width: 100%;
+            overflow-x: auto;
+          }
+
+          .recentEmployeesTable {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+          }
+
+          .recentEmployeesTable th {
+            padding: 10px 14px;
+            text-align: left;
+            color: #94a3b8;
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            border-bottom: 1px solid #eef2f7;
+            white-space: nowrap;
+          }
+
+          .recentEmployeesTable td {
+            padding: 11px 14px;
+            color: #193757;
+            font-size: 10px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+          }
+
+          .recentEmployeesTable tbody tr:last-child td {
+            border-bottom: 0;
+          }
+
+          .recentEmployeesTable tbody tr:hover {
+            background: #f8fbff;
+          }
+
+          .employeeNameCell {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            min-width: 180px;
+          }
+
+          .employeeAvatar {
+            width: 28px;
+            height: 28px;
+            flex: 0 0 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #eff6ff;
+            color: #2563eb;
+            font-size: 10px;
+            font-weight: 800;
+          }
+
+          .employeeNameWrap {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+          }
+
+          .employeeName {
+            color: #17385d;
+            font-size: 10px;
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .employeeEmail {
+            color: #94a3b8;
+            font-size: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .employeeIdBadge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 7px;
+            border-radius: 6px;
+            background: #f8fafc;
+            border: 1px solid #e5eaf0;
+            color: #475569;
+            font-size: 8px;
+            font-weight: 700;
+            white-space: nowrap;
+          }
+
+          .employeeDepartment,
+          .employeeDesignation {
+            color: #475569;
+            font-size: 9px;
+            font-weight: 600;
+          }
+
+          .employeeStatus {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 8px;
+            font-weight: 800;
+            white-space: nowrap;
+          }
+
+          .employeeStatus.active {
+            background: #ecfdf5;
+            color: #047857;
+          }
+
+          .employeeStatus.inactive {
+            background: #fef2f2;
+            color: #b91c1c;
+          }
+
+          .employeeStatusDot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+          }
+
+          .recentEmployeesFooter {
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 14px;
+            border-top: 1px solid #eef2f7;
+          }
+
+          .recentEmployeesViewAll {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 0;
+            background: transparent;
+            color: #2563eb;
+            font-size: 9px;
+            font-weight: 800;
+            cursor: pointer;
+          }
+
+          .recentEmployeesViewAll:hover {
+            color: #1d4ed8;
+          }
+          .hrmOverviewCard {
+            margin-bottom: 13px;
+          }
+
+          .hrmStats {
+            padding: 14px;
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 9px;
+          }
+
+          .hrmStat {
+            min-height: 72px;
+            padding: 11px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #e3eaf3;
+            border-radius: 10px;
+            background: #fff;
+            text-align: left;
+            cursor: pointer;
+            transition: all .18s ease;
+          }
+
+          .hrmStat:hover {
+            transform: translateY(-1px);
+            border-color: #bfd2ee;
+            background: #f8fbff;
+          }
+
+          .hrmStatIcon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f6fd;
+            color: #315b8a;
+            flex-shrink: 0;
+          }
+
+          .hrmStatLabel {
+            color: #8c9bad;
+            font-size: 7px;
+            font-weight: 700;
+          }
+
+          .hrmStatValue {
+            margin-top: 3px;
+            color: #193757;
+            font-size: 18px;
+            line-height: 1;
+            font-weight: 800;
+          }
+
+          .hrmFooter {
+            padding: 0 14px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+          }
+
+          .hrmFooterText {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+          }
+
+          .hrmFooterText strong {
+            color: #193757;
+            font-size: 9px;
+            font-weight: 800;
+          }
+
+          .hrmFooterText span {
+            color: #94a3b8;
+            font-size: 7px;
+          }
+
+          .hrmActions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+          }
+
+          .hrmActionBtn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 9px;
+            border: 1px solid #e3eaf3;
+            border-radius: 7px;
+            background: #fff;
+            color: #315b8a;
+            font-size: 7px;
+            font-weight: 700;
+            cursor: pointer;
+          }
+
+          .hrmActionBtn:hover {
+            background: #f8fbff;
+            border-color: #bfd2ee;
+          }
           /* MODULES */
 
           .modulesCard {
@@ -1052,6 +1395,393 @@ export default function HomePage() {
 
           </section>
 
+          {/* HRM OVERVIEW */}
+
+          <section className="card hrmOverviewCard">
+
+            <div className="cardHeader">
+
+              <div className="cardTitleWrap">
+
+                <div className="sectionIcon">
+                  <Building2 size={16} />
+                </div>
+
+                <div>
+                  <h2 className="cardTitle">
+                    HRM Overview
+                  </h2>
+
+                  <p className="cardSubtitle">
+                    Employee and workforce management
+                  </p>
+                </div>
+
+              </div>
+
+              <button
+                type="button"
+                className="linkButton"
+                onClick={() =>
+                  router.push("/crm/employees")
+                }
+              >
+                View employees
+                <ArrowUpRight size={12} />
+              </button>
+
+            </div>
+
+            <div className="hrmStats">
+
+              <button
+                type="button"
+                className="hrmStat"
+                onClick={() =>
+                  router.push("/crm/employees")
+                }
+              >
+                <div className="hrmStatIcon">
+                  <Users size={15} />
+                </div>
+
+                <div>
+                  <div className="hrmStatLabel">
+                    Total Employees
+                  </div>
+
+                  <div className="hrmStatValue">
+                    {totalEmployees}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className="hrmStat"
+                onClick={() =>
+                  router.push("/crm/employees")
+                }
+              >
+                <div className="hrmStatIcon">
+                  <UserCheck size={15} />
+                </div>
+
+                <div>
+                  <div className="hrmStatLabel">
+                    Active Employees
+                  </div>
+
+                  <div className="hrmStatValue">
+                    {activeEmployees}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className="hrmStat"
+                onClick={() =>
+                  router.push("/crm/employees")
+                }
+              >
+                <div className="hrmStatIcon">
+                  <UserX size={15} />
+                </div>
+
+                <div>
+                  <div className="hrmStatLabel">
+                    Inactive Employees
+                  </div>
+
+                  <div className="hrmStatValue">
+                    {inactiveEmployees}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className="hrmStat"
+                onClick={() =>
+                  router.push("/hrm/departments")
+                }
+              >
+                <div className="hrmStatIcon">
+                  <Building2 size={15} />
+                </div>
+
+                <div>
+                  <div className="hrmStatLabel">
+                    Departments
+                  </div>
+
+                  <div className="hrmStatValue">
+                    {departmentCount}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className="hrmStat"
+                onClick={() =>
+                  router.push("/hrm/designations")
+                }
+              >
+                <div className="hrmStatIcon">
+                  <BriefcaseBusiness size={15} />
+                </div>
+
+                <div>
+                  <div className="hrmStatLabel">
+                    Designations
+                  </div>
+
+                  <div className="hrmStatValue">
+                    {designationCount}
+                  </div>
+                </div>
+              </button>
+
+            </div>
+
+            <div className="hrmFooter">
+
+              <div className="hrmFooterText">
+                <strong>HRM</strong>
+                <span>
+                  Manage employees, departments and designations
+                </span>
+              </div>
+
+              <div className="hrmActions">
+
+                <button
+                  type="button"
+                  className="hrmActionBtn"
+                  onClick={() =>
+                    router.push("/crm/employees/create")
+                  }
+                >
+                  <UserPlus size={13} />
+                  Add Employee
+                </button>
+
+                <button
+                  type="button"
+                  className="hrmActionBtn"
+                  onClick={() =>
+                    router.push("/hrm/departments")
+                  }
+                >
+                  <Building2 size={13} />
+                  Departments
+                </button>
+
+                <button
+                  type="button"
+                  className="hrmActionBtn"
+                  onClick={() =>
+                    router.push("/hrm/designations")
+                  }
+                >
+                  <BriefcaseBusiness size={13} />
+                  Designations
+                </button>
+
+              </div>
+
+            </div>
+
+          </section>
+          {/* RECENT EMPLOYEES */}
+
+          <section className="card recentEmployeesCard">
+
+            <div className="cardHeader">
+
+              <div className="cardTitleWrap">
+
+                <div className="sectionIcon">
+                  <Users size={16} />
+                </div>
+
+                <div>
+                  <h2 className="cardTitle">
+                    Recent Employees
+                  </h2>
+
+                  <p className="cardSubtitle">
+                    Latest employees added to the workforce
+                  </p>
+                </div>
+
+              </div>
+
+              <button
+                type="button"
+                className="linkButton"
+                onClick={() =>
+                  router.push("/crm/employees")
+                }
+              >
+                View all
+                <ArrowUpRight size={12} />
+              </button>
+
+            </div>
+
+            {recentEmployees.length > 0 ? (
+
+              <div className="recentEmployeesTableWrap">
+
+                <table className="recentEmployeesTable">
+
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      <th>Employee ID</th>
+                      <th>Department</th>
+                      <th>Designation</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+
+                                    <tbody>
+                    {recentEmployees.slice(0, 5).map(
+                      (employee: any, index: number) => {
+                        const employeeName =
+                          employee.user?.name ||
+                          employee.name ||
+                          "Unnamed Employee";
+
+                        const employeeEmail =
+                          employee.user?.email ||
+                          employee.email ||
+                          "";
+
+                        const employeeId =
+                          employee.employee_id ||
+                          employee.employee_code ||
+                          employee.id ||
+                          `EMP-${index + 1}`;
+
+                        const department =
+                          employee.department?.name ||
+                          employee.department_name ||
+                          "—";
+
+                        const designation =
+                          employee.designation?.name ||
+                          employee.designation_name ||
+                          "—";
+
+                        const isActive =
+                          employee.status === true ||
+                          employee.status === "active" ||
+                          employee.status === 1;
+
+                        const initials = employeeName
+                          .split(" ")
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .map((part: string) => part.charAt(0))
+                          .join("")
+                          .toUpperCase();
+
+                        return (
+                          <tr key={employee.id ?? index}>
+
+                            <td>
+                              <div className="employeeNameCell">
+
+                                <div className="employeeAvatar">
+                                  {initials || "E"}
+                                </div>
+
+                                <div className="employeeNameWrap">
+
+                                  <div className="employeeName">
+                                    {employeeName}
+                                  </div>
+
+                                  {employeeEmail && (
+                                    <div className="employeeEmail">
+                                      {employeeEmail}
+                                    </div>
+                                  )}
+
+                                </div>
+
+                              </div>
+                            </td>
+
+                            <td>
+                              <span className="employeeIdBadge">
+                                {employeeId}
+                              </span>
+                            </td>
+
+                            <td>
+                              <span className="employeeDepartment">
+                                {department}
+                              </span>
+                            </td>
+
+                            <td>
+                              <span className="employeeDesignation">
+                                {designation}
+                              </span>
+                            </td>
+
+                            <td>
+                              <span
+                                className={`employeeStatus ${
+                                  isActive
+                                    ? "active"
+                                    : "inactive"
+                                }`}
+                              >
+                                <span className="employeeStatusDot" />
+                                {isActive ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+
+                          </tr>
+                        );
+                      }
+                    )}
+                  </tbody>
+
+                </table>
+
+                <div className="recentEmployeesFooter">
+
+                  <button
+                    type="button"
+                    className="recentEmployeesViewAll"
+                    onClick={() =>
+                      router.push("/crm/employees")
+                    }
+                  >
+                    View all employees
+                    <ArrowUpRight size={11} />
+                  </button>
+
+                </div>
+
+              </div>
+
+            ) : (
+
+              <div className="recentEmployeesEmpty">
+                No employees found.
+              </div>
+
+            )}
+
+          </section>
           {/* MODULES */}
 
           <section className="card modulesCard">
@@ -1095,6 +1825,15 @@ export default function HomePage() {
                 icon={<BriefcaseBusiness size={15} />}
                 onClick={() =>
                   router.push("/services")
+                }
+              />
+
+              <Module
+                name="HRM"
+                status="Employees & HR management"
+                icon={<Building2 size={15} />}
+                onClick={() =>
+                  router.push("/hrm/departments")
                 }
               />
 

@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
  * @extends Factory<User>
@@ -17,8 +16,6 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-
-            'uuid' => (string) Str::uuid(),
 
             'name' => fake()->name(),
 
@@ -34,7 +31,7 @@ class UserFactory extends Factory
 
             'email_verified_at' => now(),
 
-            'remember_token' => Str::random(10),
+            'remember_token' => \Illuminate\Support\Str::random(10),
         ];
     }
 

@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Designation;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class DesignationController extends Controller
+{
+    public function index(Request $request): JsonResponse
+    {
+        $query = Designation::query()
+            ->where('status', true)
+            ->with('department:id,name,code');
+
+        if ($request->filled('department_id')) {
+            $query->where(
+                'department_id',
+                $request->integer('department_id')
+            );
+        }
+
+        $designations = $query
+            ->orderBy('name')
+            ->get([
+                'id',
+                'department_id',
+                'name',
+                'code',
+                'description',
+                'status',
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Designations fetched successfully.',
+            'data' => $designations,
+        ]);
+    }
+}

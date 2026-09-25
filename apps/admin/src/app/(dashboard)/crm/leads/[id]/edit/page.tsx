@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ import {
 
 import type { Lead } from "@/types/lead/lead";
 import type { LeadAssignee } from "@/lib/api/leads/leadApi";
+import LeadCommunicationPanel from "@/components/leads/LeadCommunicationPanel";
 
 export default function EditLeadPage() {
   const router = useRouter();
@@ -390,6 +391,8 @@ export default function EditLeadPage() {
             </button>
           </div>
         </form>
+
+        <LeadCommunicationPanel leadId={id} />
 
       </div>
     </main>

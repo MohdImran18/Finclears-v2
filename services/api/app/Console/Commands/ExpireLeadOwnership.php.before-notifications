@@ -1,0 +1,80 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\Lead;
+use App\Services\CRM\LeadAssignmentService;
+use App\Services\CRM\LeadRoutingService;
+use Illuminate\Console\Command;
+
+class ExpireLeadOwnership extends Command
+{
+    protected $signature = 'leads:expire-ownership
+                            {--dry-run : Show expired leads without changing them}';
+
+    protected $description = 'Release expired lead ownership and re-route leads';
+
+    public function handle(
+        LeadAssignmentService $assignmentService,
+        LeadRoutingService $routingService
+    ): int {
+        $leads = Lead::query()
+            ->whereNotNull('assigned_to')
+            ->where('ownership_status', 'active')
+            ->whereNotNull('ownership_expires_at')
+            ->where('ownership_expires_at', '<=', now())
+            ->orderBy('id')
+            ->get();
+
+        if ($leads->isEmpty()) {
+            $this->info('No expired lead ownership found.');
+
+            return self::SUCCESS;
+        }
+
+        $this->info("Found {$leads->count()} expired lead(s).");
+
+        foreach ($leads as $lead) {
+            if ($this->option('dry-run')) {
+                $this->line(
+                    "Lead #{$lead->id} | Owner {$lead->assigned_to} | " .
+                    "Expired {$lead->ownership_expires_at}"
+                );
+
+                continue;
+            }
+
+            // Release current ownership.
+            $released = $assignmentService->release(
+                $lead,
+                null,
+                '30-day ownership expired'
+            );
+
+            // Mark explicitly as expired so it enters Lead Pool.
+            $released->ownership_status = 'expired';
+            $released->save();
+            $released->refresh();
+
+            // Try automatic re-routing.
+            $rerouted = $routingService->autoAssign(
+                $released,
+                null
+            );
+
+            if ($rerouted) {
+                $this->line(
+                    "Lead #{$lead->id} expired and re-routed to User #{$rerouted->assigned_to}."
+                );
+            } else {
+                $this->line(
+                    "Lead #{$lead->id} expired and remains in Lead Pool."
+                );
+            }
+        }
+
+        $this->info('Lead ownership expiry processing completed.');
+
+        return self::SUCCESS;
+    }
+}

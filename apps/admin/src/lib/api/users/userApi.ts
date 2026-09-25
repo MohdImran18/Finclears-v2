@@ -1,4 +1,4 @@
-﻿import axios from "axios";
+import axios from "axios";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -73,7 +73,7 @@ export async function updateUser(
   id: number,
   payload: UserPayload
 ) {
-  const response = await client.put(`/users/${id}`, payload);
+  const response = await client.patch(`/users/${id}`, payload);
   return response.data;
 }
 

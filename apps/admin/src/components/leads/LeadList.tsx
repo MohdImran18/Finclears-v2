@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   Edit3,
@@ -7,6 +7,7 @@ import {
   Phone,
   CalendarDays,
   IndianRupee,
+  UserCheck,
 } from "lucide-react";
 
 import type { Lead } from "@/types/lead/lead";
@@ -16,6 +17,7 @@ interface LeadListProps {
   loading?: boolean;
   onEdit: (lead: Lead) => void;
   onDelete: (lead: Lead) => void;
+  onAssign: (lead: Lead) => void;
 }
 
 export default function LeadList({
@@ -23,6 +25,7 @@ export default function LeadList({
   loading,
   onEdit,
   onDelete,
+  onAssign,
 }: LeadListProps) {
 
   if (loading) {
@@ -218,6 +221,15 @@ export default function LeadList({
 
                   <button
                     type="button"
+                    className="assignButton"
+                    onClick={() => onAssign(lead)}
+                    title={lead.assigned_to ? "Reassign lead" : "Assign lead"}
+                  >
+                    <UserCheck size={14} />
+                  </button>
+
+                  <button
+                    type="button"
                     className="editButton"
                     onClick={() => onEdit(lead)}
                     title="Edit lead"
@@ -377,6 +389,24 @@ export default function LeadList({
           border-radius: 7px;
           cursor: pointer;
           transition: .15s ease;
+        }
+
+        .assignButton {
+          width: 30px;
+          height: 30px;
+          display: grid;
+          place-items: center;
+          border: 1px solid #d6e3ee;
+          border-radius: 7px;
+          background: white;
+          color: #1769aa;
+          cursor: pointer;
+          transition: .15s ease;
+        }
+
+        .assignButton:hover {
+          background: #edf6fc;
+          border-color: #a9c7df;
         }
 
         .editButton {

@@ -4,8 +4,10 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
+  getMe,
   login,
 } from "@/lib/api/auth/authApi";
+import { getWorkspaceRoute } from "@/lib/auth/workspaceRoute";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,10 +39,8 @@ export default function LoginPage() {
 
       const user = response.data.user;
 
-      if (user.role !== "admin") {
-        throw new Error(
-          "This account does not have admin access."
-        );
+      if (!user) {
+        throw new Error("User information was not returned.");
       }
 
       if (user.status !== "active") {
@@ -54,12 +54,27 @@ export default function LoginPage() {
         response.data.token
       );
 
+      let workspaceUser = user;
+
+      try {
+        const currentUser = await getMe(response.data.token);
+
+        if (currentUser.success) {
+          workspaceUser = currentUser.data;
+        }
+      } catch (currentUserError) {
+        console.warn(
+          "Unable to load the full user profile after login:",
+          currentUserError
+        );
+      }
+
       localStorage.setItem(
         "admin_user",
-        JSON.stringify(user)
+        JSON.stringify(workspaceUser)
       );
 
-      router.replace("/");
+      router.replace(getWorkspaceRoute(workspaceUser));
     } catch (error: any) {
       console.error(error);
 

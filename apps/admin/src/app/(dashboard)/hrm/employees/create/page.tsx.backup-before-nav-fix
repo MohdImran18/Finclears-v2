@@ -1,0 +1,1198 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createEmployee } from "@/lib/api/employees/employeeApi";
+import type { EmployeePayload } from "@/types/employee/employee";
+
+interface Department {
+  id: number;
+  name: string;
+  code: string;
+}
+
+interface Designation {
+  id: number;
+  department_id: number;
+  name: string;
+  code: string;
+}
+
+interface UserOption {
+  id: number;
+  name: string;
+  email: string;
+}
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://127.0.0.1:8000/api/v1";
+
+const initialForm: EmployeePayload = {
+  name: "",
+  email: "",
+  phone: "",
+  password: "",
+  password_confirmation: "",
+
+  department_id: null,
+  designation_id: null,
+  employee_code: "",
+
+  date_of_joining: "",
+  date_of_birth: "",
+  gender: "",
+  employment_type: "full_time",
+  work_location: "",
+  reporting_manager_id: null,
+
+  personal_email: "",
+  personal_phone: "",
+
+  address: "",
+  city: "",
+  state: "",
+  pincode: "",
+
+  emergency_contact_name: "",
+  emergency_contact_phone: "",
+  emergency_contact_relation: "",
+
+  pan_number: "",
+  aadhaar_number: "",
+  bank_account_number: "",
+  bank_name: "",
+  ifsc_code: "",
+  account_holder_name: "",
+
+  status: "active",
+  notes: "",
+};
+
+export default function CreateEmployeePage() {
+  const router = useRouter();
+
+  const [form, setForm] = useState<EmployeePayload>(initialForm);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [designations, setDesignations] = useState<Designation[]>([]);
+  const [managers, setManagers] = useState<UserOption[]>([]);
+
+  const [loading, setLoading] = useState(false);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const selectedDepartmentId = form.department_id;
+
+  const filteredDesignations = useMemo(() => {
+    if (!selectedDepartmentId) return [];
+
+    return designations.filter(
+      (designation) =>
+        designation.department_id === selectedDepartmentId
+    );
+  }, [designations, selectedDepartmentId]);
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        setLoadingOptions(true);
+
+        const token =
+          localStorage.getItem("token") ||
+          localStorage.getItem("access_token") ||
+          localStorage.getItem("auth_token");
+
+        const headers: HeadersInit = {
+          Accept: "application/json",
+        };
+
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const [
+          departmentResponse,
+          designationResponse,
+          managerResponse,
+        ] = await Promise.all([
+          fetch(`${API_URL}/departments`, { headers }),
+          fetch(`${API_URL}/designations`, { headers }),
+          fetch(
+            `${API_URL}/users?role=employee&status=active&per_page=100`,
+            { headers }
+          ),
+        ]);
+
+        const departmentJson = await departmentResponse.json();
+        const designationJson = await designationResponse.json();
+        const managerJson = await managerResponse.json();
+
+        setDepartments(
+          departmentJson?.data?.data ||
+            departmentJson?.data ||
+            []
+        );
+
+        setDesignations(
+          designationJson?.data?.data ||
+            designationJson?.data ||
+            []
+        );
+
+        setManagers(
+          managerJson?.data?.data ||
+            managerJson?.data?.users ||
+            managerJson?.data ||
+            managerJson?.users ||
+            []
+        );
+      } catch (err) {
+        console.error(err);
+        setError("Unable to load employee options.");
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+
+    loadOptions();
+  }, []);
+
+  useEffect(() => {
+    if (
+      form.designation_id &&
+      !filteredDesignations.some(
+        (item) => item.id === form.designation_id
+      )
+    ) {
+      setForm((current) => ({
+        ...current,
+        designation_id: null,
+      }));
+    }
+  }, [filteredDesignations, form.designation_id]);
+
+  const updateField = (
+    field: keyof EmployeePayload,
+    value: string | number | null
+  ) => {
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const handleDepartmentChange = (value: string) => {
+    const departmentId = value ? Number(value) : null;
+
+    setForm((current) => ({
+      ...current,
+      department_id: departmentId,
+      designation_id: null,
+    }));
+  };
+
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    setError("");
+    setSuccess("");
+
+    if (form.password !== form.password_confirmation) {
+      setError("Password and confirm password do not match.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    if (!form.name.trim()) {
+      setError("Employee name is required.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    if (!form.email.trim()) {
+      setError("Email is required.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    if (!form.employee_code.trim()) {
+      setError("Employee code is required.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await createEmployee({
+        ...form,
+        name: form.name.trim(),
+        email: form.email.trim(),
+        employee_code: form.employee_code.trim(),
+      });
+
+      setSuccess("Employee created successfully.");
+
+      setTimeout(() => {
+        router.push("/crm/employees");
+      }, 900);
+    } catch (err: any) {
+      console.error(err);
+
+      const responseData = err?.response?.data;
+
+      if (responseData?.errors) {
+        const firstError = Object.values(
+          responseData.errors
+        )?.[0];
+
+        if (Array.isArray(firstError)) {
+          setError(String(firstError[0]));
+        } else {
+          setError(String(firstError));
+        }
+      } else {
+        setError(
+          responseData?.message ||
+            "Unable to create employee."
+        );
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-full bg-[#f6f9fb]">
+      {/* TOP HEADER */}
+      <div className="border-b border-slate-200 bg-white">
+        <div className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <button
+                type="button"
+                onClick={() => router.push("/crm/employees")}
+                className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-[#087f78]"
+              >
+                <span>←</span>
+                Employees
+              </button>
+
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#e8f7f5] text-xl text-[#087f78]">
+                  +
+                </div>
+
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                    Create Employee
+                  </h1>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Add a new employee profile, employment details
+                    and system access.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="hidden items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#087f78] text-sm font-bold text-white">
+                HR
+              </div>
+
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                  HR Management
+                </p>
+                <p className="text-sm font-semibold text-slate-700">
+                  Employee Onboarding
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* PROGRESS */}
+      <div className="border-b border-slate-200 bg-white">
+        <div className="mx-auto max-w-[1500px] overflow-x-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex min-w-max items-center py-3">
+            <Step number="01" label="Account" active />
+            <StepLine />
+            <Step number="02" label="Employment" />
+            <StepLine />
+            <Step number="03" label="Personal" />
+            <StepLine />
+            <Step number="04" label="Emergency" />
+            <StepLine />
+            <Step number="05" label="Payroll" />
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-[1500px] px-4 py-6 pb-28 sm:px-6 lg:px-8">
+        {/* ALERTS */}
+        {error && (
+          <div className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 text-sm text-red-700 shadow-sm">
+            <span className="mt-0.5 font-bold">!</span>
+            <div>
+              <p className="font-semibold">Unable to create employee</p>
+              <p className="mt-0.5 text-red-600">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-5 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-sm text-emerald-700 shadow-sm">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 font-bold text-white">
+              ✓
+            </span>
+            <span className="font-semibold">{success}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">
+            {/* SIDEBAR */}
+            <aside className="hidden xl:block">
+              <div className="sticky top-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="mb-3 px-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Employee Profile
+                </p>
+
+                <SidebarItem
+                  number="01"
+                  title="Account"
+                  description="Login information"
+                  target="account"
+                  active
+                />
+
+                <SidebarItem
+                  number="02"
+                  title="Employment"
+                  description="Role & reporting"
+                  target="employment"
+                />
+
+                <SidebarItem
+                  number="03"
+                  title="Personal"
+                  description="Contact & address"
+                  target="personal"
+                />
+
+                <SidebarItem
+                  number="04"
+                  title="Emergency"
+                  description="Emergency contact"
+                  target="emergency"
+                />
+
+                <SidebarItem
+                  number="05"
+                  title="Payroll"
+                  description="Identity & banking"
+                  target="payroll"
+                />
+
+                <div className="mt-5 rounded-xl bg-[#f0fbfa] p-3.5">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="text-[#087f78]">✓</span>
+                    <span className="text-xs font-bold text-[#066b65]">
+                      Secure onboarding
+                    </span>
+                  </div>
+
+                  <p className="text-xs leading-5 text-slate-500">
+                    Employee information is protected and
+                    available only to authorized users.
+                  </p>
+                </div>
+              </div>
+            </aside>
+
+            {/* MAIN FORM */}
+            <div className="space-y-6">
+              {/* ACCOUNT */}
+              <SectionCard
+                id="account"
+                  number="01"
+                title="Account & Login"
+                description="Create the employee's account and primary login information."
+              >
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <Field
+                    label="Full Name"
+                    required
+                    value={form.name}
+                    onChange={(value) =>
+                      updateField("name", value)
+                    }
+                    placeholder="Enter employee name"
+                  />
+
+                  <Field
+                    label="Employee Code"
+                    required
+                    value={form.employee_code}
+                    onChange={(value) =>
+                      updateField("employee_code", value)
+                    }
+                    placeholder="EMP009"
+                  />
+
+                  <Field
+                    label="Official Email"
+                    type="email"
+                    required
+                    value={form.email}
+                    onChange={(value) =>
+                      updateField("email", value)
+                    }
+                    placeholder="employee@finclears.com"
+                  />
+
+                  <Field
+                    label="WhatsApp / Mobile"
+                    value={form.phone || ""}
+                    onChange={(value) =>
+                      updateField("phone", value)
+                    }
+                    placeholder="+91 98765 43210"
+                    helper="Used as the employee's primary mobile number."
+                  />
+
+                  <Field
+                    label="Password"
+                    type="password"
+                    required
+                    value={form.password}
+                    onChange={(value) =>
+                      updateField("password", value)
+                    }
+                    placeholder="Minimum 8 characters"
+                  />
+
+                  <Field
+                    label="Confirm Password"
+                    type="password"
+                    required
+                    value={form.password_confirmation}
+                    onChange={(value) =>
+                      updateField(
+                        "password_confirmation",
+                        value
+                      )
+                    }
+                    placeholder="Confirm password"
+                  />
+                </div>
+              </SectionCard>
+
+              {/* EMPLOYMENT */}
+              <SectionCard
+                id="employment"
+                  number="02"
+                title="Employment Details"
+                description="Define the employee's department, designation and reporting structure."
+              >
+                {loadingOptions ? (
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-[#087f78]" />
+                    Loading departments, designations and managers...
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    <SelectField
+                      label="Department"
+                      value={form.department_id ?? ""}
+                      onChange={handleDepartmentChange}
+                      options={departments.map((department) => ({
+                        value: department.id,
+                        label: `${department.name} (${department.code})`,
+                      }))}
+                      placeholder="Select department"
+                    />
+
+                    <SelectField
+                      label="Designation"
+                      value={form.designation_id ?? ""}
+                      onChange={(value) =>
+                        updateField(
+                          "designation_id",
+                          value ? Number(value) : null
+                        )
+                      }
+                      disabled={!form.department_id}
+                      options={filteredDesignations.map(
+                        (designation) => ({
+                          value: designation.id,
+                          label: `${designation.name} (${designation.code})`,
+                        })
+                      )}
+                      placeholder={
+                        form.department_id
+                          ? "Select designation"
+                          : "Select department first"
+                      }
+                    />
+
+                    <SelectField
+                      label="Reporting Manager"
+                      value={form.reporting_manager_id ?? ""}
+                      onChange={(value) =>
+                        updateField(
+                          "reporting_manager_id",
+                          value ? Number(value) : null
+                        )
+                      }
+                      options={managers.map((manager) => ({
+                        value: manager.id,
+                        label: manager.name,
+                      }))}
+                      placeholder="Select reporting manager"
+                    />
+
+                    <Field
+                      label="Date of Joining"
+                      type="date"
+                      value={form.date_of_joining || ""}
+                      onChange={(value) =>
+                        updateField("date_of_joining", value)
+                      }
+                    />
+
+                    <SelectField
+                      label="Employment Type"
+                      value={form.employment_type || "full_time"}
+                      onChange={(value) =>
+                        updateField("employment_type", value)
+                      }
+                      options={[
+                        {
+                          value: "full_time",
+                          label: "Full Time",
+                        },
+                        {
+                          value: "part_time",
+                          label: "Part Time",
+                        },
+                        {
+                          value: "contract",
+                          label: "Contract",
+                        },
+                        {
+                          value: "intern",
+                          label: "Intern",
+                        },
+                        {
+                          value: "temporary",
+                          label: "Temporary",
+                        },
+                      ]}
+                      placeholder="Select employment type"
+                    />
+
+                    <SelectField
+                      label="Status"
+                      value={form.status || "active"}
+                      onChange={(value) =>
+                        updateField("status", value)
+                      }
+                      options={[
+                        {
+                          value: "active",
+                          label: "Active",
+                        },
+                        {
+                          value: "inactive",
+                          label: "Inactive",
+                        },
+                      ]}
+                      placeholder="Select status"
+                    />
+
+                    <Field
+                      label="Date of Birth"
+                      type="date"
+                      value={form.date_of_birth || ""}
+                      onChange={(value) =>
+                        updateField("date_of_birth", value)
+                      }
+                    />
+
+                    <SelectField
+                      label="Gender"
+                      value={form.gender || ""}
+                      onChange={(value) =>
+                        updateField("gender", value)
+                      }
+                      options={[
+                        { value: "male", label: "Male" },
+                        { value: "female", label: "Female" },
+                        { value: "other", label: "Other" },
+                      ]}
+                      placeholder="Select gender"
+                    />
+
+                    <Field
+                      label="Work Location"
+                      value={form.work_location || ""}
+                      onChange={(value) =>
+                        updateField("work_location", value)
+                      }
+                      placeholder="Delhi / Remote / Office"
+                    />
+                  </div>
+                )}
+              </SectionCard>
+
+              {/* PERSONAL */}
+              <SectionCard
+                id="personal"
+                  number="03"
+                title="Personal Information"
+                description="Personal contact information and residential address."
+              >
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <Field
+                    label="Personal Email"
+                    type="email"
+                    value={form.personal_email || ""}
+                    onChange={(value) =>
+                      updateField("personal_email", value)
+                    }
+                    placeholder="personal@email.com"
+                  />
+
+                  <Field
+                    label="Personal Phone"
+                    value={form.personal_phone || ""}
+                    onChange={(value) =>
+                      updateField("personal_phone", value)
+                    }
+                    placeholder="Personal mobile number"
+                  />
+
+                  <Field
+                    label="City"
+                    value={form.city || ""}
+                    onChange={(value) =>
+                      updateField("city", value)
+                    }
+                    placeholder="City"
+                  />
+
+                  <Field
+                    label="State"
+                    value={form.state || ""}
+                    onChange={(value) =>
+                      updateField("state", value)
+                    }
+                    placeholder="State"
+                  />
+
+                  <Field
+                    label="Pincode"
+                    value={form.pincode || ""}
+                    onChange={(value) =>
+                      updateField("pincode", value)
+                    }
+                    placeholder="Pincode"
+                  />
+
+                  <div className="md:col-span-2">
+                    <TextAreaField
+                      label="Residential Address"
+                      value={form.address || ""}
+                      onChange={(value) =>
+                        updateField("address", value)
+                      }
+                      placeholder="Full residential address"
+                      rows={4}
+                    />
+                  </div>
+                </div>
+              </SectionCard>
+
+              {/* EMERGENCY */}
+              <SectionCard
+                id="emergency"
+                  number="04"
+                title="Emergency Contact"
+                description="Add a trusted contact who can be reached in an emergency."
+              >
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                  <Field
+                    label="Contact Name"
+                    value={
+                      form.emergency_contact_name || ""
+                    }
+                    onChange={(value) =>
+                      updateField(
+                        "emergency_contact_name",
+                        value
+                      )
+                    }
+                    placeholder="Emergency contact name"
+                  />
+
+                  <Field
+                    label="Contact Phone"
+                    value={
+                      form.emergency_contact_phone || ""
+                    }
+                    onChange={(value) =>
+                      updateField(
+                        "emergency_contact_phone",
+                        value
+                      )
+                    }
+                    placeholder="+91 98765 43210"
+                  />
+
+                  <Field
+                    label="Relation"
+                    value={
+                      form.emergency_contact_relation || ""
+                    }
+                    onChange={(value) =>
+                      updateField(
+                        "emergency_contact_relation",
+                        value
+                      )
+                    }
+                    placeholder="Father / Mother / Spouse"
+                  />
+                </div>
+              </SectionCard>
+
+              {/* PAYROLL */}
+              <SectionCard
+                id="payroll"
+                  number="05"
+                title="Identity & Banking"
+                description="Sensitive employee information required for HR and payroll."
+                sensitive
+              >
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <Field
+                    label="PAN Number"
+                    value={form.pan_number || ""}
+                    onChange={(value) =>
+                      updateField("pan_number", value)
+                    }
+                    placeholder="PAN number"
+                  />
+
+                  <Field
+                    label="Aadhaar Number"
+                    value={form.aadhaar_number || ""}
+                    onChange={(value) =>
+                      updateField("aadhaar_number", value)
+                    }
+                    placeholder="Aadhaar number"
+                  />
+
+                  <Field
+                    label="Bank Account Number"
+                    value={form.bank_account_number || ""}
+                    onChange={(value) =>
+                      updateField(
+                        "bank_account_number",
+                        value
+                      )
+                    }
+                    placeholder="Bank account number"
+                  />
+
+                  <Field
+                    label="Bank Name"
+                    value={form.bank_name || ""}
+                    onChange={(value) =>
+                      updateField("bank_name", value)
+                    }
+                    placeholder="Bank name"
+                  />
+
+                  <Field
+                    label="IFSC Code"
+                    value={form.ifsc_code || ""}
+                    onChange={(value) =>
+                      updateField("ifsc_code", value)
+                    }
+                    placeholder="IFSC code"
+                  />
+
+                  <Field
+                    label="Account Holder Name"
+                    value={form.account_holder_name || ""}
+                    onChange={(value) =>
+                      updateField(
+                        "account_holder_name",
+                        value
+                      )
+                    }
+                    placeholder="Account holder name"
+                  />
+                </div>
+              </SectionCard>
+
+              {/* NOTES */}
+              <SectionCard
+                number="06"
+                title="Additional Notes"
+                description="Add any internal HR notes or additional information."
+              >
+                <TextAreaField
+                  label="Notes"
+                  value={form.notes || ""}
+                  onChange={(value) =>
+                    updateField("notes", value)
+                  }
+                  placeholder="Add notes about this employee..."
+                  rows={5}
+                />
+              </SectionCard>
+            </div>
+          </div>
+
+          {/* STICKY ACTION BAR */}
+          <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-200 bg-white/95 shadow-[0_-4px_20px_rgba(15,23,42,0.06)] backdrop-blur">
+            <div className="mx-auto flex max-w-[1500px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+              <div className="hidden text-sm text-slate-500 sm:block">
+                <span className="font-medium text-slate-700">
+                  Ready to create?
+                </span>{" "}
+                Review the information before submitting.
+              </div>
+
+              <div className="flex w-full gap-3 sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push("/crm/employees")
+                  }
+                  disabled={loading}
+                  className="flex-1 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={loading || loadingOptions}
+                  className="flex-1 rounded-xl bg-[#087f78] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#066b65] disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+                >
+                  {loading
+                    ? "Creating Employee..."
+                    : "Create Employee"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function Step({
+  number,
+  label,
+  active = false,
+}: {
+    id?: string;
+    number: string;
+  label: string;
+  active?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <div
+        className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+          active
+            ? "bg-[#087f78] text-white"
+            : "border border-slate-200 bg-white text-slate-400"
+        }`}
+      >
+        {number}
+      </div>
+
+      <span
+        className={`text-sm font-semibold ${
+          active ? "text-slate-800" : "text-slate-400"
+        }`}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function StepLine() {
+  return (
+    <div className="mx-4 h-px w-8 bg-slate-200" />
+  );
+}
+
+function SidebarItem({
+  number,
+  title,
+  description,
+  target,
+  active = false,
+}: {
+    id?: string;
+    number: string;
+  title: string;
+  description: string;
+  target: string;
+  active?: boolean;
+}) {
+  const handleClick = () => {
+    document.getElementById(target)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className={`mb-1 flex w-full gap-3 rounded-xl p-3 text-left transition ${
+        active
+          ? "bg-[#f0fbfa]"
+          : "hover:bg-slate-50"
+      }`}
+    >
+      <div
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold ${
+          active
+            ? "bg-[#087f78] text-white"
+            : "bg-slate-100 text-slate-400"
+        }`}
+      >
+        {number}
+      </div>
+
+      <div className="min-w-0">
+        <p
+          className={`text-sm font-semibold ${
+            active
+              ? "text-[#066b65]"
+              : "text-slate-700"
+          }`}
+        >
+          {title}
+        </p>
+
+        <p className="mt-0.5 text-xs text-slate-400">
+          {description}
+        </p>
+      </div>
+    </button>
+  );
+}
+
+function SectionCard({
+    id,
+    number,
+  title,
+  description,
+  children,
+  sensitive = false,
+}: {
+    id?: string;
+    number: string;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+  sensitive?: boolean;
+}) {
+  return (
+    <section
+      className={`overflow-hidden rounded-2xl border bg-white shadow-sm ${
+        sensitive
+          ? "border-amber-200"
+          : "border-slate-200"
+      }`}
+    >
+      <div
+        className={`border-b px-5 py-5 sm:px-6 ${
+          sensitive
+            ? "border-amber-100 bg-amber-50/40"
+            : "border-slate-100"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
+              sensitive
+                ? "bg-amber-100 text-amber-700"
+                : "bg-[#e8f7f5] text-[#087f78]"
+            }`}
+          >
+            {number}
+          </div>
+
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base font-bold text-slate-900 sm:text-lg">
+                {title}
+              </h2>
+
+              {sensitive && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                  Sensitive
+                </span>
+              )}
+            </div>
+
+            <p className="mt-1 text-sm text-slate-500">
+              {description}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-5 sm:p-6">{children}</div>
+    </section>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  required = false,
+  helper,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+  required?: boolean;
+  helper?: string;
+}) {
+  return (
+    <div>
+      <label className="mb-2 flex items-center text-sm font-semibold text-slate-700">
+        {label}
+
+        {required && (
+          <span className="ml-1 text-red-500">*</span>
+        )}
+      </label>
+
+      <input
+        type={type}
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value)
+        }
+        placeholder={placeholder}
+        required={required}
+        className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-[#087f78] focus:ring-4 focus:ring-[#087f78]/10"
+      />
+
+      {helper && (
+        <p className="mt-1.5 text-xs text-slate-400">
+          {helper}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  disabled = false,
+}: {
+  label: string;
+  value: string | number;
+  onChange: (value: string) => void;
+  options: Array<{
+    value: string | number;
+    label: string;
+  }>;
+  placeholder?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-slate-700">
+        {label}
+      </label>
+
+      <select
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value)
+        }
+        disabled={disabled}
+        className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm text-slate-800 outline-none transition hover:border-slate-400 focus:border-[#087f78] focus:ring-4 focus:ring-[#087f78]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+      >
+        <option value="">
+          {placeholder || `Select ${label}`}
+        </option>
+
+        {options.map((option) => (
+          <option
+            key={option.value}
+            value={option.value}
+          >
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function TextAreaField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows = 4,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-slate-700">
+        {label}
+      </label>
+
+      <textarea
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value)
+        }
+        placeholder={placeholder}
+        rows={rows}
+        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-[#087f78] focus:ring-4 focus:ring-[#087f78]/10"
+      />
+    </div>
+  );
+}

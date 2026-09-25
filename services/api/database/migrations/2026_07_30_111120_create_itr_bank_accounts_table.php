@@ -366,50 +366,56 @@ return new class extends Migration
         |--------------------------------------------------------------------------
         | Business Rule Constraints
         |--------------------------------------------------------------------------
+        |
+        | SQLite does not support ALTER TABLE ... ADD CONSTRAINT in the
+        | same way as MySQL. Keep these database-level checks enabled
+        | for MySQL while allowing SQLite-based automated tests to run.
+        |
         */
-
-        DB::statement("
-            ALTER TABLE itr_bank_accounts
-            ADD CONSTRAINT chk_itr_bank_accounts_status
-            CHECK (
-                status IN ('active','inactive','closed','blocked')
-            )
-        ");
-
-        DB::statement("
-            ALTER TABLE itr_bank_accounts
-            ADD CONSTRAINT chk_itr_bank_accounts_account_type
-            CHECK (
-                account_type IN (
-                    'saving',
-                    'current',
-                    'cash_credit',
-                    'overdraft',
-                    'nre',
-                    'nro'
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            DB::statement("
+                ALTER TABLE itr_bank_accounts
+                ADD CONSTRAINT chk_itr_bank_accounts_status
+                CHECK (
+                    status IN ('active','inactive','closed','blocked')
                 )
-            )
-        ");
+            ");
 
-        DB::statement("
-            ALTER TABLE itr_bank_accounts
-            ADD CONSTRAINT chk_itr_bank_accounts_version
-            CHECK (
-                version >= 1
-            )
-        ");
-
-        DB::statement("
-            ALTER TABLE itr_bank_accounts
-            ADD CONSTRAINT chk_itr_bank_accounts_ai_confidence
-            CHECK (
-                ai_confidence_score IS NULL
-                OR (
-                    ai_confidence_score >= 0
-                    AND ai_confidence_score <= 100
+            DB::statement("
+                ALTER TABLE itr_bank_accounts
+                ADD CONSTRAINT chk_itr_bank_accounts_account_type
+                CHECK (
+                    account_type IN (
+                        'saving',
+                        'current',
+                        'cash_credit',
+                        'overdraft',
+                        'nre',
+                        'nro'
+                    )
                 )
-            )
-        ");
+            ");
+
+            DB::statement("
+                ALTER TABLE itr_bank_accounts
+                ADD CONSTRAINT chk_itr_bank_accounts_version
+                CHECK (
+                    version >= 1
+                )
+            ");
+
+            DB::statement("
+                ALTER TABLE itr_bank_accounts
+                ADD CONSTRAINT chk_itr_bank_accounts_ai_confidence
+                CHECK (
+                    ai_confidence_score IS NULL
+                    OR (
+                        ai_confidence_score >= 0
+                        AND ai_confidence_score <= 100
+                    )
+                )
+            ");
+        }
     }
 
     public function down(): void

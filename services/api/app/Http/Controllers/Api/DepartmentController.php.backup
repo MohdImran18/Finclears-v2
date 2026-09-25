@@ -1,0 +1,31 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Department;
+use Illuminate\Http\JsonResponse;
+
+class DepartmentController extends Controller
+{
+    public function index(): JsonResponse
+    {
+        $departments = Department::query()
+            ->where('status', true)
+            ->withCount('designations')
+            ->orderBy('name')
+            ->get([
+                'id',
+                'name',
+                'code',
+                'description',
+                'status',
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Departments fetched successfully.',
+            'data' => $departments,
+        ]);
+    }
+}

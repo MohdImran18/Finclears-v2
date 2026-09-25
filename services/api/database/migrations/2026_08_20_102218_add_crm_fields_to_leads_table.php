@@ -9,89 +9,64 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('leads', function (Blueprint $table) {
-            $table->string('name')->after('id');
-            $table->string('email')->nullable()->after('name');
-            $table->string('phone', 30)->after('email');
-            $table->string('alternate_phone', 30)->nullable()->after('phone');
+            if (!Schema::hasColumn('leads', 'status')) {
+                $table->string('status')->nullable()->after('id');
+            }
 
-            $table->string('company_name')->nullable()->after('alternate_phone');
+            if (!Schema::hasColumn('leads', 'source_id')) {
+                $table->foreignId('source_id')
+                    ->nullable()
+                    ->after('status')
+                    ->constrained('lead_sources')
+                    ->nullOnDelete();
+            }
 
-            $table->foreignId('service_id')
-                ->nullable()
-                ->after('company_name')
-                ->constrained('services')
-                ->nullOnDelete();
+            if (!Schema::hasColumn('leads', 'assigned_to')) {
+                $table->foreignId('assigned_to')
+                    ->nullable()
+                    ->after('source_id')
+                    ->constrained('users')
+                    ->nullOnDelete();
+            }
 
-            $table->foreignId('source_id')
-                ->nullable()
-                ->after('service_id')
-                ->constrained('lead_sources')
-                ->nullOnDelete();
+            if (!Schema::hasColumn('leads', 'follow_up_at')) {
+                $table->dateTime('follow_up_at')
+                    ->nullable()
+                    ->after('assigned_to');
+            }
 
-            $table->string('status', 30)
-                ->default('new')
-                ->after('source_id');
-
-            $table->string('priority', 20)
-                ->default('medium')
-                ->after('status');
-
-            $table->foreignId('assigned_to')
-                ->nullable()
-                ->after('priority')
-                ->constrained('users')
-                ->nullOnDelete();
-
-            $table->decimal('estimated_value', 12, 2)
-                ->nullable()
-                ->after('assigned_to');
-
-            $table->text('notes')
-                ->nullable()
-                ->after('estimated_value');
-
-            $table->dateTime('next_follow_up_at')
-                ->nullable()
-                ->after('notes');
-
-            $table->dateTime('converted_at')
-                ->nullable()
-                ->after('next_follow_up_at');
-
-            $table->text('lost_reason')
-                ->nullable()
-                ->after('converted_at');
-
-            $table->index('status');
-            $table->index('priority');
-            $table->index('next_follow_up_at');
+            if (!Schema::hasColumn('leads', 'next_follow_up_at')) {
+                $table->dateTime('next_follow_up_at')
+                    ->nullable()
+                    ->after('follow_up_at');
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('leads', function (Blueprint $table) {
-            $table->dropForeign(['service_id']);
-            $table->dropForeign(['source_id']);
-            $table->dropForeign(['assigned_to']);
+            if (Schema::hasColumn('leads', 'next_follow_up_at')) {
+                $table->dropColumn('next_follow_up_at');
+            }
 
-            $table->dropColumn([
-                'name',
-                'email',
-                'phone',
-                'alternate_phone',
-                'company_name',
-                'service_id',
-                'source_id',
-                'status',
-                'priority',
-                'assigned_to',
-                'estimated_value',
-                'notes',
-                'next_follow_up_at',
-                'converted_at',
-                'lost_reason',
-            ]);
+            if (Schema::hasColumn('leads', 'follow_up_at')) {
+                $table->dropColumn('follow_up_at');
+            }
+
+            if (Schema::hasColumn('leads', 'assigned_to')) {
+                $table->dropForeign(['assigned_to']);
+                $table->dropColumn('assigned_to');
+            }
+
+            if (Schema::hasColumn('leads', 'source_id')) {
+                $table->dropForeign(['source_id']);
+                $table->dropColumn('source_id');
+            }
+
+            if (Schema::hasColumn('leads', 'status')) {
+                $table->dropColumn('status');
+            }
         });
     }
 };

@@ -17,6 +17,9 @@ class UserController extends BaseController
         protected UserService $service
     ) {}
 
+    /**
+     * List Users
+     */
     public function index(Request $request)
     {
         $users = $this->service->paginate(
@@ -34,6 +37,9 @@ class UserController extends BaseController
         );
     }
 
+    /**
+     * Create User
+     */
     public function store(StoreUserRequest $request)
     {
         $user = $this->service->create(
@@ -46,7 +52,10 @@ class UserController extends BaseController
             201
         );
     }
-
+   
+    /**
+     * Show User
+     */
     public function show(User $user)
     {
         return $this->success(
@@ -54,6 +63,9 @@ class UserController extends BaseController
         );
     }
 
+    /**
+     * Update User
+     */
     public function update(
         UpdateUserRequest $request,
         User $user
@@ -69,9 +81,13 @@ class UserController extends BaseController
         );
     }
 
+    /**
+     * Delete User
+     */
     public function destroy(User $user)
     {
         try {
+
             $this->service->delete(
                 $user,
                 request()->user()
@@ -83,10 +99,12 @@ class UserController extends BaseController
             );
 
         } catch (RuntimeException $e) {
+
             return $this->error(
                 $e->getMessage(),
                 422
             );
         }
     }
+
 }

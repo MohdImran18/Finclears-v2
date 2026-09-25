@@ -6,17 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::table('itr_kyc_verifications', function (Blueprint $table) {
-            $table->softDeletes()->after('updated_at');
+        Schema::table('payroll_run_items', function (Blueprint $table) {
+            //
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::table('itr_kyc_verifications', function (Blueprint $table) {
-            $table->dropSoftDeletes();
+        Schema::table('payroll_run_items', function (Blueprint $table) {
+            //
         });
     }
 };

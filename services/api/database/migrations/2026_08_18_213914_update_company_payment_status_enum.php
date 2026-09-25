@@ -7,6 +7,9 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return;
+        }
         // Step 1: Temporarily keep the legacy "paid" value
         // while adding the new canonical PaymentStatus values.
         DB::statement("

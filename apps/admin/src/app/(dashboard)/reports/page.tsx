@@ -1,517 +1,337 @@
 "use client";
 
+import React from "react";
+
 import { useEffect, useState } from "react";
 import {
-  BarChart3,
-  ShoppingCart,
-  CreditCard,
-  IndianRupee,
-  Users,
-  UserPlus,
+  Download,
   RefreshCw,
-  TrendingUp,
+  BarChart3,
 } from "lucide-react";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://127.0.0.1:8000/api/v1";
-
-type ReportState = {
-  orders: number;
-  payments: number;
-  revenue: number;
-  customers: number;
-  leads: number;
-  users: number;
-};
-
-function getToken() {
-  if (typeof window === "undefined") return "";
-
-  return (
-    localStorage.getItem("token") ||
-    localStorage.getItem("access_token") ||
-    localStorage.getItem("auth_token") ||
-    ""
-  );
-}
-
-async function fetchApi(path: string) {
-  const token = getToken();
-
-  const response = await fetch(`${API_URL}${path}`, {
-    headers: {
-      Accept: "application/json",
-      ...(token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : {}),
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
-  }
-
-  return response.json();
-}
-
-function extractList(response: any): any[] {
-  if (Array.isArray(response)) {
-    return response;
-  }
-
-  if (Array.isArray(response?.data)) {
-    return response.data;
-  }
-
-  if (Array.isArray(response?.data?.data)) {
-    return response.data.data;
-  }
-
-  return [];
-}
-
-function extractTotal(response: any): number {
-  if (typeof response?.meta?.total === "number") {
-    return response.meta.total;
-  }
-
-  if (typeof response?.data?.meta?.total === "number") {
-    return response.data.meta.total;
-  }
-
-  return extractList(response).length;
-}
-
-function getAmount(payment: any): number {
-  return Number(
-    payment?.amount ??
-      payment?.paid_amount ??
-      payment?.total_amount ??
-      0
-  );
-}
-
-function isSuccessfulPayment(payment: any): boolean {
-  const status = String(
-    payment?.payment_status ??
-      payment?.status ??
-      ""
-  ).toLowerCase();
-
-  return [
-    "success",
-    "successful",
-    "paid",
-    "completed",
-  ].includes(status);
-}
+import {
+  exportLeadReports,
+  getLeadReports,
+} from "@/lib/api/reports/leadReportsApi";
 
 export default function ReportsPage() {
-  const [report, setReport] = useState<ReportState>({
-    orders: 0,
-    payments: 0,
-    revenue: 0,
-    customers: 0,
-    leads: 0,
-    users: 0,
-  });
+  const [from, setFrom] = useState(
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      .toISOString()
+      .slice(0, 10)
+  );
 
+  const [to, setTo] = useState(
+    new Date().toISOString().slice(0, 10)
+  );
+
+  const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  async function loadReports() {
+  async function load() {
+    setLoading(true);
+
     try {
-      setLoading(true);
-      setError("");
-
-      const [
-        ordersResponse,
-        paymentsResponse,
-        customersResponse,
-        leadsResponse,
-        usersResponse,
-      ] = await Promise.all([
-        fetchApi("/orders?per_page=100"),
-        fetchApi("/payments?per_page=100"),
-        fetchApi("/customers?per_page=100"),
-        fetchApi("/leads?per_page=100"),
-        fetchApi("/users?per_page=100"),
-      ]);
-
-      const payments = extractList(paymentsResponse);
-
-      const revenue = payments
-        .filter(isSuccessfulPayment)
-        .reduce((sum, payment) => {
-          return sum + getAmount(payment);
-        }, 0);
-
-      setReport({
-        orders: extractTotal(ordersResponse),
-        payments: extractTotal(paymentsResponse),
-        revenue,
-        customers: extractTotal(customersResponse),
-        leads: extractTotal(leadsResponse),
-        users: extractTotal(usersResponse),
-      });
-    } catch (err) {
-      console.error("Failed to load reports:", err);
-      setError(
-        "Unable to load reports. Please check your API connection."
-      );
+      const response = await getLeadReports(from, to);
+      setReport(response.data);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadReports();
+    load();
   }, []);
 
   return (
-    <main style={pageStyle}>
-      <div style={containerStyle}>
-        <div style={headerStyle}>
+    <main style={{
+      minHeight: "100%",
+      padding: 26,
+      background: "#f5f8fb"
+    }}>
+      <div style={{ maxWidth: 1450, margin: "0 auto" }}>
+        <header style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 16,
+          marginBottom: 20
+        }}>
           <div>
-            <div style={eyebrowStyle}>
-              <BarChart3 size={15} />
-              ADMIN REPORTS
+            <div style={{
+              color: "#1769aa",
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: ".08em"
+            }}>
+              CRM / REPORTS
             </div>
 
-            <h1 style={titleStyle}>Reports & Analytics</h1>
+            <h1 style={{
+              margin: "6px 0",
+              color: "#102a43"
+            }}>
+              Lead Reports
+            </h1>
 
-            <p style={subtitleStyle}>
-              Live business overview from your existing APIs.
+            <p style={{
+              margin: 0,
+              color: "#627d98",
+              fontSize: 12
+            }}>
+              Sales performance and lead analytics.
             </p>
           </div>
 
           <button
             type="button"
-            onClick={loadReports}
-            disabled={loading}
-            style={refreshButtonStyle}
+            onClick={() => exportLeadReports(from, to)}
+            style={{
+              height: 38,
+              padding: "0 14px",
+              borderRadius: 8,
+              border: "1px solid #d5e2ec",
+              background: "#fff",
+              color: "#1769aa",
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              gap: 7,
+              alignItems: "center"
+            }}
           >
-            <RefreshCw size={15} />
-            {loading ? "Refreshing..." : "Refresh"}
+            <Download size={14} />
+            Export CSV
           </button>
-        </div>
+        </header>
 
-        {error && (
-          <div style={errorStyle}>
-            {error}
-          </div>
-        )}
-
-        <section style={gridStyle}>
-          <ReportCard
-            icon={<ShoppingCart size={21} />}
-            title="Orders"
-            value={loading ? "—" : report.orders.toLocaleString()}
-            subtitle="Total orders"
+        <section style={{
+          display: "flex",
+          gap: 10,
+          marginBottom: 18
+        }}>
+          <input
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
           />
 
-          <ReportCard
-            icon={<CreditCard size={21} />}
-            title="Payments"
-            value={loading ? "—" : report.payments.toLocaleString()}
-            subtitle="Total payment transactions"
+          <input
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
           />
 
-          <ReportCard
-            icon={<IndianRupee size={21} />}
-            title="Revenue"
-            value={
-              loading
-                ? "—"
-                : `₹${report.revenue.toLocaleString("en-IN", {
-                    maximumFractionDigits: 2,
-                  })}`
-            }
-            subtitle="Successful payments"
-          />
-
-          <ReportCard
-            icon={<Users size={21} />}
-            title="Customers"
-            value={loading ? "—" : report.customers.toLocaleString()}
-            subtitle="Total customers"
-          />
-
-          <ReportCard
-            icon={<UserPlus size={21} />}
-            title="Leads"
-            value={loading ? "—" : report.leads.toLocaleString()}
-            subtitle="Total leads"
-          />
-
-          <ReportCard
-            icon={<TrendingUp size={21} />}
-            title="Users"
-            value={loading ? "—" : report.users.toLocaleString()}
-            subtitle="Admin users"
-          />
+          <button
+            type="button"
+            onClick={load}
+            style={{
+              height: 38,
+              padding: "0 14px",
+              borderRadius: 8,
+              border: 0,
+              background: "#1769aa",
+              color: "#fff",
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 7
+            }}
+          >
+            <RefreshCw size={14} />
+            Apply
+          </button>
         </section>
 
-        <section style={infoCardStyle}>
-          <div style={infoHeaderStyle}>
-            <BarChart3 size={19} />
-            <div>
-              <h2 style={infoTitleStyle}>
-                Business Overview
-              </h2>
-
-              <p style={infoSubtitleStyle}>
-                Current totals fetched from the admin APIs.
-              </p>
+        {loading ? (
+          <div style={{ padding: 50, textAlign: "center" }}>
+            Loading report...
+          </div>
+        ) : report ? (
+          <>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(6, 1fr)",
+              gap: 12
+            }}>
+              {[
+                ["Total Leads", report.summary.total_leads],
+                ["Converted", report.summary.converted_leads],
+                ["Lost", report.summary.lost_leads],
+                ["Conversion %", `${report.summary.conversion_rate}%`],
+                ["Pipeline", `â‚¹${Number(report.summary.pipeline_value).toLocaleString("en-IN")}`],
+                ["Revenue", `â‚¹${Number(report.summary.revenue).toLocaleString("en-IN")}`],
+              ].map(([label, value]) => (
+                <div key={String(label)} style={{
+                  padding: 16,
+                  background: "#fff",
+                  border: "1px solid #dde7ef",
+                  borderRadius: 12
+                }}>
+                  <div style={{
+                    color: "#627d98",
+                    fontSize: 11
+                  }}>
+                    {label}
+                  </div>
+                  <strong style={{
+                    display: "block",
+                    marginTop: 5,
+                    color: "#102a43",
+                    fontSize: 21
+                  }}>
+                    {value}
+                  </strong>
+                </div>
+              ))}
             </div>
-          </div>
 
-          <div style={summaryGridStyle}>
-            <SummaryRow
-              label="Orders"
-              value={report.orders}
+            <ReportTable
+              title="Source Performance"
+              rows={report.source_performance}
+              nameKey="name"
             />
 
-            <SummaryRow
-              label="Payments"
-              value={report.payments}
+            <ReportTable
+              title="Employee Performance"
+              rows={report.employee_performance}
+              nameKey="name"
             />
 
-            <SummaryRow
-              label="Customers"
-              value={report.customers}
+            <ReportTable
+              title="Service Performance"
+              rows={report.service_performance}
+              nameKey="title"
             />
 
-            <SummaryRow
-              label="Leads"
-              value={report.leads}
+            <ReportTable
+              title="Lost Lead Analysis"
+              rows={report.lost_reasons}
+              nameKey="reason"
+              compact
             />
 
-            <SummaryRow
-              label="Users"
-              value={report.users}
-            />
+            <div style={{
+              marginTop: 14,
+              padding: 18,
+              background: "#fff",
+              border: "1px solid #dde7ef",
+              borderRadius: 12
+            }}>
+              <h3 style={{ margin: "0 0 14px", color: "#173b56" }}>
+                Follow-up Performance
+              </h3>
 
-            <SummaryRow
-              label="Successful Revenue"
-              value={`₹${report.revenue.toLocaleString("en-IN", {
-                maximumFractionDigits: 2,
-              })}`}
-            />
-          </div>
-        </section>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4,1fr)",
+                gap: 14
+              }}>
+                <Stat label="Total" value={report.followup_performance?.total ?? 0} />
+                <Stat label="Completed" value={report.followup_performance?.completed ?? 0} />
+                <Stat label="Pending" value={report.followup_performance?.pending ?? 0} />
+                <Stat label="Cancelled" value={report.followup_performance?.cancelled ?? 0} />
+              </div>
+            </div>
+          </>
+        ) : null}
       </div>
     </main>
   );
 }
 
-function ReportCard({
-  icon,
+function ReportTable({
   title,
-  value,
-  subtitle,
+  rows,
+  nameKey,
+  compact = false,
 }: {
-  icon: React.ReactNode;
   title: string;
-  value: string;
-  subtitle: string;
+  rows: any[];
+  nameKey: string;
+  compact?: boolean;
 }) {
   return (
-    <div style={cardStyle}>
-      <div style={cardTopStyle}>
-        <div style={iconBoxStyle}>{icon}</div>
-        <span style={cardTitleStyle}>{title}</span>
+    <section style={{
+      marginTop: 14,
+      padding: 18,
+      background: "#fff",
+      border: "1px solid #dde7ef",
+      borderRadius: 12
+    }}>
+      <h3 style={{
+        margin: "0 0 14px",
+        color: "#173b56"
+      }}>
+        {title}
+      </h3>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: compact
+          ? "1fr 120px"
+          : "2fr repeat(4,120px)",
+        gap: 8,
+        fontSize: 11
+      }}>
+        <strong>Name</strong>
+
+        {!compact && (
+          <>
+            <strong>Total</strong>
+            <strong>Converted</strong>
+            <strong>Lost</strong>
+            <strong>Value</strong>
+          </>
+        )}
+
+        {rows?.map((row, index) => (
+          <React.Fragment key={index}>
+            <span>{row[nameKey] || "Unknown"}</span>
+
+            {compact ? (
+              <span>{row.total}</span>
+            ) : (
+              <>
+                <span>{row.total}</span>
+                <span>{row.converted}</span>
+                <span>{row.lost}</span>
+                <span>
+                  â‚¹{Number(row.value || 0).toLocaleString("en-IN")}
+                </span>
+              </>
+            )}
+          </React.Fragment>
+        ))}
       </div>
-
-      <div style={valueStyle}>{value}</div>
-
-      <div style={cardSubtitleStyle}>{subtitle}</div>
-    </div>
+    </section>
   );
 }
 
-function SummaryRow({
+function Stat({
   label,
   value,
 }: {
   label: string;
-  value: string | number;
+  value: number;
 }) {
   return (
-    <div style={summaryRowStyle}>
-      <span>{label}</span>
+    <div>
+      <div style={{
+        color: "#627d98",
+        fontSize: 11
+      }}>
+        {label}
+      </div>
 
-      <strong>
-        {typeof value === "number"
-          ? value.toLocaleString("en-IN")
-          : value}
+      <strong style={{
+        display: "block",
+        marginTop: 4,
+        color: "#102a43",
+        fontSize: 20
+      }}>
+        {value}
       </strong>
     </div>
   );
 }
-
-const pageStyle: React.CSSProperties = {
-  minHeight: "100vh",
-  background: "#f8fafc",
-  padding: 24,
-};
-
-const containerStyle: React.CSSProperties = {
-  maxWidth: 1400,
-  margin: "0 auto",
-};
-
-const headerStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: 20,
-  marginBottom: 24,
-};
-
-const eyebrowStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 7,
-  color: "#2563eb",
-  fontSize: 10,
-  fontWeight: 800,
-  letterSpacing: ".14em",
-};
-
-const titleStyle: React.CSSProperties = {
-  margin: "7px 0 4px",
-  color: "#102a50",
-  fontSize: 30,
-  fontWeight: 800,
-};
-
-const subtitleStyle: React.CSSProperties = {
-  margin: 0,
-  color: "#71839b",
-  fontSize: 13,
-};
-
-const refreshButtonStyle: React.CSSProperties = {
-  height: 40,
-  padding: "0 15px",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 8,
-  border: "1px solid #dbe5f1",
-  borderRadius: 9,
-  background: "#fff",
-  color: "#40536d",
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const errorStyle: React.CSSProperties = {
-  marginBottom: 18,
-  padding: 14,
-  border: "1px solid #fecaca",
-  borderRadius: 10,
-  background: "#fef2f2",
-  color: "#b91c1c",
-  fontSize: 13,
-};
-
-const gridStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns:
-    "repeat(auto-fit, minmax(230px, 1fr))",
-  gap: 16,
-};
-
-const cardStyle: React.CSSProperties = {
-  background: "#fff",
-  border: "1px solid #e2e8f0",
-  borderRadius: 14,
-  padding: 20,
-};
-
-const cardTopStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
-};
-
-const iconBoxStyle: React.CSSProperties = {
-  width: 40,
-  height: 40,
-  borderRadius: 10,
-  background: "#eff6ff",
-  color: "#2563eb",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const cardTitleStyle: React.CSSProperties = {
-  color: "#52657e",
-  fontSize: 12,
-  fontWeight: 750,
-};
-
-const valueStyle: React.CSSProperties = {
-  marginTop: 18,
-  color: "#102a50",
-  fontSize: 28,
-  fontWeight: 800,
-};
-
-const cardSubtitleStyle: React.CSSProperties = {
-  marginTop: 5,
-  color: "#94a3b8",
-  fontSize: 11,
-};
-
-const infoCardStyle: React.CSSProperties = {
-  marginTop: 20,
-  background: "#fff",
-  border: "1px solid #e2e8f0",
-  borderRadius: 14,
-  padding: 22,
-};
-
-const infoHeaderStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
-  color: "#2563eb",
-};
-
-const infoTitleStyle: React.CSSProperties = {
-  margin: 0,
-  color: "#102a50",
-  fontSize: 17,
-  fontWeight: 800,
-};
-
-const infoSubtitleStyle: React.CSSProperties = {
-  margin: "3px 0 0",
-  color: "#71839b",
-  fontSize: 11,
-};
-
-const summaryGridStyle: React.CSSProperties = {
-  marginTop: 20,
-  display: "grid",
-  gridTemplateColumns:
-    "repeat(auto-fit, minmax(220px, 1fr))",
-  gap: 10,
-};
-
-const summaryRowStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "13px 14px",
-  border: "1px solid #edf2f7",
-  borderRadius: 9,
-  color: "#52657e",
-  fontSize: 12,
-};

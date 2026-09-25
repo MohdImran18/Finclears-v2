@@ -1,0 +1,378 @@
+﻿"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+import EmployeeStepper from "./components/EmployeeStepper";
+import EmployeeAccountForm from "./components/EmployeeAccountForm";
+import EmployeeEmploymentForm from "./components/EmployeeEmploymentForm";
+import EmployeePersonalForm from "./components/EmployeePersonalForm";
+import EmployeeEmergencyForm from "./components/EmployeeEmergencyForm";
+import EmployeePayrollForm from "./components/EmployeePayrollForm";
+
+import { createEmployee } from "@/lib/api/employees/employeeApi";
+import type { EmployeePayload } from "@/types/employee/employee";
+
+const TOTAL_STEPS = 5;
+
+const initialForm: Partial<EmployeePayload> = {
+  name: "",
+  email: "",
+  phone: "",
+  password: "",
+  password_confirmation: "",
+
+  employee_code: "",
+
+  department_id: null,
+  designation_id: null,
+
+  date_of_joining: "",
+  date_of_birth: "",
+  gender: "",
+  employment_type: "full_time",
+  work_location: "",
+
+  reporting_manager_id: null,
+
+  personal_email: "",
+  personal_phone: "",
+
+  address: "",
+  city: "",
+  state: "",
+  pincode: "",
+
+  emergency_contact_name: "",
+  emergency_contact_phone: "",
+  emergency_contact_relation: "",
+
+  pan_number: "",
+  aadhaar_number: "",
+  bank_account_number: "",
+  bank_name: "",
+  ifsc_code: "",
+  account_holder_name: "",
+
+  status: "active",
+  notes: "",
+};
+
+export default function CreateEmployeePage() {
+  const router = useRouter();
+
+  const [currentStep, setCurrentStep] = useState(1);
+  const [form, setForm] =
+    useState<Partial<EmployeePayload>>(initialForm);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const goToStep = (step: number) => {
+    if (step < 1 || step > TOTAL_STEPS) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setCurrentStep(step);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  const nextStep = () => {
+    if (currentStep < TOTAL_STEPS) {
+      goToStep(currentStep + 1);
+    }
+  };
+
+  const previousStep = () => {
+    if (currentStep > 1) {
+      goToStep(currentStep - 1);
+    }
+  };
+
+  const validateCurrentStep = () => {
+    setError("");
+
+    if (currentStep === 1) {
+      if (!form.name?.trim()) {
+        setError("Employee name is required.");
+        return false;
+      }
+
+      if (!form.email?.trim()) {
+        setError("Email is required.");
+        return false;
+      }
+
+      if (!form.employee_code?.trim()) {
+        setError("Employee code is required.");
+        return false;
+      }
+
+      if (!form.password) {
+        setError("Password is required.");
+        return false;
+      }
+
+      if (form.password.length < 8) {
+        setError("Password must be at least 8 characters.");
+        return false;
+      }
+
+      if (form.password !== form.password_confirmation) {
+        setError("Password and confirmation password do not match.");
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleNext = () => {
+    if (!validateCurrentStep()) {
+      return;
+    }
+
+    nextStep();
+  };
+
+  const handleSubmit = async () => {
+    setError("");
+    setSuccess("");
+
+    if (!validateCurrentStep()) {
+      return;
+    }
+
+    const payload = {
+      ...form,
+      name: form.name || "",
+      email: form.email || "",
+      password: form.password || "",
+      password_confirmation:
+        form.password_confirmation || "",
+      employee_code: form.employee_code || "",
+    } as EmployeePayload;
+
+    try {
+      setLoading(true);
+
+      const response = await createEmployee(payload);
+
+      if (response.success) {
+        setSuccess(
+          response.message || "Employee created successfully."
+        );
+
+        setTimeout(() => {
+          router.push("/crm/employees");
+        }, 1200);
+      } else {
+        setError(
+          response.message || "Unable to create employee."
+        );
+      }
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "Something went wrong while creating the employee.";
+
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderCurrentForm = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <EmployeeAccountForm
+            form={form}
+            setForm={setForm}
+          />
+        );
+
+      case 2:
+        return (
+          <EmployeeEmploymentForm
+            form={form}
+            setForm={setForm}
+          />
+        );
+
+      case 3:
+        return (
+          <EmployeePersonalForm
+            form={form}
+            setForm={setForm}
+          />
+        );
+
+      case 4:
+        return (
+          <EmployeeEmergencyForm
+            form={form}
+            setForm={setForm}
+          />
+        );
+
+      case 5:
+        return (
+          <EmployeePayrollForm
+            form={form}
+            setForm={setForm}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+
+        {/* Header */}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-slate-500">
+              <button
+                type="button"
+                onClick={() => router.push("/crm/employees")}
+                className="hover:text-[#087f78]"
+              >
+                Employees
+              </button>
+
+              <span>/</span>
+
+              <span className="text-slate-700">
+                Create Employee
+              </span>
+            </div>
+
+            <h1 className="mt-2 text-2xl font-bold text-slate-900">
+              Create Employee
+            </h1>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Add employee account, employment and HR information.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => router.push("/crm/employees")}
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+        </div>
+
+        {/* Stepper */}
+        <EmployeeStepper
+          currentStep={currentStep}
+          onStepChange={goToStep}
+        />
+
+        {/* Alerts */}
+        {error && (
+          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+            {success}
+          </div>
+        )}
+
+        {/* Main module */}
+        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+          {/* Module header */}
+          <div className="border-b border-slate-100 bg-white px-6 py-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#087f78]">
+                  Step {String(currentStep).padStart(2, "0")} of 05
+                </p>
+
+                <h2 className="mt-1 text-lg font-bold text-slate-900">
+                  {currentStep === 1 && "Account & Login"}
+                  {currentStep === 2 && "Employment Details"}
+                  {currentStep === 3 && "Personal Information"}
+                  {currentStep === 4 && "Emergency Contact"}
+                  {currentStep === 5 && "Identity & Banking"}
+                </h2>
+              </div>
+
+              <div className="hidden rounded-full bg-[#e8f7f5] px-3 py-1.5 text-xs font-semibold text-[#087f78] sm:block">
+                Employee Profile
+              </div>
+            </div>
+          </div>
+
+          {/* Form */}
+          <div className="p-6 lg:p-8">
+            {renderCurrentForm()}
+          </div>
+
+          {/* Footer navigation */}
+          <div className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+
+            <button
+              type="button"
+              onClick={previousStep}
+              disabled={currentStep === 1 || loading}
+              className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              ← Previous
+            </button>
+
+            <div className="flex gap-3">
+
+              {currentStep < TOTAL_STEPS ? (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={loading}
+                  className="rounded-xl bg-[#087f78] px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#066b65] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Save & Continue →
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="rounded-xl bg-[#087f78] px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#066b65] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading
+                    ? "Creating Employee..."
+                    : "✓ Create Employee"}
+                </button>
+              )}
+
+            </div>
+          </div>
+        </div>
+
+        {/* Progress */}
+        <div className="mt-5 text-center text-xs text-slate-400">
+          Step {currentStep} of {TOTAL_STEPS}
+        </div>
+      </div>
+    </div>
+  );
+}

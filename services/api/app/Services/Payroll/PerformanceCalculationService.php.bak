@@ -1,0 +1,381 @@
+<?php
+
+namespace App\Services\Payroll;
+
+use App\Models\EmployeePerformanceRule;
+
+class PerformanceCalculationService
+{
+    /**
+     * Calculate employee performance-based
+     * incentives and deductions.
+     */
+    public function calculate(
+        EmployeePerformanceRule $rule,
+        array $inputs = []
+    ): array {
+        $context = array_merge([
+            'sales' => 0,
+            'collection' => 0,
+            'revenue' => 0,
+            'leads' => 0,
+
+            'target' => (float) $rule->target_value,
+            'achievement' => 0,
+
+            'basic_salary' => 0,
+            'gross_salary' => 0,
+            'net_salary' => 0,
+
+            'working_days' => 0,
+            'attendance_days' => 0,
+            'lop_days' => 0,
+
+            'loss_amount' => 0,
+        ], $inputs);
+
+        $target = $this->resolveTarget($rule);
+
+        $achievement = $this->resolveAchievement(
+            $rule,
+            $context
+        );
+
+        $achievementPercentage = $target > 0
+            ? ($achievement / $target) * 100
+            : 0;
+
+        /*
+         * Respect configured achievement percentage limits.
+         */
+        if (
+            $rule->minimum_achievement_percentage !== null &&
+            $achievementPercentage <
+                (float) $rule->minimum_achievement_percentage
+        ) {
+            $achievementPercentage = 0;
+        }
+
+        if (
+            $rule->maximum_achievement_percentage !== null &&
+            $achievementPercentage >
+                (float) $rule->maximum_achievement_percentage
+        ) {
+            $achievementPercentage =
+                (float) $rule->maximum_achievement_percentage;
+        }
+
+        $incentive = $this->calculateIncentive(
+            $rule,
+            $context,
+            $achievementPercentage
+        );
+
+        $performanceDeduction = $this->calculateDeduction(
+            $rule,
+            $context,
+            $achievementPercentage
+        );
+
+        $lossDeduction = $this->calculateLossDeduction(
+            $rule,
+            $context
+        );
+
+        $attendanceDeduction = $this->calculateAttendanceDeduction(
+            $rule,
+            $context
+        );
+
+        $totalDeductions =
+            $performanceDeduction +
+            $lossDeduction +
+            $attendanceDeduction;
+
+        return [
+            'rule_id' => $rule->id,
+            'employee_profile_id' => $rule->employee_profile_id,
+
+            'metric_type' => $rule->metric_type,
+            'period_type' => $rule->period_type,
+
+            'target' => $this->money($target),
+            'achievement' => $this->money($achievement),
+
+            'achievement_percentage' =>
+                $this->money($achievementPercentage),
+
+            'incentive' => $this->money($incentive),
+
+            'deductions' => [
+                'performance' =>
+                    $this->money($performanceDeduction),
+
+                'loss' =>
+                    $this->money($lossDeduction),
+
+                'attendance' =>
+                    $this->money($attendanceDeduction),
+
+                'total' =>
+                    $this->money($totalDeductions),
+            ],
+
+            'net_performance_adjustment' =>
+                $this->money(
+                    $incentive - $totalDeductions
+                ),
+        ];
+    }
+
+    private function resolveTarget(
+        EmployeePerformanceRule $rule
+    ): float {
+        $target = (float) $rule->target_value;
+
+        if ($rule->minimum_target !== null) {
+            $target = max(
+                $target,
+                (float) $rule->minimum_target
+            );
+        }
+
+        if ($rule->maximum_target !== null) {
+            $target = min(
+                $target,
+                (float) $rule->maximum_target
+            );
+        }
+
+        return $target;
+    }
+
+    private function resolveAchievement(
+        EmployeePerformanceRule $rule,
+        array $context
+    ): float {
+        $metric = $rule->metric_type;
+
+        return (float) (
+            $context[$metric]
+            ?? $context['achievement']
+            ?? 0
+        );
+    }
+
+    private function calculateIncentive(
+        EmployeePerformanceRule $rule,
+        array $context,
+        float $achievementPercentage
+    ): float {
+        if (! $rule->incentive_type) {
+            return 0;
+        }
+
+        $amount = 0.0;
+
+        switch ($rule->incentive_type) {
+            case 'fixed':
+                $amount = (float) (
+                    $rule->incentive_value ?? 0
+                );
+                break;
+
+            case 'percentage':
+                $amount = (
+                    (float) ($context['gross_salary'] ?? 0)
+                    *
+                    (float) ($rule->incentive_value ?? 0)
+                ) / 100;
+                break;
+
+            case 'slab':
+                $amount = $this->calculateSlab(
+                    $rule->incentive_slabs,
+                    $achievementPercentage
+                );
+                break;
+        }
+
+        return $this->applyLimits(
+            $amount,
+            $rule->minimum_incentive,
+            $rule->maximum_incentive
+        );
+    }
+
+    private function calculateDeduction(
+        EmployeePerformanceRule $rule,
+        array $context,
+        float $achievementPercentage
+    ): float {
+        if (! $rule->deduction_type) {
+            return 0;
+        }
+
+        $amount = 0.0;
+
+        switch ($rule->deduction_type) {
+            case 'fixed':
+                $amount = (float) (
+                    $rule->deduction_value ?? 0
+                );
+                break;
+
+            case 'percentage':
+                $amount = (
+                    (float) ($context['gross_salary'] ?? 0)
+                    *
+                    (float) ($rule->deduction_value ?? 0)
+                ) / 100;
+                break;
+
+            case 'slab':
+                $amount = $this->calculateSlab(
+                    $rule->deduction_slabs,
+                    $achievementPercentage
+                );
+                break;
+        }
+
+        return $this->applyLimits(
+            $amount,
+            $rule->minimum_deduction,
+            $rule->maximum_deduction
+        );
+    }
+
+    private function calculateLossDeduction(
+        EmployeePerformanceRule $rule,
+        array $context
+    ): float {
+        if (! $rule->loss_deduction_enabled) {
+            return 0;
+        }
+
+        $loss = (float) ($context['loss_amount'] ?? 0);
+
+        if ($loss <= 0) {
+            return 0;
+        }
+
+        switch ($rule->loss_deduction_type) {
+            case 'fixed':
+                return $this->money(
+                    min(
+                        $loss,
+                        (float) ($rule->loss_deduction_value ?? 0)
+                    )
+                );
+
+            case 'percentage':
+                return $this->money(
+                    $loss *
+                    (
+                        (float) (
+                            $rule->loss_deduction_value ?? 0
+                        ) / 100
+                    )
+                );
+
+            default:
+                return $this->money($loss);
+        }
+    }
+
+    private function calculateAttendanceDeduction(
+        EmployeePerformanceRule $rule,
+        array $context
+    ): float {
+        if (! $rule->attendance_deduction_enabled) {
+            return 0;
+        }
+
+        $lopDays = (float) ($context['lop_days'] ?? 0);
+
+        if ($lopDays <= 0) {
+            return 0;
+        }
+
+        $value = (float) (
+            $rule->attendance_deduction_value ?? 0
+        );
+
+        switch ($rule->attendance_deduction_type) {
+            case 'fixed':
+            case 'per_day':
+                return $this->money(
+                    $lopDays * $value
+                );
+
+            case 'percentage':
+                return $this->money(
+                    (float) ($context['gross_salary'] ?? 0)
+                    * ($value / 100)
+                );
+
+            default:
+                return 0;
+        }
+    }
+
+    private function calculateSlab(
+        ?array $slabs,
+        float $achievementPercentage
+    ): float {
+        if (! is_array($slabs)) {
+            return 0;
+        }
+
+        foreach ($slabs as $slab) {
+            $minimum = (float) (
+                $slab['min_percentage'] ?? 0
+            );
+
+            $maximum = isset($slab['max_percentage'])
+                ? (float) $slab['max_percentage']
+                : null;
+
+            if (
+                $achievementPercentage >= $minimum &&
+                (
+                    $maximum === null ||
+                    $achievementPercentage <= $maximum
+                )
+            ) {
+                return (float) (
+                    $slab['amount'] ?? 0
+                );
+            }
+        }
+
+        return 0;
+    }
+
+    private function applyLimits(
+        float $amount,
+        $minimum,
+        $maximum
+    ): float {
+        if ($minimum !== null) {
+            $amount = max(
+                $amount,
+                (float) $minimum
+            );
+        }
+
+        if ($maximum !== null) {
+            $amount = min(
+                $amount,
+                (float) $maximum
+            );
+        }
+
+        return $this->money($amount);
+    }
+
+    private function money($value): float
+    {
+        return round((float) $value, 2);
+    }
+}

@@ -1,0 +1,505 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Attendance;
+use App\Models\EmployeeProfile;
+use App\Models\EmployeeShiftAssignment;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+
+class AttendanceController extends Controller
+{
+    /**
+     * List attendance records.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $query = Attendance::query()
+            ->with([
+                'employeeProfile:id,employee_code,user_id',
+                'employeeProfile.user:id,name,email',
+                'shift',
+            ])
+            ->orderByDesc('attendance_date')
+            ->orderByDesc('id');
+
+        if ($request->filled('employee_profile_id')) {
+            $query->where(
+                'employee_profile_id',
+                $request->integer('employee_profile_id')
+            );
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate(
+                'attendance_date',
+                $request->input('date')
+            );
+        }
+
+        if ($request->filled('from_date')) {
+            $query->whereDate(
+                'attendance_date',
+                '>=',
+                $request->input('from_date')
+            );
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate(
+                'attendance_date',
+                '<=',
+                $request->input('to_date')
+            );
+        }
+
+        if ($request->filled('status')) {
+            $query->where(
+                'status',
+                $request->input('status')
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attendance records retrieved successfully.',
+            'data' => $query->get(),
+        ]);
+    }
+
+    /**
+     * Show one attendance record.
+     */
+    public function show(int $id): JsonResponse
+    {
+        $attendance = Attendance::with([
+            'employeeProfile:id,employee_code,user_id',
+            'employeeProfile.user:id,name,email',
+            'shift',
+        ])->find($id);
+
+        if (! $attendance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Attendance record not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attendance record retrieved successfully.',
+            'data' => $attendance,
+        ]);
+    }
+
+    /**
+     * Check employee in.
+     */
+    public function checkIn(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'employee_profile_id' => [
+                'required',
+                'integer',
+                'exists:employee_profiles,id',
+            ],
+            'check_in_at' => [
+                'nullable',
+                'date',
+            ],
+            'check_in_source' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'notes' => [
+                'nullable',
+                'string',
+                'max:5000',
+            ],
+        ]);
+
+        $employee = EmployeeProfile::findOrFail(
+            $validated['employee_profile_id']
+        );
+
+        $checkInAt = ! empty($validated['check_in_at'])
+            ? Carbon::parse($validated['check_in_at'])
+            : now();
+
+        $attendanceDate = $checkInAt->toDateString();
+
+        $attendance = Attendance::query()
+            ->where('employee_profile_id', $employee->id)
+            ->whereDate('attendance_date', $attendanceDate)
+            ->first();
+
+        if ($attendance?->check_in_at) {
+            throw ValidationException::withMessages([
+                'employee_profile_id' => [
+                    'Employee has already checked in for this date.',
+                ],
+            ]);
+        }
+
+        /*
+         * Resolve the shift that is effective on the
+         * attendance date.
+         */
+        $assignment = EmployeeShiftAssignment::query()
+            ->with('shift')
+            ->where('employee_profile_id', $employee->id)
+            ->whereDate('effective_from', '<=', $attendanceDate)
+            ->where(function ($query) use ($attendanceDate) {
+                $query->whereNull('effective_to')
+                    ->orWhereDate(
+                        'effective_to',
+                        '>=',
+                        $attendanceDate
+                    );
+            })
+            ->orderByDesc('effective_from')
+            ->orderByDesc('id')
+            ->first();
+
+        $shift = $assignment?->shift;
+
+        $lateMinutes = 0;
+
+        if ($shift) {
+            $scheduledStart = Carbon::parse(
+                $attendanceDate . ' ' . $shift->start_time
+            );
+
+            $graceEnd = $scheduledStart->copy()->addMinutes(
+                (int) $shift->grace_period_minutes
+            );
+
+            if ($checkInAt->greaterThan($graceEnd)) {
+                $lateMinutes = $graceEnd->diffInMinutes($checkInAt);
+            }
+        }
+
+        $attendance = Attendance::updateOrCreate(
+            [
+                'employee_profile_id' => $employee->id,
+                'attendance_date' => $attendanceDate,
+            ],
+            [
+                'shift_id' => $shift?->id,
+                'check_in_at' => $checkInAt,
+                'check_in_source' =>
+                    $validated['check_in_source'] ?? 'manual',
+                'late_minutes' => $lateMinutes,
+                'status' => 'present',
+                'notes' => $validated['notes'] ?? null,
+            ]
+        );
+
+        $attendance->load([
+            'employeeProfile:id,employee_code,user_id',
+            'employeeProfile.user:id,name,email',
+            'shift',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Employee checked in successfully.',
+            'data' => $attendance,
+        ], 201);
+    }
+
+    /**
+     * Check employee out and calculate working time.
+     */
+    public function checkOut(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'employee_profile_id' => [
+                'required',
+                'integer',
+                'exists:employee_profiles,id',
+            ],
+            'check_out_at' => [
+                'nullable',
+                'date',
+            ],
+            'check_out_source' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'notes' => [
+                'nullable',
+                'string',
+                'max:5000',
+            ],
+        ]);
+
+        $employee = EmployeeProfile::findOrFail(
+            $validated['employee_profile_id']
+        );
+
+        $checkOutAt = ! empty($validated['check_out_at'])
+            ? Carbon::parse($validated['check_out_at'])
+            : now();
+
+        $attendance = Attendance::query()
+            ->where('employee_profile_id', $employee->id)
+            ->whereDate(
+                'attendance_date',
+                $checkOutAt->toDateString()
+            )
+            ->first();
+
+        if (! $attendance) {
+            throw ValidationException::withMessages([
+                'employee_profile_id' => [
+                    'No attendance record found for this date.',
+                ],
+            ]);
+        }
+
+        if (! $attendance->check_in_at) {
+            throw ValidationException::withMessages([
+                'employee_profile_id' => [
+                    'Employee must check in before checking out.',
+                ],
+            ]);
+        }
+
+        if ($attendance->check_out_at) {
+            throw ValidationException::withMessages([
+                'employee_profile_id' => [
+                    'Employee has already checked out for this date.',
+                ],
+            ]);
+        }
+
+        $checkInAt = Carbon::parse($attendance->check_in_at);
+
+        if ($checkOutAt->lessThanOrEqualTo($checkInAt)) {
+            throw ValidationException::withMessages([
+                'check_out_at' => [
+                    'Check-out time must be after check-in time.',
+                ],
+            ]);
+        }
+
+        $elapsedMinutes = $checkInAt->diffInMinutes($checkOutAt);
+
+        $shift = $attendance->shift;
+
+        $workingMinutes = $elapsedMinutes;
+        $earlyDepartureMinutes = 0;
+        $overtimeMinutes = 0;
+        $attendanceStatus = $attendance->status;
+
+        if ($shift) {
+            $scheduledStart = Carbon::parse(
+                $attendance->attendance_date->toDateString()
+                . ' '
+                . $shift->start_time
+            );
+
+            $scheduledEnd = Carbon::parse(
+                $attendance->attendance_date->toDateString()
+                . ' '
+                . $shift->end_time
+            );
+
+            if ($shift->cross_midnight) {
+                $scheduledEnd->addDay();
+            }
+
+            /*
+             * Deduct the configured shift break from actual
+             * elapsed time. Working minutes can never be negative.
+             */
+            $breakMinutes = max(
+                0,
+                (int) $shift->break_duration_minutes
+            );
+
+            $workingMinutes = max(
+                0,
+                $elapsedMinutes - $breakMinutes
+            );
+
+            /*
+             * Half-day status is based on configured
+             * half_day_after_hours after break deduction.
+             */
+            $halfDayThresholdMinutes = (int) round(
+                ((float) $shift->half_day_after_hours) * 60
+            );
+
+            if (
+                $attendanceStatus === 'present'
+                && $halfDayThresholdMinutes > 0
+                && $workingMinutes < $halfDayThresholdMinutes
+            ) {
+                $attendanceStatus = 'half_day';
+            }
+
+            /*
+             * Early departure is based on the scheduled shift end.
+             */
+            if ($checkOutAt->lessThan($scheduledEnd)) {
+                $earlyDepartureMinutes =
+                    $checkOutAt->diffInMinutes($scheduledEnd);
+            }
+
+            /*
+             * Overtime is based on actual working time after
+             * deducting the configured break.
+             */
+            if (
+                $shift->overtime_eligible
+                && $shift->overtime_after_hours !== null
+            ) {
+                $overtimeThresholdMinutes = (int) round(
+                    ((float) $shift->overtime_after_hours) * 60
+                );
+
+                if ($workingMinutes > $overtimeThresholdMinutes) {
+                    $overtimeMinutes =
+                        $workingMinutes - $overtimeThresholdMinutes;
+                }
+            }
+        }
+
+        $attendance->update([
+            'check_out_at' => $checkOutAt,
+            'working_minutes' => $workingMinutes,
+            'status' => $attendanceStatus,
+            'early_departure_minutes' => $earlyDepartureMinutes,
+            'overtime_minutes' => $overtimeMinutes,
+            'check_out_source' =>
+                $validated['check_out_source'] ?? 'manual',
+            'notes' => $validated['notes'] ?? $attendance->notes,
+        ]);
+
+        $attendance->load([
+            'employeeProfile:id,employee_code,user_id',
+            'employeeProfile.user:id,name,email',
+            'shift',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Employee checked out successfully.',
+            'data' => $attendance,
+        ]);
+    }
+
+    /**
+     * Get attendance for one employee.
+     */
+    public function employeeAttendance(
+        int $employeeProfileId,
+        Request $request
+    ): JsonResponse {
+        EmployeeProfile::findOrFail($employeeProfileId);
+
+        $query = Attendance::query()
+            ->with(['shift'])
+            ->where(
+                'employee_profile_id',
+                $employeeProfileId
+            )
+            ->orderByDesc('attendance_date')
+            ->orderByDesc('id');
+
+        if ($request->filled('from_date')) {
+            $query->whereDate(
+                'attendance_date',
+                '>=',
+                $request->input('from_date')
+            );
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate(
+                'attendance_date',
+                '<=',
+                $request->input('to_date')
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Employee attendance retrieved successfully.',
+            'data' => $query->get(),
+        ]);
+    }
+    
+    /**
+     * Mark employee attendance status.
+     */
+    public function markStatus(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'employee_profile_id' => [
+                'required',
+                'integer',
+                'exists:employee_profiles,id',
+            ],
+            'attendance_date' => [
+                'required',
+                'date',
+            ],
+            'status' => [
+                'required',
+                'in:absent,half_day,leave,holiday,week_off',
+            ],
+            'shift_id' => [
+                'nullable',
+                'integer',
+                'exists:shifts,id',
+            ],
+            'notes' => [
+                'nullable',
+                'string',
+            ],
+        ]);
+
+        $attendance = Attendance::firstOrNew([
+            'employee_profile_id' => $validated['employee_profile_id'],
+            'attendance_date' => Carbon::parse(
+                $validated['attendance_date']
+            )->toDateString(),
+        ]);
+
+        $attendance->fill([
+            'shift_id' => $validated['shift_id'] ?? $attendance->shift_id,
+            'status' => $validated['status'],
+            'check_in_at' => null,
+            'check_out_at' => null,
+            'working_minutes' => 0,
+            'late_minutes' => 0,
+            'early_departure_minutes' => 0,
+            'overtime_minutes' => 0,
+            'check_in_source' => null,
+            'check_out_source' => null,
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        $attendance->save();
+
+        $attendance->load([
+            'employeeProfile:id,employee_code,user_id',
+            'employeeProfile.user:id,name,email',
+            'shift',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attendance status updated successfully.',
+            'data' => $attendance,
+        ]);
+    }
+}

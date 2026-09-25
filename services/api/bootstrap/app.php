@@ -30,10 +30,11 @@ return Application::configure(
         );
 
         $middleware->alias([
-            'role' => RoleMiddleware::class,
-            'permission' => PermissionMiddleware::class,
-            'role_or_permission' => RoleOrPermissionMiddleware::class,
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+          'role' => RoleMiddleware::class,
+'permission' => PermissionMiddleware::class,
+'role_or_permission' => RoleOrPermissionMiddleware::class,
+'require_permission' => \App\Http\Middleware\RequirePermission::class,
+'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
     })
 

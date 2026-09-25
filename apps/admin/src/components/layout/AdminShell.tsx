@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import type { ReactNode } from "react";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
+import { AuthProvider } from "@/lib/auth/AuthProvider";
 
 export default function AdminShell({
   children,
@@ -10,16 +11,18 @@ export default function AdminShell({
   children: ReactNode;
 }) {
   return (
-    <div className="adminShell">
-      <AdminSidebar />
+    <AuthProvider>
+      <div className="adminShell">
+        <AdminSidebar />
 
-      <div className="adminMain">
-        <AdminHeader />
+        <div className="adminMain">
+          <AdminHeader />
 
-        <main className="adminContent">
-          {children}
-        </main>
+          <main className="adminContent">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </AuthProvider>
   );
 }

@@ -1,0 +1,671 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\EmployeeLeaveBalance;
+use App\Models\LeaveApplication;
+use App\Models\LeaveType;
+use App\Services\Employee\EmployeeAccessScope;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class LeaveApplicationController extends Controller
+{
+    public function __construct(
+        protected EmployeeAccessScope $employeeAccessScope
+    ) {
+    }
+
+    /**
+     * List leave applications.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $accessibleEmployeeIds = $this->employeeAccessScope
+            ->query($user)
+            ->pluck('id');
+
+        $query = LeaveApplication::query()
+            ->whereIn('employee_profile_id', $accessibleEmployeeIds)
+            ->with([
+                'employeeProfile:id,employee_code,user_id',
+                'leaveType:id,name,code,is_paid,requires_approval',
+                'approver:id,name',
+            ])
+            ->orderByDesc('from_date')
+            ->orderByDesc('id');
+
+        if ($request->filled('employee_profile_id')) {
+            $query->where(
+                'employee_profile_id',
+                $request->integer('employee_profile_id')
+            );
+        }
+
+        if ($request->filled('leave_type_id')) {
+            $query->where(
+                'leave_type_id',
+                $request->integer('leave_type_id')
+            );
+        }
+
+        if ($request->filled('status')) {
+            $query->where(
+                'status',
+                $request->string('status')->toString()
+            );
+        }
+
+        if ($request->filled('year')) {
+            $query->whereYear(
+                'from_date',
+                $request->integer('year')
+            );
+        }
+
+        $applications = $query->paginate(
+            $request->integer('per_page', 20)
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $applications,
+        ]);
+    }
+
+    /**
+     * Apply for leave.
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'employee_profile_id' => [
+                'required',
+                'integer',
+                'exists:employee_profiles,id',
+            ],
+            'leave_type_id' => [
+                'required',
+                'integer',
+                'exists:leave_types,id',
+            ],
+            'from_date' => [
+                'required',
+                'date',
+            ],
+            'to_date' => [
+                'required',
+                'date',
+                'after_or_equal:from_date',
+            ],
+            'reason' => [
+                'nullable',
+                'string',
+                'max:5000',
+            ],
+        ]);
+
+        $user = $request->user();
+
+        $employee = $this->employeeAccessScope
+            ->query($user)
+            ->whereKey($validated['employee_profile_id'])
+            ->first();
+
+        if (! $employee) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not allowed to apply leave for this employee.',
+            ], 403);
+        }
+
+        $leaveType = LeaveType::find(
+            $validated['leave_type_id']
+        );
+
+        if (! $leaveType->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Selected leave type is inactive.',
+            ], 422);
+        }
+
+        $fromDate = \Carbon\Carbon::parse(
+            $validated['from_date']
+        )->startOfDay();
+
+        $toDate = \Carbon\Carbon::parse(
+            $validated['to_date']
+        )->startOfDay();
+
+        $totalDays = $fromDate->diffInDays($toDate) + 1;
+
+        if ($totalDays <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid leave date range.',
+            ], 422);
+        }
+
+        $year = $fromDate->year;
+
+        if ($toDate->year !== $year) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave application cannot cross calendar years.',
+            ], 422);
+        }
+
+        return DB::transaction(function () use (
+            $validated,
+            $leaveType,
+            $year,
+            $totalDays
+        ) {
+            $balance = EmployeeLeaveBalance::query()
+                ->where(
+                    'employee_profile_id',
+                    $validated['employee_profile_id']
+                )
+                ->where(
+                    'leave_type_id',
+                    $validated['leave_type_id']
+                )
+                ->where('year', $year)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $balance) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Leave balance has not been configured for this employee and leave type.',
+                ], 422);
+            }
+
+            $availableBalance = $balance->availableBalance();
+
+            if ($totalDays > $availableBalance) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Insufficient leave balance.',
+                    'data' => [
+                        'requested_days' => $totalDays,
+                        'available_balance' => $availableBalance,
+                    ],
+                ], 422);
+            }
+
+            $overlapExists = LeaveApplication::query()
+                ->where(
+                    'employee_profile_id',
+                    $validated['employee_profile_id']
+                )
+                ->where(
+                    'leave_type_id',
+                    $validated['leave_type_id']
+                )
+                ->whereIn('status', [
+                    'pending',
+                    'approved',
+                ])
+                ->whereDate(
+                    'from_date',
+                    '<=',
+                    $validated['to_date']
+                )
+                ->whereDate(
+                    'to_date',
+                    '>=',
+                    $validated['from_date']
+                )
+                ->exists();
+
+            if ($overlapExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A pending or approved leave application already exists for part of this date range.',
+                ], 422);
+            }
+
+            $application = LeaveApplication::create([
+                'employee_profile_id' =>
+                    $validated['employee_profile_id'],
+
+                'leave_type_id' =>
+                    $validated['leave_type_id'],
+
+                'from_date' =>
+                    $validated['from_date'],
+
+                'to_date' =>
+                    $validated['to_date'],
+
+                'total_days' =>
+                    $totalDays,
+
+                'reason' =>
+                    $validated['reason'] ?? null,
+
+                'status' =>
+                    $leaveType->requires_approval
+                        ? 'pending'
+                        : 'approved',
+            ]);
+
+            if ($application->status === 'pending') {
+                $balance->increment(
+                    'pending',
+                    $totalDays
+                );
+            } else {
+                $balance->increment(
+                    'used',
+                    $totalDays
+                );
+            }
+
+            $application->load([
+                'employeeProfile:id,employee_code,user_id',
+                'leaveType:id,name,code,is_paid,requires_approval',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $application->status === 'pending'
+                    ? 'Leave application submitted successfully.'
+                    : 'Leave application approved automatically.',
+                'data' => $application,
+            ], 201);
+        });
+    }
+
+    /**
+     * Show one leave application.
+     */
+    public function show(int $id): JsonResponse
+    {
+        $application = LeaveApplication::query()
+            ->with([
+                'employeeProfile:id,employee_code,user_id',
+                'leaveType:id,name,code,is_paid,requires_approval',
+                'approver:id,name',
+            ])
+            ->find($id);
+
+        if (! $application) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave application not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $application,
+        ]);
+    }
+
+    /**
+     * Approve a pending leave application.
+     */
+    public function approve(
+        Request $request,
+        int $id
+    ): JsonResponse {
+        $application = LeaveApplication::query()
+            ->with('leaveType')
+            ->find($id);
+
+        if (! $application) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave application not found.',
+            ], 404);
+        }
+
+        $user = $request->user();
+
+        $canApprove = $this->employeeAccessScope
+            ->query($user)
+            ->whereKey($application->employee_profile_id)
+            ->exists();
+
+        if (! $canApprove) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not allowed to approve this leave application.',
+            ], 403);
+        }
+
+        if ($application->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only pending leave applications can be approved.',
+            ], 422);
+        }
+
+        $approverId = $request->user()?->id;
+
+        return DB::transaction(function () use (
+            $application,
+            $approverId
+        ) {
+            $application = LeaveApplication::query()
+                ->lockForUpdate()
+                ->find($application->id);
+
+            if ($application->status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Leave application has already been processed.',
+                ], 422);
+            }
+
+            $year = \Carbon\Carbon::parse(
+                $application->from_date
+            )->year;
+
+            $balance = EmployeeLeaveBalance::query()
+                ->where(
+                    'employee_profile_id',
+                    $application->employee_profile_id
+                )
+                ->where(
+                    'leave_type_id',
+                    $application->leave_type_id
+                )
+                ->where('year', $year)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $balance) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Leave balance not found.',
+                ], 422);
+            }
+
+            if (
+                (float) $balance->pending
+                < (float) $application->total_days
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pending leave balance is insufficient for this application.',
+                ], 422);
+            }
+
+            $days = (float) $application->total_days;
+
+            $balance->decrement('pending', $days);
+            $balance->increment('used', $days);
+
+            $application->update([
+                'status' => 'approved',
+                'approved_by' => $approverId,
+                'approved_at' => now(),
+                'rejection_reason' => null,
+            ]);
+
+            $application->load([
+                'employeeProfile:id,employee_code,user_id',
+                'leaveType:id,name,code,is_paid,requires_approval',
+                'approver:id,name',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Leave application approved successfully.',
+                'data' => $application,
+            ]);
+        });
+    }
+
+    /**
+     * Reject a pending leave application.
+     */
+    public function reject(
+        Request $request,
+        int $id
+    ): JsonResponse {
+        $validated = $request->validate([
+            'rejection_reason' => [
+                'required',
+                'string',
+                'max:5000',
+            ],
+        ]);
+
+        $application = LeaveApplication::find($id);
+
+        if (! $application) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave application not found.',
+            ], 404);
+        }
+
+        $user = $request->user();
+
+        $canReject = $this->employeeAccessScope
+            ->query($user)
+            ->whereKey($application->employee_profile_id)
+            ->exists();
+
+        if (! $canReject) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not allowed to reject this leave application.',
+            ], 403);
+        }
+
+        if ($application->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only pending leave applications can be rejected.',
+            ], 422);
+        }
+
+        $approverId = $request->user()?->id;
+
+        return DB::transaction(function () use (
+            $application,
+            $approverId,
+            $validated
+        ) {
+            $application = LeaveApplication::query()
+                ->lockForUpdate()
+                ->find($application->id);
+
+            if ($application->status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Leave application has already been processed.',
+                ], 422);
+            }
+
+            $year = \Carbon\Carbon::parse(
+                $application->from_date
+            )->year;
+
+            $balance = EmployeeLeaveBalance::query()
+                ->where(
+                    'employee_profile_id',
+                    $application->employee_profile_id
+                )
+                ->where(
+                    'leave_type_id',
+                    $application->leave_type_id
+                )
+                ->where('year', $year)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $balance) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Leave balance not found.',
+                ], 422);
+            }
+
+            $days = (float) $application->total_days;
+
+            if ((float) $balance->pending < $days) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pending leave balance is insufficient for this application.',
+                ], 422);
+            }
+
+            $balance->decrement('pending', $days);
+
+            $application->update([
+                'status' => 'rejected',
+                'approved_by' => $approverId,
+                'approved_at' => now(),
+                'rejection_reason' =>
+                    $validated['rejection_reason'],
+            ]);
+
+            $application->load([
+                'employeeProfile:id,employee_code,user_id',
+                'leaveType:id,name,code,is_paid,requires_approval',
+                'approver:id,name',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Leave application rejected successfully.',
+                'data' => $application,
+            ]);
+        });
+    }
+
+    /**
+     * Cancel a leave application.
+     */
+    public function cancel(
+        Request $request,
+        int $id
+    ): JsonResponse {
+        $application = LeaveApplication::find($id);
+
+        if (! $application) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave application not found.',
+            ], 404);
+        }
+
+        $user = $request->user();
+
+        $canCancel = $this->employeeAccessScope
+            ->query($user)
+            ->whereKey($application->employee_profile_id)
+            ->exists();
+
+        if (! $canCancel) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not allowed to cancel this leave application.',
+            ], 403);
+        }
+
+        if (
+            ! in_array(
+                $application->status,
+                ['pending', 'approved'],
+                true
+            )
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only pending or approved leave applications can be cancelled.',
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($application) {
+            $application = LeaveApplication::query()
+                ->lockForUpdate()
+                ->find($application->id);
+
+            if (
+                ! in_array(
+                    $application->status,
+                    ['pending', 'approved'],
+                    true
+                )
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Leave application has already been processed.',
+                ], 422);
+            }
+
+            $year = \Carbon\Carbon::parse(
+                $application->from_date
+            )->year;
+
+            $balance = EmployeeLeaveBalance::query()
+                ->where(
+                    'employee_profile_id',
+                    $application->employee_profile_id
+                )
+                ->where(
+                    'leave_type_id',
+                    $application->leave_type_id
+                )
+                ->where('year', $year)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $balance) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Leave balance not found.',
+                ], 422);
+            }
+
+            $days = (float) $application->total_days;
+
+            if ($application->status === 'pending') {
+                if ((float) $balance->pending < $days) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Pending leave balance is insufficient for this application.',
+                    ], 422);
+                }
+
+                $balance->decrement('pending', $days);
+            } else {
+                if ((float) $balance->used < $days) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Used leave balance is insufficient for this application.',
+                    ], 422);
+                }
+
+                $balance->decrement('used', $days);
+            }
+
+            $application->update([
+                'status' => 'cancelled',
+            ]);
+
+            $application->load([
+                'employeeProfile:id,employee_code,user_id',
+                'leaveType:id,name,code,is_paid,requires_approval',
+                'approver:id,name',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Leave application cancelled successfully.',
+                'data' => $application,
+            ]);
+        });
+    }
+}
