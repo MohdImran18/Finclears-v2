@@ -32,6 +32,23 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
+export interface LeadSource {
+  id: number;
+  name: string;
+}
+
+export async function getLeadSources() {
+  const response = await client.get<{
+    success: boolean;
+    message: string;
+    data: {
+      sources: LeadSource[];
+    };
+  }>("/lead-sources");
+
+  return response.data;
+}
+
 export async function getLeads(params?: {
   page?: number;
   per_page?: number;

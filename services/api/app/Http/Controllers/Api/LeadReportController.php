@@ -26,6 +26,14 @@ class LeadReportController extends Controller
             ->whereNull('leads.deleted_at')
             ->whereBetween('leads.created_at', [$from, $to]);
 
+        $currentUser = $request->user();
+        $isEmployee = $currentUser?->role === 'employee';
+
+        // Employees can report only on their assigned leads.
+        if ($isEmployee) {
+            $base->where('leads.assigned_to', $currentUser->id);
+        }
+
         $total = (clone $base)->count();
 
         $converted = (clone $base)
@@ -101,6 +109,16 @@ class LeadReportController extends Controller
             ->get();
 
         $followups = LeadFollowup::query()
+            ->when(
+                $isEmployee,
+                fn ($query) => $query->whereHas(
+                    'lead',
+                    fn ($leadQuery) => $leadQuery->where(
+                        'assigned_to',
+                        $currentUser->id
+                    )
+                )
+            )
             ->whereBetween('created_at', [$from, $to])
             ->select(
                 DB::raw('COUNT(*) as total'),
@@ -153,6 +171,13 @@ class LeadReportController extends Controller
             ])
             ->whereNull('deleted_at')
             ->whereBetween('created_at', [$from, $to])
+            ->when(
+                $request->user()?->role === 'employee',
+                fn ($query) => $query->where(
+                    'assigned_to',
+                    $request->user()->id
+                )
+            )
             ->latest()
             ->get();
 

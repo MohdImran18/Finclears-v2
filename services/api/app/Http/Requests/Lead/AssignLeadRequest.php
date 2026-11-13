@@ -8,8 +8,13 @@ class AssignLeadRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('leads.assign') === true
-            || $this->user()?->can('leads.reassign') === true;
+        $user = $this->user();
+
+        return $user !== null && (
+            $user->role === 'employee'
+            || $user->can('leads.assign')
+            || $user->can('leads.reassign')
+        );
     }
 
     public function rules(): array
@@ -22,7 +27,7 @@ class AssignLeadRequest extends FormRequest
             ],
 
             'reason' => [
-                'required',
+                'nullable',
                 'string',
                 'max:1000',
             ],

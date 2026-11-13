@@ -28,13 +28,15 @@ class NotificationService
         string $to,
         string $subject,
         string $body,
-        ?string $name = null
+        ?string $name = null,
+        ?string $attachmentPath = null
     ): void {
         $this->email->send(
             $to,
             $subject,
             $body,
-            $name
+            $name,
+            $attachmentPath
         );
     }
 
@@ -423,4 +425,57 @@ class NotificationService
             'success' => $whatsappSent || $emailSent,
         ];
     }
+
+
+    /**
+     * Generate the admin CRM URL for a lead.
+     */
+    protected function crmUrl(int $leadId): string
+    {
+        return rtrim(config('app.url'), '/')
+            . '/employee/crm/leads/' . $leadId . '/edit';
+    }
+
+    /**
+     * Build a simple HTML email template for CRM notifications.
+     */
+    protected function emailTemplate(
+        string $title,
+        string $intro,
+        array $details,
+        string $buttonText,
+        string $buttonUrl
+    ): string {
+        $escape = static fn ($value): string =>
+            htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+        $rows = '';
+
+        foreach ($details as $label => $value) {
+            $rows .= '<tr>'
+                . '<td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">'
+                . $escape($label)
+                . '</td>'
+                . '<td style="padding:8px;border-bottom:1px solid #eee;">'
+                . $escape($value)
+                . '</td>'
+                . '</tr>';
+        }
+
+        return '<div style="font-family:Arial,sans-serif;color:#263238;max-width:600px;margin:auto;">'
+            . '<h2 style="color:#087f72;">FinClears CRM</h2>'
+            . '<h3>' . $escape($title) . '</h3>'
+            . '<p>' . $escape($intro) . '</p>'
+            . '<table style="width:100%;border-collapse:collapse;">'
+            . $rows
+            . '</table>'
+            . '<p style="margin-top:24px;">'
+            . '<a href="' . $escape($buttonUrl) . '" '
+            . 'style="background:#087f72;color:#fff;padding:12px 20px;'
+            . 'text-decoration:none;border-radius:5px;display:inline-block;">'
+            . $escape($buttonText)
+            . '</a></p>'
+            . '</div>';
+    }
+
 }

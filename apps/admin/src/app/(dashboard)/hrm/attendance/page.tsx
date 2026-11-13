@@ -1,5 +1,9 @@
 "use client";
 
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { getPrimaryRole } from "@/lib/auth/permissions";
+import EmployeeSelfAttendance from "@/components/attendance/EmployeeSelfAttendance";
+
 import { useEffect, useState } from "react";
 import type { Employee } from "@/types/employee/employee";
 import { getEmployees } from "@/lib/api/employees/employeeApi";
@@ -92,7 +96,7 @@ function statusLabel(status: AttendanceStatus) {
   }
 }
 
-export default function AttendancePage() {
+function AdminAttendancePage() {
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeesLoading, setEmployeesLoading] = useState(true);
@@ -775,4 +779,23 @@ export default function AttendancePage() {
       </div>
     </div>
   );
+}
+
+
+export default function AttendancePage() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        Loading attendance...
+      </div>
+    );
+  }
+
+  if (getPrimaryRole(user) === "employee") {
+    return <EmployeeSelfAttendance />;
+  }
+
+  return <AdminAttendancePage />;
 }

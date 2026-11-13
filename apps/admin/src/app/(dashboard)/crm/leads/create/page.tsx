@@ -3,8 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { createLead, getLeadAssignees } from "@/lib/api/leads/leadApi";
-import type { LeadAssignee } from "@/lib/api/leads/leadApi";
+import {
+  createLead,
+  getLeadAssignees,
+  getLeadSources,
+} from "@/lib/api/leads/leadApi";
+import type {
+  LeadAssignee,
+  LeadSource,
+} from "@/lib/api/leads/leadApi";
 
 export default function CreateLeadPage() {
   const router = useRouter();
@@ -28,6 +35,7 @@ export default function CreateLeadPage() {
   const [error, setError] = useState("");
 
   const [assignees, setAssignees] = useState<LeadAssignee[]>([]);
+  const [sources, setSources] = useState<LeadSource[]>([]);
 
   useEffect(() => {
     getLeadAssignees()
@@ -37,6 +45,16 @@ export default function CreateLeadPage() {
       })
       .catch((error) => {
         console.error("Unable to load assignees.", error);
+      });
+  }, []);
+
+  useEffect(() => {
+    getLeadSources()
+      .then((response) => {
+        setSources(response.data?.sources || []);
+      })
+      .catch((error) => {
+        console.error("Unable to load lead sources.", error);
       });
   }, []);
 
@@ -202,11 +220,10 @@ export default function CreateLeadPage() {
               }
               options={[
                 ["", "Select Source"],
-                ["1", "Website"],
-                ["2", "Google Ads"],
-                ["3", "Meta Ads"],
-                ["4", "Instagram"],
-                ["5", "Referral"],
+                ...sources.map((source) => [
+                  String(source.id),
+                  source.name,
+                ] as [string, string]),
               ]}
             />
 

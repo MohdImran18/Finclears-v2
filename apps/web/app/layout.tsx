@@ -4,6 +4,7 @@ import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 
 import AppProvider from "@/components/providers/AppProvider";
+import Footer from "@/components/home/Footer";
 import StructuredData from "@/components/seo/StructuredData";
 
 import { organizationSchema } from "@/lib/seo/organization";
@@ -101,6 +102,7 @@ export default function RootLayout({ children }: Readonly<RootLayoutProps>) {
 				<StructuredData data={websiteSchema} />
 
 				<AppProvider>{children}</AppProvider>
+                                <Footer />
 			</body>
 		</html>
 	);

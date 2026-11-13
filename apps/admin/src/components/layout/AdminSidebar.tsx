@@ -180,9 +180,14 @@ export default function AdminSidebar() {
   );
 
   const visibleOperationItems = operationItems.filter(
-    (item) =>
-      !item.permission ||
-      hasPermission(user, item.permission)
+    (item) => {
+      if (item.href === "/blogs") {
+        return isAdmin && hasPermission(user, "blogs.view");
+      }
+
+      return !item.permission ||
+        hasPermission(user, item.permission);
+    }
   );
 
   const visibleHrmItems = hrmItems.filter(

@@ -16,6 +16,14 @@ class CrmDashboardController extends Controller
         $base = Lead::query()
             ->whereNull('leads.deleted_at');
 
+        $currentUser = request()->user();
+        $isEmployee = $currentUser?->role === 'employee';
+
+        // Employees see dashboard metrics only for their assigned leads.
+        if ($isEmployee) {
+            $base->where('leads.assigned_to', $currentUser->id);
+        }
+
         $total = (clone $base)->count();
 
         $statusCounts = (clone $base)
@@ -116,6 +124,16 @@ class CrmDashboardController extends Controller
                 'user:id,name',
             ])
             ->where('status', 'pending')
+            ->when(
+                $isEmployee,
+                fn ($query) => $query->whereHas(
+                    'lead',
+                    fn ($leadQuery) => $leadQuery->where(
+                        'assigned_to',
+                        $currentUser->id
+                    )
+                )
+            )
             ->whereNotNull('follow_up_at')
             ->where('follow_up_at', '>=', now())
             ->orderBy('follow_up_at')
@@ -128,6 +146,16 @@ class CrmDashboardController extends Controller
                 'user:id,name',
             ])
             ->whereNotNull('lead_id')
+            ->when(
+                $isEmployee,
+                fn ($query) => $query->whereHas(
+                    'lead',
+                    fn ($leadQuery) => $leadQuery->where(
+                        'assigned_to',
+                        $currentUser->id
+                    )
+                )
+            )
             ->latest('activity_at')
             ->limit(15)
             ->get();

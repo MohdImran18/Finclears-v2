@@ -53,11 +53,7 @@ class UpdateEmployeeLetterRequest extends FormRequest
                 'date',
             ],
 
-            'status' => [
-                'sometimes',
-                'string',
-                'in:draft,generated,pending_approval,approved,issued,cancelled',
-            ],
+            'status' => ['prohibited'],
 
             'rendered_content' => [
                 'nullable',

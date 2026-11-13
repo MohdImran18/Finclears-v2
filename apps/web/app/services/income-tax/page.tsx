@@ -1,11 +1,11 @@
-export default function Page() {
-	return (
-		<main className="min-h-screen flex items-center justify-center">
-			<div className="text-center">
-				<h1 className="text-5xl font-bold">Coming Soon</h1>
-				<p className="mt-4 text-slate-600">This page is under development.</p>
-			</div>
-		</main>
-	);
-}
+import ServiceCategoryPage from "@/components/services/ServiceCategoryPage";
 
+export default function Page() {
+  return (
+    <ServiceCategoryPage
+      categorySlug="income-tax"
+      title="Income Tax Services"
+      description="Explore income tax services for individuals and businesses, including applicable tax filing and compliance support."
+    />
+  );
+}

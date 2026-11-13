@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import BlogList from "@/components/blogs/BlogList";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { getWorkspaceRoute } from "@/lib/auth/workspaceRoute";
 import BlogFilters from "@/components/blogs/BlogFilters";
 import BlogDeleteDialog from "@/components/blogs/BlogDeleteDialog";
 
@@ -20,6 +22,19 @@ import type { Blog } from "@/types/blog/blog";
 
 export default function BlogsPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+
+  const roles = user?.spatie_roles || [];
+  const canManageBlogs =
+    user?.role === "admin" ||
+    roles.includes("admin") ||
+    roles.includes("super-admin");
+
+  useEffect(() => {
+    if (!authLoading && !canManageBlogs) {
+      router.replace(user ? getWorkspaceRoute(user) : "/login");
+    }
+  }, [authLoading, canManageBlogs, router, user]);
 
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [search, setSearch] = useState("");
@@ -62,8 +77,10 @@ export default function BlogsPage() {
   }
 
   useEffect(() => {
-    load();
-  }, [search, status, featured]);
+    if (!authLoading && canManageBlogs) {
+      load();
+    }
+  }, [search, status, featured, authLoading, canManageBlogs]);
 
   async function handlePublish(blog: Blog) {
     try {
@@ -149,6 +166,10 @@ export default function BlogsPage() {
       featured: featuredCount,
     };
   }, [blogs]);
+
+  if (authLoading || !canManageBlogs) {
+    return <div className="p-6">Checking access...</div>;
+  }
 
   return (
     <main style={pageStyle}>

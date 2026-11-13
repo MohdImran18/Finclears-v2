@@ -31,6 +31,10 @@ class LeadController extends Controller
             'assignedUser:id,name,email',
         ]);
 
+        if ($request->user()?->role === 'employee') {
+            $query->where('assigned_to', $request->user()->id);
+        }
+
         if ($request->filled('search')) {
             $search = $request->string('search')->toString();
 
@@ -76,10 +80,7 @@ class LeadController extends Controller
             'assignedUser:id,name,email',
         ])
             ->whereNull('deleted_at')
-            ->where(function ($q) {
-                $q->whereNull('assigned_to')
-                    ->orWhere('ownership_status', 'expired');
-            });
+            ->whereNull('assigned_to');
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -108,7 +109,13 @@ class LeadController extends Controller
         $validated = $request->validated();
 
         $lead = DB::transaction(function () use ($validated, $request) {
-            $initialAssignedTo = $validated['assigned_to'] ?? null;
+            $currentUser = $request->user();
+
+            // Employees always own the enquiries they create.
+            // Ignore any assigned_to value supplied by an employee.
+            $initialAssignedTo = $currentUser?->role === 'employee'
+                ? (int) $currentUser->id
+                : ($validated['assigned_to'] ?? null);
 
             unset($validated['assigned_to']);
 
@@ -140,10 +147,14 @@ class LeadController extends Controller
 
 
         if ($lead->assigned_to === null) {
-            $this->notifications->leadCreated(
-                $lead->fresh(),
-                $request->user()?->id
-            );
+            try {
+                $this->notifications->leadCreated(
+                    $lead->fresh(),
+                    $request->user()?->id
+                );
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
         return response()->json([
             'success' => true,
@@ -184,6 +195,18 @@ class LeadController extends Controller
         Lead $lead
     ): JsonResponse {
         $validated = $request->validated();
+
+        // Only users with assignment permissions may change lead ownership.
+        if (
+            array_key_exists('assigned_to', $validated)
+            && !$request->user()->can('leads.assign')
+            && !$request->user()->can('leads.reassign')
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to change lead ownership.',
+            ], 403);
+        }
 
         $assignmentChanged = array_key_exists('assigned_to', $validated)
             && (int) $lead->assigned_to !== (int) $validated['assigned_to'];
@@ -300,8 +323,16 @@ class LeadController extends Controller
         Lead $lead
     ): JsonResponse {
         $validated = $request->validated();
-
+        $actor = $request->user();
         $assignedTo = (int) $validated['assigned_to'];
+
+        // Employees can only claim leads for themselves.
+        if ($actor->role === 'employee' && $assignedTo !== (int) $actor->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You can only assign a lead to yourself.',
+            ], 403);
+        }
 
         $user = \App\Models\User::query()
             ->where('id', $assignedTo)
@@ -316,13 +347,46 @@ class LeadController extends Controller
             ], 422);
         }
 
-        $updated = $this->assignmentService->assign(
-            $lead,
-            $assignedTo,
-            $request->user()?->id,
-            $validated['assignment_type'] ?? 'manager_reassign',
-            $validated['reason']
-        );
+        if ($actor->role === 'employee') {
+            $updated = DB::transaction(function () use (
+                $lead,
+                $actor,
+                $validated,
+                $assignedTo
+            ) {
+                $lockedLead = Lead::query()
+                    ->whereKey($lead->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($lockedLead->assigned_to !== null) {
+                    return null;
+                }
+
+                return $this->assignmentService->assign(
+                    $lockedLead,
+                    $assignedTo,
+                    $actor->id,
+                    'manual',
+                    $validated['reason'] ?? 'Self-claimed from lead pool'
+                );
+            });
+
+            if ($updated === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This lead has already been claimed. Please refresh the lead pool.',
+                ], 409);
+            }
+        } else {
+            $updated = $this->assignmentService->assign(
+                $lead,
+                $assignedTo,
+                $actor->id,
+                $validated['assignment_type'] ?? 'manager_reassign',
+                $validated['reason'] ?? null
+            );
+        }
 
         return response()->json([
             'success' => true,

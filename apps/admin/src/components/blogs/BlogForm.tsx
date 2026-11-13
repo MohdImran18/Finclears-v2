@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Blog, BlogPayload } from "@/types/blog/blog";
 import {
   getBlogCategories,
+  uploadBlogFeaturedImage,
   type BlogCategory,
 } from "@/lib/api/blogs/blogApi";
 
@@ -41,6 +42,14 @@ export default function BlogForm({
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoryError, setCategoryError] = useState("");
   const [slugTouched, setSlugTouched] = useState(!!initial);
+
+  const [imagePreview, setImagePreview] = useState(initial?.featured_image ?? "");
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageError, setImageError] = useState("");
+  const [imageSize, setImageSize] = useState<number | null>(null);
+  const [imageDimensions, setImageDimensions] = useState("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
 
   const [form, setForm] = useState<BlogPayload>({
     blog_category_id: initial?.blog_category_id ?? 1,
@@ -105,6 +114,10 @@ export default function BlogForm({
     });
 
     setSlugTouched(true);
+    setImagePreview(initial.featured_image ?? "");
+    setImageSize(null);
+    setImageDimensions("");
+    setImageError("");
   }, [initial]);
 
   const set = <K extends keyof BlogPayload>(
@@ -116,6 +129,89 @@ export default function BlogForm({
       [key]: value,
     }));
   };
+
+  async function handleFeaturedImageChange(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+
+    if (!file) return;
+
+    setImageError("");
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setImageError("Please select a JPG, PNG or WebP image.");
+      input.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError("Image size must not exceed 5 MB.");
+      input.value = "";
+      return;
+    }
+
+    const localPreview = URL.createObjectURL(file);
+    const previousPreview = imagePreview;
+
+    setImagePreview(localPreview);
+    setImageSize(file.size);
+
+    const probe = new Image();
+
+    probe.onload = () => {
+      setImageDimensions(`${probe.naturalWidth} × ${probe.naturalHeight} px`);
+    };
+
+    probe.onerror = () => {
+      setImageDimensions("");
+    };
+
+    probe.src = localPreview;
+
+    setImageUploading(true);
+
+    try {
+      const uploadedUrl = await uploadBlogFeaturedImage(file);
+
+      set("featured_image", uploadedUrl);
+      setImagePreview(uploadedUrl);
+
+      if (previousPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(previousPreview);
+      }
+
+      URL.revokeObjectURL(localPreview);
+    } catch (error) {
+      console.error("Featured image upload failed:", error);
+      setImagePreview(previousPreview);
+      setImageSize(null);
+      setImageError(
+        error instanceof Error
+          ? error.message
+          : "Image upload failed. Please try again."
+      );
+      URL.revokeObjectURL(localPreview);
+    } finally {
+      setImageUploading(false);
+      input.value = "";
+    }
+  }
+
+  function removeFeaturedImage() {
+    if (imagePreview.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    set("featured_image", "");
+    setImagePreview("");
+    setImageSize(null);
+    setImageDimensions("");
+    setImageError("");
+  }
 
   const wordCount = useMemo(() => {
     return form.content
@@ -134,7 +230,6 @@ export default function BlogForm({
   const metaTitleLength = (form.meta_title || "").length;
   const metaDescriptionLength = (form.meta_description || "").length;
 
-  const imageUrl = form.featured_image || "";
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -248,34 +343,128 @@ export default function BlogForm({
 
             <div style={fieldGroupStyle}>
               <label style={labelStyle}>
-                Featured Image URL
+                Featured Image
               </label>
 
               <input
-                value={form.featured_image || ""}
-                onChange={(e) =>
-                  set("featured_image", e.target.value)
-                }
-                placeholder="https://example.com/image.jpg"
-                disabled={loading}
-                style={inputStyle}
+                ref={imageInputRef}
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                onChange={handleFeaturedImageChange}
+                disabled={loading || imageUploading}
+                style={{ display: "none" }}
               />
 
-              {imageUrl && (
-                <div style={imagePreviewStyle}>
-                  <img
-                    src={imageUrl}
-                    alt="Featured preview"
-                    style={imagePreviewImageStyle}
-                    onError={(event) => {
-                      event.currentTarget.style.display = "none";
-                    }}
-                  />
-                  <div style={imagePreviewOverlayStyle}>
-                    Featured image preview
+              <div
+                style={{
+                  border: "1px dashed #cbd5e1",
+                  borderRadius: 10,
+                  padding: 16,
+                  background: "#f8fafc",
+                }}
+              >
+                {!imagePreview && (
+                  <div style={{ textAlign: "center", padding: "20px 10px" }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>☁</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
+                      Upload featured image
+                    </div>
+                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 5 }}>
+                      JPG, PNG or WebP · Maximum 5 MB
+                    </div>
                   </div>
+                )}
+
+                {imagePreview && (
+                  <div style={imagePreviewStyle}>
+                    <img
+                      src={imagePreview}
+                      alt="Featured image preview"
+                      style={imagePreviewImageStyle}
+                      onLoad={(event) => {
+                        const img = event.currentTarget;
+                        setImageDimensions(
+                          `${img.naturalWidth} × ${img.naturalHeight} px`
+                        );
+                      }}
+                      onError={() => {
+                        setImageError("Unable to preview this image.");
+                      }}
+                    />
+                    <div style={imagePreviewOverlayStyle}>
+                      Featured image preview
+                    </div>
+                  </div>
+                )}
+
+                {(imagePreview || imageSize !== null) && (
+                  <div style={{ marginTop: 12, fontSize: 11, color: "#64748b" }}>
+                    {imageDimensions && <div>Dimensions: {imageDimensions}</div>}
+                    {imageSize !== null && (
+                      <div>
+                        File size: {(imageSize / 1024).toFixed(1)} KB
+                        {imageSize >= 1024 * 1024
+                          ? ` (${(imageSize / (1024 * 1024)).toFixed(2)} MB)`
+                          : ""}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    disabled={loading || imageUploading}
+                    style={{
+                      ...inputStyle,
+                      width: "auto",
+                      padding: "0 14px",
+                      cursor: "pointer",
+                      background: "#0f172a",
+                      color: "#ffffff",
+                      border: "1px solid #0f172a",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {imageUploading
+                      ? "Uploading..."
+                      : imagePreview
+                        ? "Replace Image"
+                        : "Browse Image"}
+                  </button>
+
+                  {imagePreview && (
+                    <button
+                      type="button"
+                      onClick={removeFeaturedImage}
+                      disabled={loading || imageUploading}
+                      style={{
+                        ...inputStyle,
+                        width: "auto",
+                        padding: "0 14px",
+                        cursor: "pointer",
+                        color: "#dc2626",
+                        background: "#fff",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
-              )}
+
+                {imageUploading && (
+                  <div style={{ marginTop: 10, fontSize: 12, color: "#2563eb" }}>
+                    Uploading image, please wait...
+                  </div>
+                )}
+
+                {imageError && (
+                  <div style={{ marginTop: 10, fontSize: 12, color: "#dc2626" }}>
+                    {imageError}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div style={fieldGroupStyle}>

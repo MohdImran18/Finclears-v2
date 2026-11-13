@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import Link from "next/link";
 
 import type { Service } from "@/types/service";
@@ -10,6 +11,7 @@ interface ServiceCardProps {
 }
 
 export default function ServiceCard({ service }: ServiceCardProps) {
+        const [imageFailed, setImageFailed] = useState(false);
 	const image =
 		service.featured_image || "/images/services/service-placeholder.webp";
 
@@ -26,14 +28,23 @@ export default function ServiceCard({ service }: ServiceCardProps) {
 			{/* Image */}
 
 			<div className="relative h-52 overflow-hidden bg-slate-100">
-				<Image
-					src={image}
-					alt={service.title}
-					fill
-					priority={false}
-					sizes="(max-width:768px)100vw,(max-width:1200px)50vw,33vw"
-					className="object-cover transition-transform duration-500 group-hover:scale-105"
-				/>
+				{!imageFailed ? (
+                                        <Image
+                                                src={image}
+                                                alt={service.title}
+                                                fill
+                                                priority={false}
+                                                sizes="(max-width:768px)100vw,(max-width:1200px)50vw,33vw"
+                                                onError={() => setImageFailed(true)}
+                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                        />
+                                ) : (
+                                        <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-blue-700 to-indigo-800 p-6 text-center text-white">
+                                                <span className="text-4xl" aria-hidden="true">✓</span>
+                                                <span className="mt-3 text-lg font-bold">{service.title}</span>
+                                                <span className="mt-1 text-sm text-blue-100">FinClears Business Services</span>
+                                        </div>
+                                )}
 
 				<div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 

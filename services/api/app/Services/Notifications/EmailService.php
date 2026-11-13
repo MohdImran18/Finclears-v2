@@ -10,7 +10,8 @@ class EmailService
         string $to,
         string $subject,
         string $html,
-        ?string $name = null
+        ?string $name = null,
+        ?string $attachmentPath = null
     ): void {
         $logoPath = public_path(
             'images/finclears-logo.jpeg'
@@ -21,12 +22,20 @@ class EmailService
             $subject,
             $html,
             $name,
-            $logoPath
+            $logoPath,
+            $attachmentPath
         ) {
             $message
                 ->to($to, $name ?: null)
                 ->subject($subject)
                 ->html($html);
+
+            if ($attachmentPath && is_file($attachmentPath)) {
+                $message->attach($attachmentPath, [
+                    'as' => basename($attachmentPath),
+                    'mime' => 'application/pdf',
+                ]);
+            }
 
             if (is_file($logoPath)) {
                 $cid = $message->embed($logoPath);

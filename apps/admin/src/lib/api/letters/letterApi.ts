@@ -4,10 +4,13 @@ export interface LetterTemplateField {
   id: number;
   letter_template_id: number;
   field_key: string;
-  label: string;
-  field_type: string;
+  field_label: string;
+  field_type: "text" | "textarea" | "date" | "number";
+  source: "employee" | "system" | "company" | "manual";
+  default_value?: string | null;
   is_required: boolean;
-  sort_order?: number;
+  is_active: boolean;
+  display_order: number;
 }
 
 export interface LetterTemplate {
@@ -21,6 +24,7 @@ export interface LetterTemplate {
   is_active: boolean;
   is_default: boolean;
   version: number;
+  notes?: string | null;
   fields?: LetterTemplateField[];
 }
 
@@ -130,6 +134,31 @@ export async function getLetterTemplate(id: number | string) {
   return response.data;
 }
 
+export async function createLetterTemplate(
+  payload: Record<string, any>
+) {
+  const response = await client.post<{
+    success: boolean;
+    message: string;
+    data: LetterTemplate;
+  }>("/letters/templates", payload);
+
+  return response.data;
+}
+
+export async function updateLetterTemplate(
+  id: number | string,
+  payload: Record<string, any>
+) {
+  const response = await client.put<{
+    success: boolean;
+    message: string;
+    data: LetterTemplate;
+  }>(`/letters/templates/${id}`, payload);
+
+  return response.data;
+}
+
 export async function getEmployeeLetters(
   employeeProfileId: number | string
 ) {
@@ -206,14 +235,6 @@ export async function regenerateLetter(
   return response.data;
 }
 
-export async function approveLetter(id: number | string) {
-  const response = await client.post<LetterResponse>(
-    `/letters/${id}/approve`
-  );
-
-  return response.data;
-}
-
 export async function getLetterVersions(id: number | string) {
   const response = await client.get<{
     success: boolean;
@@ -271,4 +292,13 @@ export async function previewLetter(id: number | string) {
   );
 
   return response;
+}
+
+export async function sendEmployeeLetter(id: number | string) {
+  const response = await client.post<{
+    success: boolean;
+    message: string;
+  }>(`/letters/${id}/send`);
+
+  return response.data;
 }

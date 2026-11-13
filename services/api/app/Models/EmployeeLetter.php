@@ -27,8 +27,27 @@ class EmployeeLetter extends Model
         'pdf_path',
         'generated_at',
         'generated_by',
+
+        // Existing final approval fields
         'approved_by',
         'approved_at',
+
+        // HR Manager approval audit
+        'hr_approved_by',
+        'hr_approved_at',
+        'hr_approval_remarks',
+        'hr_rejected_by',
+        'hr_rejected_at',
+        'hr_rejection_remarks',
+
+        // Admin approval audit
+        'admin_approved_by',
+        'admin_approved_at',
+        'admin_approval_remarks',
+        'admin_rejected_by',
+        'admin_rejected_at',
+        'admin_rejection_remarks',
+
         'notes',
     ];
 
@@ -38,6 +57,11 @@ class EmployeeLetter extends Model
         'field_values' => 'array',
         'generated_at' => 'datetime',
         'approved_at' => 'datetime',
+
+        'hr_approved_at' => 'datetime',
+        'hr_rejected_at' => 'datetime',
+        'admin_approved_at' => 'datetime',
+        'admin_rejected_at' => 'datetime',
     ];
 
     public function employeeProfile(): BelongsTo
@@ -70,6 +94,26 @@ class EmployeeLetter extends Model
             User::class,
             'approved_by'
         );
+    }
+
+    public function hrApprovedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'hr_approved_by');
+    }
+
+    public function hrRejectedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'hr_rejected_by');
+    }
+
+    public function adminApprovedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'admin_approved_by');
+    }
+
+    public function adminRejectedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'admin_rejected_by');
     }
 
     public function versions(): HasMany

@@ -124,6 +124,23 @@ export default function EditEmployeePage() {
       setError("");
       setSuccess("");
 
+      if (form.password || form.password_confirmation) {
+        if (!form.password || !form.password_confirmation) {
+          setError("Enter both new password and confirmation password.");
+          return;
+        }
+
+        if (form.password.length < 8) {
+          setError("New password must be at least 8 characters.");
+          return;
+        }
+
+        if (form.password !== form.password_confirmation) {
+          setError("New password and confirmation password do not match.");
+          return;
+        }
+      }
+
       const payload: Partial<EmployeePayload> = {
         ...form,
       };
@@ -149,12 +166,116 @@ export default function EditEmployeePage() {
     }
   };
 
+  const saveCurrentStep = async (): Promise<boolean> => {
+    const stepFields: Record<number, (keyof EmployeePayload)[]> = {
+      1: [
+        "name",
+        "email",
+        "phone",
+        "employee_code",
+        "password",
+        "password_confirmation",
+      ],
+      2: [
+        "department_id",
+        "designation_id",
+        "date_of_joining",
+        "employment_type",
+        "work_location",
+        "reporting_manager_id",
+      ],
+      3: [
+        "date_of_birth",
+        "gender",
+        "personal_email",
+        "personal_phone",
+        "address",
+        "city",
+        "state",
+        "pincode",
+      ],
+      4: [
+        "emergency_contact_name",
+        "emergency_contact_phone",
+        "emergency_contact_relation",
+      ],
+      5: [
+        "pan_number",
+        "aadhaar_number",
+        "account_holder_name",
+        "bank_name",
+        "bank_account_number",
+        "ifsc_code",
+      ],
+    };
+
+    try {
+      setSaving(true);
+      setError("");
+      setSuccess("");
+
+      if (
+        currentStep === 1 &&
+        (form.password || form.password_confirmation)
+      ) {
+        if (!form.password || !form.password_confirmation) {
+          setError("Enter both new password and confirmation password.");
+          return false;
+        }
+
+        if (form.password.length < 8) {
+          setError("New password must be at least 8 characters.");
+          return false;
+        }
+
+        if (form.password !== form.password_confirmation) {
+          setError("New password and confirmation password do not match.");
+          return false;
+        }
+      }
+
+      const payload = Object.fromEntries(
+        stepFields[currentStep]
+          .map((field) => [field, form[field]] as const)
+          .filter(([, value]) => value !== undefined)
+      ) as Partial<EmployeePayload>;
+
+      if (!payload.password) {
+        delete payload.password;
+        delete payload.password_confirmation;
+      }
+
+      await updateEmployee(id, payload);
+
+      setSuccess("Step saved successfully.");
+      return true;
+    } catch (err) {
+      console.error("Failed to save employee step:", err);
+      setError("Unable to save this step. Please check the details and try again.");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleStepChange = async (nextStep: number) => {
+    if (saving || nextStep === currentStep || nextStep < 1 || nextStep > 5) {
+      return;
+    }
+
+    const saved = await saveCurrentStep();
+
+    if (saved) {
+      setCurrentStep(nextStep);
+    }
+  };
+
   const goNext = () => {
-    setCurrentStep((step) => Math.min(step + 1, 5));
+    void handleStepChange(Math.min(currentStep + 1, 5));
   };
 
   const goPrevious = () => {
-    setCurrentStep((step) => Math.max(step - 1, 1));
+    void handleStepChange(Math.max(currentStep - 1, 1));
   };
 
   if (loading) {
@@ -224,7 +345,7 @@ export default function EditEmployeePage() {
       {/* Stepper */}
       <EmployeeStepper
         currentStep={currentStep}
-        onStepChange={setCurrentStep}
+        onStepChange={(step) => void handleStepChange(step)}
       />
 
       {/* Messages */}
@@ -246,6 +367,7 @@ export default function EditEmployeePage() {
           <EmployeeAccountForm
             form={form}
             setForm={setForm}
+            isEdit
           />
         )}
 
@@ -302,7 +424,7 @@ export default function EditEmployeePage() {
             disabled={saving}
             className="rounded-xl bg-[#087f78] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#066b65] disabled:opacity-50"
           >
-            Save & Continue &rarr;
+            {saving ? "Saving..." : "Save & Continue →"}
           </button>
         ) : (
           <button

@@ -180,7 +180,6 @@ class RbacSeeder extends Seeder
             'letters.view',
             'letters.create',
             'letters.edit',
-            'letters.issue',
             'letters.download',
 
             'payroll.view',
@@ -485,6 +484,8 @@ class RbacSeeder extends Seeder
             'documents.download',
 
             'letters.view',
+            'letters.edit',
+            'letters.create',
             'letters.download',
 
             'payroll.view',

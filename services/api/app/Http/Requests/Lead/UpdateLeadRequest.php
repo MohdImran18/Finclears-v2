@@ -13,7 +13,7 @@ class UpdateLeadRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $rules = [
             'name' => [
                 'sometimes',
                 'required',
@@ -95,5 +95,12 @@ class UpdateLeadRequest extends FormRequest
                 'string',
             ],
         ];
+
+        // Employees may update their own leads but cannot change ownership.
+        if ($this->user()?->role === 'employee') {
+            $rules['assigned_to'] = ['prohibited'];
+        }
+
+        return $rules;
     }
 }

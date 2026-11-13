@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\BlogController;
 use App\Http\Controllers\Api\BlogAdminController;
+use App\Http\Controllers\Api\BlogFeaturedImageController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\CompanyDirectorController;
 use App\Http\Controllers\Api\CompanyDocumentController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\FAQController;
 use App\Http\Controllers\Api\LeadController;
+use App\Http\Controllers\Api\LeadSourceController;
 use App\Http\Controllers\Api\LeadReportController;
 use App\Http\Controllers\Api\CrmDashboardController;
 use App\Http\Controllers\Api\LeadCommunicationController;
@@ -33,6 +35,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\CompanyPaymentController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\ServiceAdminController;
+use App\Http\Controllers\Api\ServiceDescriptionImageController;
 use App\Http\Controllers\Api\ServiceBenefitAdminController;
 use App\Http\Controllers\Api\ServiceProcessAdminController;
 use App\Http\Controllers\Api\ServicePricingAdminController;
@@ -43,6 +46,7 @@ use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\EmployeeShiftAssignmentController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\EmployeeSelfAttendanceController;
 use App\Http\Controllers\EmployeeDocumentController;
 use App\Http\Controllers\Api\SalaryComponentController;
 use App\Http\Controllers\Api\EmployeeSalaryStructureController;
@@ -234,80 +238,117 @@ Route::prefix('v1')->group(function () {
             Route::get('/', [
                 LetterController::class,
                 'index',
-            ])->middleware('require_permission:employees.view');
+            ])->middleware('require_permission:letters.view');
 
             Route::get('/templates', [
                 LetterController::class,
                 'templates',
-            ])->middleware('require_permission:employees.view');
+            ])->middleware('require_permission:letters.create');
 
             Route::get('/templates/{id}', [
                 LetterController::class,
                 'template',
-            ])->middleware('require_permission:employees.view');
+            ])->middleware('require_permission:letters.create');
+
+            Route::post('/templates', [
+                LetterController::class,
+                'storeTemplate',
+            ])->middleware('require_permission:letters.create');
+
+            Route::put('/templates/{id}', [
+                LetterController::class,
+                'updateTemplate',
+            ])->middleware('require_permission:letters.create');
 
             Route::get('/employees/{employeeProfileId}/fields', [
                 LetterController::class,
                 'employeeFields',
-            ])->middleware('require_permission:employees.view');
+            ])->middleware('require_permission:letters.create');
 
             Route::get('/employees/{employeeProfileId}', [
                 LetterController::class,
                 'employeeLetters',
-            ])->middleware('require_permission:employees.view');
+            ])->middleware('require_permission:letters.view');
 
             Route::get('/{id}/versions', [
                 LetterController::class,
                 'versions',
-            ])->middleware('require_permission:employees.view');
+            ])->middleware('require_permission:letters.view');
 
             Route::get('/{id}', [
                 LetterController::class,
                 'show',
-            ])->middleware('require_permission:employees.view');
+            ])->middleware('require_permission:letters.view');
 
             Route::post('/', [
                 LetterController::class,
                 'store',
-            ])->middleware('require_permission:employees.create');
+            ])->middleware('require_permission:letters.create');
 
             Route::put('/{id}', [
                 LetterController::class,
                 'update',
-            ])->middleware('require_permission:employees.edit');
+            ])->middleware('require_permission:letters.edit');
 
             Route::get('/{id}/preview', [
                 LetterController::class,
                 'preview',
-            ])->middleware('require_permission:employees.view');
+            ])->middleware('require_permission:letters.view');
 
             Route::get('/{id}/download', [
                 LetterController::class,
                 'download',
-            ])->middleware('require_permission:employees.view');
+            ])->middleware('require_permission:letters.download');
 
             Route::get('/{id}/versions/{version}', [
                 LetterController::class,
                 'version',
-            ])->middleware('require_permission:employees.view');
+            ])->middleware('require_permission:letters.view');
             Route::get('/{id}/versions/{version}/download', [
                 LetterController::class,
                 'downloadVersionPdf',
-            ])->middleware('require_permission:employees.view');
+            ])->middleware('require_permission:letters.download');
             Route::post('/{id}/generate', [
                 LetterController::class,
                 'generate',
-            ])->middleware('require_permission:employees.edit');
+            ])->middleware('require_permission:letters.edit');
 
             Route::post('/{id}/regenerate', [
                 LetterController::class,
                 'regenerate',
-            ])->middleware('require_permission:employees.edit');
+            ])->middleware('require_permission:letters.edit');
 
-            Route::post('/{id}/approve', [
+            Route::post('/{id}/submit', [
                 LetterController::class,
-                'approve',
-            ])->middleware('require_permission:employees.edit');
+                'submitForHrApproval',
+            ])->middleware('require_permission:letters.create');
+
+            Route::post('/{id}/hr-approve', [
+                LetterController::class,
+                'hrApprove',
+            ])->middleware('require_permission:letters.approve');
+
+            Route::post('/{id}/hr-reject', [
+                LetterController::class,
+                'hrReject',
+            ])->middleware('require_permission:letters.reject');
+
+            Route::post('/{id}/admin-approve', [
+                LetterController::class,
+                'adminApprove',
+            ])->middleware('require_permission:letters.approve');
+
+            Route::post('/{id}/admin-reject', [
+                LetterController::class,
+                'adminReject',
+            ])->middleware('require_permission:letters.reject');
+
+            Route::post('/{id}/send', [
+                LetterController::class,
+                'sendLetter',
+            ])->middleware('require_permission:letters.download');
+
+            // Legacy single-stage approval disabled.
 
         });
         /*
@@ -482,6 +523,16 @@ Route::prefix('v1')->group(function () {
             LeaveApplicationController::class,
             'show',
         ])->middleware('require_permission:leave.view');
+        Route::post(
+            '/employee/attendance/check-in',
+            [EmployeeSelfAttendanceController::class, 'checkIn']
+        )->middleware('throttle:10,1');
+
+        Route::post(
+            '/employee/attendance/check-out',
+            [EmployeeSelfAttendanceController::class, 'checkOut']
+        )->middleware('throttle:10,1');
+
         Route::get('/attendances', [
             AttendanceController::class,
             'index',
@@ -747,6 +798,11 @@ Route::prefix('v1')->group(function () {
             ->middleware('admin')
             ->group(function () {
 
+                Route::post('/description-image', [
+                    ServiceDescriptionImageController::class,
+                    'store',
+                ]);
+
                 Route::get('/', [
                     ServiceAdminController::class,
                     'index',
@@ -975,6 +1031,11 @@ Route::prefix('v1')->group(function () {
         )->middleware('require_permission:leads.view');
 
         Route::get(
+            'lead-sources',
+            [LeadSourceController::class, 'index']
+        )->middleware('require_permission:leads.view');
+
+        Route::get(
             'lead-pool',
             [LeadController::class, 'pool']
         )->middleware('require_permission:leads.view');
@@ -982,7 +1043,7 @@ Route::prefix('v1')->group(function () {
         Route::post(
             'leads/{lead}/assign',
             [LeadController::class, 'assign']
-        )->middleware('require_permission:leads.assign');
+        )->middleware('require_permission:leads.view')->middleware('lead.ownership');
 
 
         Route::get(
@@ -998,22 +1059,22 @@ Route::prefix('v1')->group(function () {
         Route::get(
             'leads/{lead}',
             [LeadController::class, 'show']
-        )->middleware('require_permission:leads.view');
+        )->middleware('require_permission:leads.view')->middleware('lead.ownership');
 
         Route::put(
             'leads/{lead}',
             [LeadController::class, 'update']
-        )->middleware('require_permission:leads.edit');
+        )->middleware('require_permission:leads.edit')->middleware('lead.ownership');
 
         Route::patch(
             'leads/{lead}',
             [LeadController::class, 'update']
-        )->middleware('require_permission:leads.edit');
+        )->middleware('require_permission:leads.edit')->middleware('lead.ownership');
 
         Route::delete(
             'leads/{lead}',
             [LeadController::class, 'destroy']
-        )->middleware('require_permission:leads.delete');
+        )->middleware('require_permission:leads.delete')->middleware('lead.ownership');
 
         /*
         |--------------------------------------------------------------------------
@@ -1024,47 +1085,47 @@ Route::prefix('v1')->group(function () {
         Route::get(
             'leads/{lead}/timeline',
             [LeadCommunicationController::class, 'timeline']
-        )->middleware('require_permission:leads.view');
+        )->middleware('require_permission:leads.view')->middleware('lead.ownership');
 
         Route::get(
             'leads/{lead}/assignment-history',
             [LeadCommunicationController::class, 'assignmentHistory']
-        )->middleware('require_permission:leads.view');
+        )->middleware('require_permission:leads.view')->middleware('lead.ownership');
 
         Route::get(
             'leads/{lead}/comments',
             [LeadCommunicationController::class, 'comments']
-        )->middleware('require_permission:leads.view');
+        )->middleware('require_permission:leads.view')->middleware('lead.ownership');
 
         Route::post(
             'leads/{lead}/comments',
             [LeadCommunicationController::class, 'storeComment']
-        )->middleware('require_permission:leads.edit');
+        )->middleware('require_permission:leads.edit')->middleware('lead.ownership');
 
         Route::get(
             'leads/{lead}/calls',
             [LeadCommunicationController::class, 'calls']
-        )->middleware('require_permission:leads.view');
+        )->middleware('require_permission:leads.view')->middleware('lead.ownership');
 
         Route::post(
             'leads/{lead}/calls',
             [LeadCommunicationController::class, 'storeCall']
-        )->middleware('require_permission:leads.edit');
+        )->middleware('require_permission:leads.edit')->middleware('lead.ownership');
 
         Route::get(
             'leads/{lead}/followups',
             [LeadCommunicationController::class, 'followups']
-        )->middleware('require_permission:leads.view');
+        )->middleware('require_permission:leads.view')->middleware('lead.ownership');
 
         Route::post(
             'leads/{lead}/followups',
             [LeadCommunicationController::class, 'storeFollowup']
-        )->middleware('require_permission:leads.edit');
+        )->middleware('require_permission:leads.edit')->middleware('lead.ownership');
 
         Route::put(
             'leads/{lead}/followups/{followup}',
             [LeadCommunicationController::class, 'updateFollowup']
-        )->middleware('require_permission:leads.edit');
+        )->middleware('require_permission:leads.edit')->middleware('lead.ownership');
 
         Route::apiResource('customers', CustomerController::class);
 
@@ -1317,6 +1378,12 @@ Route::post(
     Route::prefix('admin/blogs')
         ->middleware('admin')
         ->group(function () {
+            Route::post('/featured-image', [
+                BlogFeaturedImageController::class,
+                'store',
+            ]);
+
+
 
             Route::get('/', [
                 BlogAdminController::class,

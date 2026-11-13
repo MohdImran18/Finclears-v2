@@ -16,3 +16,29 @@ node_modules
 !.env.example
 *.env.backup*
 
+
+# Laravel production data and private files
+/services/api/storage/*
+!/services/api/storage/**/.gitignore
+/services/api/bootstrap/cache/*
+!/services/api/bootstrap/cache/.gitignore
+/services/api/vendor/
+
+# Application backups and runtime data
+/backups/
+/storage/
+*.sql
+*.sql.gz
+*.dump
+*.log
+
+# Build and generated files
+dist/
+build/
+coverage/
+.turbo/
+
+# Security-sensitive files
+*.pem
+*.key
+auth.json

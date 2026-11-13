@@ -22,22 +22,27 @@ class EmployeeAccessScope
     {
         $query = EmployeeProfile::query();
 
-        // Admin has unrestricted employee access.
-        if ($user->role === User::ROLE_ADMIN) {
-            return $query;
-        }
-
-        // HR/Finance managers are not restricted to one reporting tree.
-        // Module-level permissions should control what they can actually use.
+        // Admin and Super Admin have unrestricted employee access.
         if (
-            $user->hasRole('hr-manager') ||
-            $user->hasRole('finance-manager')
+            in_array($user->role, [
+                User::ROLE_ADMIN,
+                User::ROLE_SUPER_ADMIN,
+            ], true) ||
+            $user->hasRole('super-admin')
         ) {
             return $query;
         }
 
-        // Team leads and department managers see their reporting tree.
+        // Finance Manager retains unrestricted employee access.
+        if ($user->hasRole('finance-manager')) {
+            return $query;
+        }
+
+        // HR Manager, HR Executive, Team Lead and Department Manager
+        // can access only their own profile and assigned reporting tree.
         if (
+            $user->hasRole('hr-manager') ||
+            $user->hasRole('hr-executive') ||
             $user->hasRole('team-lead') ||
             $user->hasRole('department-manager')
         ) {

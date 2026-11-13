@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import sanitizeHtml from "sanitize-html";
 
 import StructuredData from "@/components/seo/StructuredData";
 import Breadcrumb from "@/components/services/Breadcrumb";
@@ -42,9 +43,7 @@ interface Props {
 
 async function getService(slug: string): Promise<Service | null> {
 	const response = await fetch(`${API}/api/v1/services/${slug}`, {
-		next: {
-			revalidate: 3600,
-		},
+                cache: "no-store",
 	});
 
 	if (!response.ok) {
@@ -219,13 +218,28 @@ export default async function ServicePage({ params }: Props) {
 		(item: ProcessItem) => item.title,
 	);
 
-	const documents = (service.documents ?? []).map(
-		(item: ServiceDocument) => item.document_name,
-	);
+	const documents = (service.documents ?? [])
+		.map((item: ServiceDocument) => item.document_name || (item as any).title)
+		.filter(Boolean);
 
-	const pricingFeatures = (service.pricing ?? []).map(
-		(item: PricingItem) => item.plan_name,
-	);
+	const pricingFeatures = (service.pricing ?? [])
+                .filter((item: PricingItem) => item.status !== false)
+                .map((item: PricingItem) => item.plan_name)
+                .filter(Boolean);
+
+        if (pricingFeatures.length === 0) {
+                pricingFeatures.push(
+                        ...(service.benefits ?? [])
+                                .filter((item: ServiceBenefit) => item.status !== false)
+                                .map((item: ServiceBenefit) => item.title)
+                                .filter(Boolean),
+                );
+        }
+        const aboutDescription = (service.description ?? "").replace(
+                /<h[23][^>]*>\s*(?:What Is|Key Benefits|Who Should|Eligibility|Documents Required|Private Limited Company Registration Process|What Is Included|Important Compliance|Why Choose|Frequently Asked Questions|Get Started)\b[\s\S]*$/i,
+                "",
+        );
+
 	return (
 		<main>
 			<StructuredData data={serviceJson} />
@@ -246,20 +260,53 @@ export default async function ServicePage({ params }: Props) {
 			<ServiceHero service={service} />
 
 			{/* Overview */}
+                    <section className="bg-slate-50 py-10 sm:py-14">
+                        <div className="mx-auto max-w-6xl px-5 sm:px-6">
+                            <div className="mx-auto max-w-3xl text-center">
+                                <span className="inline-flex items-center rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-bold uppercase tracking-widest text-blue-700 shadow-sm">
+                                    Service Overview
+                                </span>
+                                <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
+                                    About This Service
+                                </h2>
+                                <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
+                                    Understand the service, key requirements and how FinClears can help you move forward.
+                                </p>
+                            </div>
 
-			<section className="py-20">
-				<div className="mx-auto max-w-7xl px-6">
-					<div className="mx-auto max-w-4xl text-center">
-						<h2 className="text-4xl font-bold">About this Service</h2>
+                            <article
+                                className="service-description mx-auto mt-7 max-w-5xl rounded-2xl border border-slate-200/80 bg-white px-6 py-7 shadow-sm sm:mt-9 sm:px-9 sm:py-9 lg:px-12 [&_h2]:mb-4 [&_h2]:mt-8 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:text-slate-900 [&_h3]:mb-3 [&_h3]:mt-7 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:text-slate-900 [&_p]:mb-5 [&_p]:text-base [&_p]:leading-8 [&_p]:text-slate-600 [&_ul]:mb-6 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6 [&_ol]:mb-6 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-6 [&_li]:pl-1 [&_a]:font-medium [&_a]:text-blue-700 [&_a]:underline [&_img]:mx-auto [&_img]:my-8 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-2xl [&_blockquote]:my-6 [&_blockquote]:border-l-4 [&_blockquote]:border-blue-200 [&_blockquote]:pl-5 [&_hr]:my-8 [&_hr]:border-slate-200"
+                                dangerouslySetInnerHTML={{
+                                    __html: sanitizeHtml(aboutDescription, {
+                                        allowedTags: [
+                                            "p", "br", "strong", "b", "em", "i", "u",
+                                            "h2", "h3", "ul", "ol", "li", "a", "img",
+                                            "blockquote", "hr", "span",
+                                        ],
+                                        allowedAttributes: {
+                                            a: ["href", "target", "rel"],
+                                            img: ["src", "alt", "title", "width", "height"],
+                                            p: ["style"],
+                                            h2: ["style"],
+                                            h3: ["style"],
+                                            span: ["style"],
+                                        },
+                                        allowedSchemes: ["http", "https", "mailto"],
+                                        allowedSchemesByTag: {
+                                            img: ["http", "https"],
+                                        },
+                                        allowedStyles: {
+                                            "*": {
+                                                "text-align": [/^left$/, /^center$/, /^right$/, /^justify$/],
+                                            },
+                                        },
+                                    }),
+                                }}
+                            />
+                        </div>
+                    </section>
 
-						<p className="mt-6 text-lg leading-8 text-gray-600">
-							{service.description}
-						</p>
-					</div>
-				</div>
-			</section>
-
-			{benefits.length > 0 && <ServiceBenefits benefits={benefits} />}
+                    {benefits.length > 0 && <ServiceBenefits benefits={benefits} />}
 
 			<ServicePricing
 				price={service.starting_price ?? 0}

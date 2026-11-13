@@ -1,53 +1,59 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-
     <style>
         @page {
-            margin: 28mm 22mm 25mm 22mm;
+            size: A4 portrait;
+            margin: 48mm 22mm 48mm 22mm;
         }
 
-        body {
+        html, body {
+            margin: 0;
+            padding: 0;
             font-family: DejaVu Sans, sans-serif;
-            font-size: 11pt;
-            line-height: 1.65;
+            font-size: 10pt;
+            line-height: 1.45;
             color: #222;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
+        .letterhead-background {
+            position: fixed;
+            top: -48mm;
+            left: -22mm;
+            width: 210mm;
+            height: 297mm;
+            z-index: -1000;
         }
 
-        .company-name {
-            font-size: 18pt;
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-
-        .company-address {
-            font-size: 9pt;
-            color: #555;
+        .letter-content {
+            position: relative;
+            z-index: 1;
         }
 
         .meta {
             width: 100%;
-            margin-bottom: 25px;
-            font-size: 10pt;
+            margin-bottom: 18px;
+            font-size: 9pt;
+            border-collapse: collapse;
         }
 
         .meta td {
             padding: 3px 0;
+            vertical-align: top;
         }
 
         .meta .right {
             text-align: right;
         }
 
+        .recipient {
+            margin-bottom: 14px;
+        }
+
         .subject {
             font-weight: bold;
-            margin: 18px 0;
+            margin: 14px 0;
         }
 
         .content {
@@ -55,34 +61,30 @@
         }
 
         .content p {
-            margin: 0 0 12px 0;
+            margin: 0 0 10px 0;
         }
 
         .content table {
             width: 100%;
             border-collapse: collapse;
-            margin: 15px 0;
+            margin: 12px 0;
         }
 
         .content th,
         .content td {
             border: 1px solid #999;
-            padding: 7px;
+            padding: 6px;
             text-align: left;
         }
 
-        .signature {
-            margin-top: 45px;
+        .content th {
+            background: #548dcc;
+            color: #fff;
         }
 
-        .footer {
-            position: fixed;
-            bottom: -12mm;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 8pt;
-            color: #777;
+        .signature {
+            margin-top: 30px;
+            page-break-inside: avoid;
         }
 
         .letter-number {
@@ -91,77 +93,61 @@
         }
     </style>
 </head>
-
 <body>
 
-    <div class="header">
-        <div class="company-name">
-            {{ $companyName ?? config('app.name') }}
+    <img
+        class="letterhead-background"
+        src="{{ public_path('images/finclears-letterhead-background.jpg') }}"
+    >
+
+    <div class="letter-content">
+
+        <table class="meta">
+            <tr>
+                <td>
+                    <strong>Date:</strong>
+                    {{ $letter->letter_date?->format('d F Y') }}
+                </td>
+                <td class="right">
+                    @if($letter->letter_number)
+                        <span class="letter-number">
+                            <strong>Letter No:</strong>
+                            {{ $letter->letter_number }}
+                        </span>
+                    @endif
+                </td>
+            </tr>
+        </table>
+
+        <div class="recipient">
+            <strong>To,</strong><br>
+            {{ $letter->employeeProfile?->user?->name ?? 'Employee' }}<br>
+
+            @if($letter->employeeProfile?->designation?->name)
+                {{ $letter->employeeProfile->designation->name }}<br>
+            @endif
+
+            @if($letter->employeeProfile?->department?->name)
+                {{ $letter->employeeProfile->department->name }}
+            @endif
         </div>
 
-        @if(!empty($companyAddress))
-            <div class="company-address">
-                {{ $companyAddress }}
+        @if($letter->title)
+            <div class="subject">
+                Subject: {{ $letter->title }}
             </div>
         @endif
-    </div>
 
-    <table class="meta">
-        <tr>
-            <td>
-                <strong>Date:</strong>
-                {{ $letter->letter_date?->format('d F Y') }}
-            </td>
-
-            <td class="right">
-                @if($letter->letter_number)
-                    <span class="letter-number">
-                        <strong>Letter No:</strong>
-                        {{ $letter->letter_number }}
-                    </span>
-                @endif
-            </td>
-        </tr>
-    </table>
-
-    <div>
-        <strong>To,</strong><br>
-
-        {{ $letter->employeeProfile?->user?->name ?? 'Employee' }}<br>
-
-        @if($letter->employeeProfile?->designation?->name)
-            {{ $letter->employeeProfile->designation->name }}<br>
-        @endif
-
-        @if($letter->employeeProfile?->department?->name)
-            {{ $letter->employeeProfile->department->name }}
-        @endif
-    </div>
-
-    @if($letter->title)
-        <div class="subject">
-            Subject: {{ $letter->title }}
+        <div class="content">
+            {!! $renderedContent !!}
         </div>
-    @endif
 
-    <div class="content">
-        {!! $renderedContent !!}
+        <div class="signature">
+            <strong>For {{ $companyName ?? config('app.name') }}</strong>
+            <br><br><br>
+            Authorized Signatory
+        </div>
+
     </div>
-
-    <div class="signature">
-        <strong>For {{ $companyName ?? config('app.name') }}</strong>
-
-        <br><br><br>
-
-        Authorized Signatory
-    </div>
-
-    <div class="footer">
-        {{ $companyName ?? config('app.name') }}
-        @if($letter->letter_number)
-            &nbsp; | &nbsp; {{ $letter->letter_number }}
-        @endif
-    </div>
-
 </body>
 </html>

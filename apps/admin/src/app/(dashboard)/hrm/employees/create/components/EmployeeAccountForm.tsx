@@ -5,11 +5,13 @@ import type { EmployeePayload } from "@/types/employee/employee";
 interface EmployeeAccountFormProps {
   form: Partial<EmployeePayload>;
   setForm: React.Dispatch<React.SetStateAction<Partial<EmployeePayload>>>;
+  isEdit?: boolean;
 }
 
 export default function EmployeeAccountForm({
   form,
   setForm,
+  isEdit = false,
 }: EmployeeAccountFormProps) {
   const update = (
     field: keyof EmployeePayload,
@@ -197,11 +199,13 @@ export default function EmployeeAccountForm({
 
           <div className="mb-5">
             <h3 className="text-sm font-bold text-slate-800">
-              Password
+              {isEdit ? "Change Password (Optional)" : "Password"}
             </h3>
 
             <p className="mt-1 text-xs text-slate-400">
-              Set the employee's initial password.
+              {isEdit
+                ? "Leave blank to keep the current password."
+                : "Set the employee's initial password."}
             </p>
           </div>
 
@@ -209,7 +213,7 @@ export default function EmployeeAccountForm({
 
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-700">
-                Password *
+                {isEdit ? "New Password" : "Password *"}
               </label>
 
               <input
@@ -217,13 +221,14 @@ export default function EmployeeAccountForm({
                 value={form.password ?? ""}
                 onChange={(e) => update("password", e.target.value)}
                 placeholder="Minimum 8 characters"
+                minLength={isEdit ? 8 : undefined}
                 className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#087f78] focus:ring-2 focus:ring-[#087f78]/10"
               />
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-700">
-                Confirm Password *
+                {isEdit ? "Confirm New Password" : "Confirm Password *"}
               </label>
 
               <input

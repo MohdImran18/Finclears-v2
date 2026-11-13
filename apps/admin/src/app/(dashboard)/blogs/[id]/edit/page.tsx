@@ -5,10 +5,18 @@ import { useParams, useRouter } from "next/navigation";
 import BlogForm from "@/components/blogs/BlogForm";
 import { getBlog, updateBlog } from "@/lib/api/blogs/blogApi";
 import type { Blog, BlogPayload } from "@/types/blog/blog";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { getWorkspaceRoute } from "@/lib/auth/workspaceRoute";
 
 export default function EditBlogPage() {
   const params = useParams();
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const roles = user?.spatie_roles || [];
+  const canManageBlogs =
+    user?.role === "admin" ||
+    roles.includes("admin") ||
+    roles.includes("super-admin");
   const id = Number(params.id);
 
   const [blog, setBlog] = useState<Blog | null>(null);
@@ -16,6 +24,13 @@ export default function EditBlogPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!canManageBlogs) {
+      router.replace(user ? getWorkspaceRoute(user) : "/login");
+      return;
+    }
+
     if (!id) return;
 
     getBlog(id)
@@ -25,7 +40,7 @@ export default function EditBlogPage() {
         alert("Unable to load blog.");
       })
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, authLoading, canManageBlogs, router, user]);
 
   async function submit(payload: BlogPayload) {
     try {
@@ -43,7 +58,7 @@ export default function EditBlogPage() {
     }
   }
 
-  if (loading) {
+  if (authLoading || !canManageBlogs || loading) {
     return <main style={{ padding: 30 }}>Loading...</main>;
   }
 

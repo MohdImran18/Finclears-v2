@@ -31,6 +31,12 @@ class LeadAssignmentService
             $assignmentType,
             $reason
         ) {
+            // Lock the latest database row to prevent concurrent assignment races.
+            $lead = Lead::query()
+                ->whereKey($lead->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
             $fromUserId = $lead->assigned_to;
 
             // Nothing changed.

@@ -51,7 +51,7 @@ export default function EnquiryForm({
 	}
 
 	return (
-		<section className="bg-white py-20">
+		<section id="enquiry-form" className="scroll-mt-20 bg-white py-20">
 			<div className="container mx-auto px-6">
 				<div className="mx-auto max-w-6xl">
 					<div className="grid gap-12 lg:grid-cols-2">

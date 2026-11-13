@@ -244,7 +244,6 @@ export default function CreateLetterPage() {
         title,
         letter_date: letterDate,
         effective_date: effectiveDate || null,
-        status: "draft",
         field_values: customValues,
       });
 

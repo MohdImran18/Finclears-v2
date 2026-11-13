@@ -44,6 +44,28 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
+export async function uploadServiceDescriptionImage(file: File) {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const response = await client.post<{
+    success: boolean;
+    message: string;
+    data?: { url?: string; path?: string };
+    url?: string;
+  }>("/admin/services/description-image", formData, {
+    headers: { "Content-Type": undefined },
+  });
+
+  const url = response.data.data?.url ?? response.data.url;
+
+  if (!url) {
+    throw new Error("Upload succeeded but the image URL was missing.");
+  }
+
+  return url;
+}
+
 /* Service Categories */
 
 export async function getServiceCategories() {

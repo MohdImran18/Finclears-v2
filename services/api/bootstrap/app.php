@@ -35,6 +35,7 @@ return Application::configure(
 'role_or_permission' => RoleOrPermissionMiddleware::class,
 'require_permission' => \App\Http\Middleware\RequirePermission::class,
 'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'lead.ownership' => \App\Http\Middleware\EnsureLeadOwnership::class,
         ]);
     })
 

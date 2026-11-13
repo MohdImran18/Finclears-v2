@@ -55,11 +55,7 @@ class StoreEmployeeLetterRequest extends FormRequest
                 'date',
             ],
 
-            'status' => [
-                'nullable',
-                'string',
-                'in:draft,generated,pending_approval,approved,issued,cancelled',
-            ],
+            'status' => ['prohibited'],
 
             'rendered_content' => [
                 'nullable',

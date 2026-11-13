@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
+import RichTextEditor from "@/components/editor/RichTextEditor";
 
 import type {
   Service,
@@ -208,16 +209,10 @@ export default function ServiceForm({
         </Field>
 
         <Field label="Full Description" required>
-          <textarea
+          <RichTextEditor
             value={form.description}
-            onChange={(e) =>
-              set("description", e.target.value)
-            }
-            required
+            onChange={(value) => set("description", value)}
             disabled={!!loading}
-            rows={10}
-            style={textareaStyle}
-            placeholder="Detailed service description..."
           />
         </Field>
       </section>

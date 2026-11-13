@@ -5,6 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 
 import ServiceForm from "@/components/services/ServiceForm";
 import ServiceFaqEditor from "@/components/services/faqs/ServiceFaqEditor";
+import ServiceBenefitsEditor from "@/components/services/benefits/ServiceBenefitsEditor";
+import ServiceProcessEditor from "@/components/services/process/ServiceProcessEditor";
+import ServiceDocumentsEditor from "@/components/services/documents/ServiceDocumentsEditor";
+import ServicePricingEditor from "@/components/services/pricing/ServicePricingEditor";
 import {
   getService,
   getServiceCategories,
@@ -199,12 +203,20 @@ export default function EditServicePage() {
             No active service categories are available.
           </div>
         ) : (
-          <ServiceForm
-            initial={service}
-            categories={categories}
-            loading={saving}
-            onSubmit={handleSubmit}
-          />
+          <>
+            <ServiceForm
+              initial={service}
+              categories={categories}
+              loading={saving}
+              onSubmit={handleSubmit}
+            />
+
+            <ServiceBenefitsEditor serviceId={service.id} />
+            <ServiceProcessEditor serviceId={service.id} />
+            <ServiceDocumentsEditor serviceId={service.id} />
+            <ServiceFaqEditor serviceId={service.id} />
+            <ServicePricingEditor serviceId={service.id} />
+          </>
         )}
       </div>
     </main>

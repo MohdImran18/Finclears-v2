@@ -6,11 +6,15 @@ import { useParams, useRouter } from "next/navigation";
 import {
   getLead,
   getLeadAssignees,
+  getLeadSources,
   updateLead,
 } from "@/lib/api/leads/leadApi";
 
 import type { Lead } from "@/types/lead/lead";
-import type { LeadAssignee } from "@/lib/api/leads/leadApi";
+import type {
+  LeadAssignee,
+  LeadSource,
+} from "@/lib/api/leads/leadApi";
 import LeadCommunicationPanel from "@/components/leads/LeadCommunicationPanel";
 
 export default function EditLeadPage() {
@@ -23,6 +27,7 @@ export default function EditLeadPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [assignees, setAssignees] = useState<LeadAssignee[]>([]);
+  const [sources, setSources] = useState<LeadSource[]>([]);
 
   useEffect(() => {
     getLeadAssignees()
@@ -32,6 +37,16 @@ export default function EditLeadPage() {
       })
       .catch((error) => {
         console.error("Unable to load assignees.", error);
+      });
+  }, []);
+
+  useEffect(() => {
+    getLeadSources()
+      .then((response) => {
+        setSources(response.data?.sources || []);
+      })
+      .catch((error) => {
+        console.error("Unable to load lead sources.", error);
       });
   }, []);
 
@@ -288,11 +303,10 @@ export default function EditLeadPage() {
               }
               options={[
                 ["", "Select Source"],
-                ["1", "Website"],
-                ["2", "Google Ads"],
-                ["3", "Meta Ads"],
-                ["4", "Instagram"],
-                ["5", "Referral"],
+                ...sources.map((source) => [
+                  String(source.id),
+                  source.name,
+                ] as [string, string]),
               ]}
             />
 

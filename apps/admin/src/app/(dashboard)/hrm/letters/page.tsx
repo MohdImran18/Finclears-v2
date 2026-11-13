@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { hasPermission } from "@/lib/auth/permissions";
 import {
   getLetters,
   getLetterTemplates,
@@ -16,15 +18,29 @@ export default function LettersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  async function loadData() {
+  const { user, loading: authLoading } = useAuth();
+
+  const canCreateLetters = hasPermission(user, "letters.create");
+  const canEditLetters = hasPermission(user, "letters.edit");
+  const canDownloadLetters = hasPermission(user, "letters.download");
+
+  const roles = user?.spatie_roles || [];
+  const canManageTemplates =
+    user?.role === "admin" ||
+    roles.includes("admin") ||
+    roles.includes("super-admin") ||
+    roles.includes("hr-manager");
+
+  const isEmployee =
+    user?.spatie_roles?.includes("employee") ||
+    user?.role === "employee";
+
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const [lettersResponse, templatesResponse] = await Promise.all([
-        getLetters(),
-        getLetterTemplates(),
-      ]);
+      const lettersResponse = await getLetters();
 
       setLetters(
         Array.isArray(lettersResponse.data?.data)
@@ -32,14 +48,19 @@ export default function LettersPage() {
           : []
       );
 
-      setTemplates(
-        Array.isArray(templatesResponse.data)
-          ? templatesResponse.data
-          : []
-      );
+      if (canCreateLetters) {
+        const templatesResponse = await getLetterTemplates();
+
+        setTemplates(
+          Array.isArray(templatesResponse.data)
+            ? templatesResponse.data
+            : []
+        );
+      } else {
+        setTemplates([]);
+      }
     } catch (err: any) {
       console.error(err);
-
       setError(
         err?.response?.data?.message ||
           "Unable to load letters."
@@ -47,11 +68,13 @@ export default function LettersPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [canCreateLetters]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!authLoading) {
+      loadData();
+    }
+  }, [authLoading, loadData]);
 
   function formatDate(value?: string | null) {
     if (!value) return "ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â";
@@ -121,22 +144,43 @@ export default function LettersPage() {
           </h1>
 
           <p className="mt-1 text-sm text-gray-500">
-            Create, generate and manage employee letters.
+            {isEmployee
+              ? "View letters issued to you."
+              : "Create, generate and manage employee letters."}
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() =>
-            window.open(
-              "/employee/hrm/letters/create",
-              "_self"
-            )
-          }
-          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-        >
-          + Create Letter
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {canManageTemplates && (
+            <button
+              type="button"
+              onClick={() =>
+                window.open(
+                  "/employee/hrm/letters/templates",
+                  "_self"
+                )
+              }
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Manage Templates
+            </button>
+          )}
+
+          {canCreateLetters && (
+            <button
+              type="button"
+              onClick={() =>
+                window.open(
+                  "/employee/hrm/letters/create",
+                  "_self"
+                )
+              }
+              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+            >
+              + Create Letter
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -145,7 +189,9 @@ export default function LettersPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className={`grid grid-cols-1 gap-4 ${
+        canCreateLetters ? "md:grid-cols-3" : "md:grid-cols-2"
+      }`}>
         <div className="rounded-xl border bg-white p-5">
           <div className="text-sm text-gray-500">
             Total Letters
@@ -168,21 +214,23 @@ export default function LettersPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border bg-white p-5">
-          <div className="text-sm text-gray-500">
-            Templates
+        {canCreateLetters && (
+          <div className="rounded-xl border bg-white p-5">
+            <div className="text-sm text-gray-500">
+              Templates
+            </div>
+            <div className="mt-2 text-2xl font-semibold">
+              {templates.length}
+            </div>
           </div>
-          <div className="mt-2 text-2xl font-semibold">
-            {templates.length}
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="rounded-xl border bg-white">
         <div className="border-b px-5 py-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <h2 className="font-semibold text-gray-900">
-              Employee Letters
+              {isEmployee ? "Your Letters" : "Employee Letters"}
             </h2>
 
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -221,7 +269,9 @@ export default function LettersPage() {
             <p className="mt-1 text-sm text-gray-500">
               {search || statusFilter !== "all"
                 ? "Try changing your search or status filter."
-                : "Create a letter to get started."}
+                : isEmployee
+                  ? "No letters have been issued to you yet."
+                  : "Create a letter to get started."}
             </p>
           </div>
         ) : (
@@ -320,7 +370,7 @@ export default function LettersPage() {
                           View
                         </button>
 
-                        {letter.status !== "approved" && (
+                        {canEditLetters && letter.status !== "approved" && (
                           <button
                             type="button"
                             className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-gray-50"
@@ -335,7 +385,7 @@ export default function LettersPage() {
                           </button>
                         )}
 
-                        {letter.pdf_path && (
+                        {canDownloadLetters && letter.pdf_path && (
                           <button
                             type="button"
                             className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-gray-50"

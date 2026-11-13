@@ -1,15 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import BlogForm from "@/components/blogs/BlogForm";
 import { createBlog } from "@/lib/api/blogs/blogApi";
 import type { BlogPayload } from "@/types/blog/blog";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { getWorkspaceRoute } from "@/lib/auth/workspaceRoute";
 
 export default function CreateBlogPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const roles = user?.spatie_roles || [];
+  const canManageBlogs =
+    user?.role === "admin" ||
+    roles.includes("admin") ||
+    roles.includes("super-admin");
+
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !canManageBlogs) {
+      router.replace(user ? getWorkspaceRoute(user) : "/login");
+    }
+  }, [authLoading, canManageBlogs, router, user]);
 
   async function submit(payload: BlogPayload) {
     try {
@@ -28,6 +43,10 @@ export default function CreateBlogPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (authLoading || !canManageBlogs) {
+    return <main style={pageStyle}>Checking access...</main>;
   }
 
   return (

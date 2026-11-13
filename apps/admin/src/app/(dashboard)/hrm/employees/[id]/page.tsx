@@ -469,7 +469,7 @@ function Info({
       </p>
 
       <p className="mt-1 text-sm font-semibold text-slate-800">
-        {value || "Ã¢â‚¬â€"}
+        {value !== undefined && value !== null && value !== "" ? value : "—"}
       </p>
     </div>
   );

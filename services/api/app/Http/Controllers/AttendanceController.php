@@ -9,6 +9,8 @@ use App\Services\Employee\EmployeeAccessScope;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AttendanceController extends Controller
@@ -131,6 +133,10 @@ class AttendanceController extends Controller
                 'nullable',
                 'date',
             ],
+            'attendance_date' => [
+                'nullable',
+                'date',
+            ],
             'check_in_source' => [
                 'nullable',
                 'string',
@@ -161,7 +167,7 @@ class AttendanceController extends Controller
             ? Carbon::parse($validated['check_in_at'])
             : now();
 
-        $attendanceDate = $checkInAt->toDateString();
+        $attendanceDate = $validated['attendance_date'] ?? $checkInAt->toDateString();
 
         $attendance = Attendance::query()
             ->where('employee_profile_id', $employee->id)
@@ -202,7 +208,8 @@ class AttendanceController extends Controller
 
         if ($shift) {
             $scheduledStart = Carbon::parse(
-                $attendanceDate . ' ' . $shift->start_time
+                $attendanceDate . ' ' . $shift->start_time,
+                ! empty($validated['attendance_date']) ? 'Asia/Kolkata' : config('app.timezone')
             );
 
             $graceEnd = $scheduledStart->copy()->addMinutes(
@@ -258,6 +265,10 @@ class AttendanceController extends Controller
                 'nullable',
                 'date',
             ],
+            'attendance_date' => [
+                'nullable',
+                'date',
+            ],
             'check_out_source' => [
                 'nullable',
                 'string',
@@ -292,7 +303,7 @@ class AttendanceController extends Controller
             ->where('employee_profile_id', $employee->id)
             ->whereDate(
                 'attendance_date',
-                $checkOutAt->toDateString()
+                $validated['attendance_date'] ?? $checkOutAt->toDateString()
             )
             ->first();
 
@@ -340,16 +351,22 @@ class AttendanceController extends Controller
         $attendanceStatus = $attendance->status;
 
         if ($shift) {
+            $shiftTimezone = ! empty($validated['attendance_date'])
+                ? 'Asia/Kolkata'
+                : config('app.timezone');
+
             $scheduledStart = Carbon::parse(
                 $attendance->attendance_date->toDateString()
                 . ' '
-                . $shift->start_time
+                . $shift->start_time,
+                $shiftTimezone
             );
 
             $scheduledEnd = Carbon::parse(
                 $attendance->attendance_date->toDateString()
                 . ' '
-                . $shift->end_time
+                . $shift->end_time,
+                $shiftTimezone
             );
 
             if ($shift->cross_midnight) {

@@ -13,11 +13,11 @@ class ServiceDocumentResource extends JsonResource
 
             'id' => $this->id,
 
-            'title' => $this->title,
+            'title' => $this->document_name,
 
             'description' => $this->description,
 
-            'required' => (bool) $this->required,
+            'required' => (bool) $this->is_required,
 
             'sort_order' => $this->sort_order,
 

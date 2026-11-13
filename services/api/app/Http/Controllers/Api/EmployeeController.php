@@ -121,6 +121,13 @@ class EmployeeController extends Controller
             'reportingManager:id,name,email',
         ]);
 
+        // Expose sensitive fields only in this authorized employee detail response.
+        $employee->makeVisible([
+            'pan_number',
+            'aadhaar_number',
+            'bank_account_number',
+        ]);
+
         return response()->json([
             'success' => true,
             'message' => 'Employee created successfully.',
