@@ -7,10 +7,15 @@ use App\Models\EmployeeProfile;
 use App\Models\LeaveType;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Services\Employee\EmployeeAccessScope;
 
 
 class EmployeeLeaveBalanceController extends Controller
 {
+    public function __construct(
+        protected EmployeeAccessScope $employeeAccessScope
+    ) {
+    }
     /**
      * List leave balances.
      */
@@ -23,7 +28,13 @@ class EmployeeLeaveBalanceController extends Controller
             ])
             ->orderByDesc('year')
             ->orderBy('employee_profile_id')
-            ->orderBy('leave_type_id');
+            ->orderBy('leave_type_id')
+            ->whereIn(
+                'employee_profile_id',
+                $this->employeeAccessScope
+                    ->query($request->user())
+                    ->select('id')
+            );
 
         if ($request->filled('employee_profile_id')) {
             $query->where(
@@ -110,6 +121,19 @@ class EmployeeLeaveBalanceController extends Controller
             ],
         ]);
 
+
+        $canAccessEmployee = $this->employeeAccessScope
+            ->query($request->user())
+            ->whereKey($validated['employee_profile_id'])
+            ->exists();
+
+        if (! $canAccessEmployee) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not allowed to manage leave balance for this employee.',
+            ], 403);
+        }
+
         $exists = EmployeeLeaveBalance::query()
             ->where(
                 'employee_profile_id',
@@ -147,9 +171,14 @@ class EmployeeLeaveBalanceController extends Controller
     /**
      * Show one leave balance.
      */
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
-        $balance = EmployeeLeaveBalance::with([
+        $balance = EmployeeLeaveBalance::whereIn(
+            'employee_profile_id',
+            $this->employeeAccessScope
+                ->query($request->user())
+                ->select('id')
+        )->with([
             'employeeProfile:id,employee_code',
             'leaveType:id,name,code,annual_quota,is_paid',
         ])->find($id);
@@ -179,7 +208,12 @@ class EmployeeLeaveBalanceController extends Controller
         Request $request,
         int $id
     ): JsonResponse {
-        $balance = EmployeeLeaveBalance::find($id);
+        $balance = EmployeeLeaveBalance::whereIn(
+            'employee_profile_id',
+            $this->employeeAccessScope
+                ->query($request->user())
+                ->select('id')
+        )->find($id);
 
         if (! $balance) {
             return response()->json([
@@ -236,9 +270,14 @@ class EmployeeLeaveBalanceController extends Controller
     /**
      * Delete a leave balance.
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
-        $balance = EmployeeLeaveBalance::find($id);
+        $balance = EmployeeLeaveBalance::whereIn(
+            'employee_profile_id',
+            $this->employeeAccessScope
+                ->query($request->user())
+                ->select('id')
+        )->find($id);
 
         if (! $balance) {
             return response()->json([

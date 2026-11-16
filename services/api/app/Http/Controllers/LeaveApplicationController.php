@@ -285,9 +285,15 @@ class LeaveApplicationController extends Controller
     /**
      * Show one leave application.
      */
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
         $application = LeaveApplication::query()
+                        ->whereIn(
+                'employee_profile_id',
+                $this->employeeAccessScope
+                    ->query($request->user())
+                    ->select('id')
+            )
             ->with([
                 'employeeProfile:id,employee_code,user_id',
                 'leaveType:id,name,code,is_paid,requires_approval',

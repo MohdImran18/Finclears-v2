@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Payroll;
 use App\Http\Controllers\Controller;
 use App\Models\PayrollRun;
 use App\Services\Payroll\PayrollGenerationService;
+use App\Services\Employee\EmployeeAccessScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
@@ -12,7 +13,8 @@ use InvalidArgumentException;
 class PayrollController extends Controller
 {
     public function __construct(
-        private PayrollGenerationService $payrollGenerationService
+        private PayrollGenerationService $payrollGenerationService,
+        private EmployeeAccessScope $employeeAccessScope
     ) {
     }
 
@@ -40,6 +42,19 @@ class PayrollController extends Controller
                 'max:12',
             ],
         ]);
+
+
+        $canAccessEmployee = $this->employeeAccessScope
+            ->query($request->user())
+            ->whereKey($validated['employee_profile_id'])
+            ->exists();
+
+        if (! $canAccessEmployee) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not allowed to generate payroll for this employee.',
+            ], 403);
+        }
 
         try {
             $payrollRun = $this->payrollGenerationService->generate(
@@ -69,7 +84,14 @@ class PayrollController extends Controller
         Request $request,
         int $id
     ): JsonResponse {
-        $payrollRun = PayrollRun::find($id);
+        $payrollRun = PayrollRun::query()
+            ->whereIn(
+                'employee_profile_id',
+                $this->employeeAccessScope
+                    ->query($request->user())
+                    ->select('id')
+            )
+            ->find($id);
 
         if (! $payrollRun) {
             return response()->json([
@@ -118,7 +140,14 @@ class PayrollController extends Controller
             ],
         ]);
 
-        $payrollRun = PayrollRun::find($id);
+        $payrollRun = PayrollRun::query()
+            ->whereIn(
+                'employee_profile_id',
+                $this->employeeAccessScope
+                    ->query($request->user())
+                    ->select('id')
+            )
+            ->find($id);
 
         if (! $payrollRun) {
             return response()->json([
@@ -164,7 +193,13 @@ class PayrollController extends Controller
             ])
             ->orderByDesc('payroll_year')
             ->orderByDesc('payroll_month')
-            ->orderByDesc('id');
+            ->orderByDesc('id')
+            ->whereIn(
+                'employee_profile_id',
+                $this->employeeAccessScope
+                    ->query($request->user())
+                    ->select('id')
+            );
 
         if ($request->filled('employee_profile_id')) {
             $query->where(
@@ -207,9 +242,14 @@ class PayrollController extends Controller
     /**
      * Show one payroll run with complete breakdown.
      */
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
-        $payrollRun = PayrollRun::with([
+        $payrollRun = PayrollRun::whereIn(
+            'employee_profile_id',
+            $this->employeeAccessScope
+                ->query($request->user())
+                ->select('id')
+        )->with([
             'employeeProfile',
             'salaryStructure',
             'items',

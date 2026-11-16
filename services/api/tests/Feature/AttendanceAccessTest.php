@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Attendance;
+use App\Models\EmployeeDailyConsent;
 use App\Models\EmployeeProfile;
 use App\Models\User;
 use App\Services\Employee\EmployeeAccessScope;
@@ -19,6 +20,13 @@ class AttendanceAccessTest extends TestCase
     {
         parent::setUp();
 
+        config([
+            'employee-monitoring.policy_version' => 'v1',
+            'employee-monitoring.timezone' => 'Asia/Kolkata',
+            'employee-monitoring.policy_approved' => true,
+            'employee-monitoring.policy_text' => 'Employee monitoring policy test text.',
+        ]);
+
         $permissions = [
             'attendance.view',
             'attendance.request',
@@ -28,10 +36,42 @@ class AttendanceAccessTest extends TestCase
         ];
 
         foreach ($permissions as $permission) {
-            Permission::findOrCreate($permission, 'web');
+            Permission::findOrCreate($permission, 'sanctum');
         }
+
+        \Spatie\Permission\Models\Role::findOrCreate(
+            'department-manager',
+            'sanctum'
+        );
     }
 
+    private function grantDailyConsent(User $user): void
+    {
+        $timezone = config('employee-monitoring.timezone', 'Asia/Kolkata');
+
+        EmployeeDailyConsent::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'work_date' => now($timezone)->toDateString(),
+                'policy_version' => config('employee-monitoring.policy_version'),
+            ],
+            [
+                'status' => EmployeeDailyConsent::STATUS_ACCEPTED,
+                'accepted_at' => now($timezone),
+                'withdrawn_at' => null,
+            ]
+        );
+    }
+
+    private function authenticateEmployeePortal(User $user): void
+    {
+        $plainTextToken = $user->createToken(
+            'attendance-access-test',
+            ['employee-portal']
+        )->plainTextToken;
+
+        $this->withToken($plainTextToken);
+    }
     private function employeeUser(): User
     {
         $user = User::factory()->create([
@@ -43,19 +83,25 @@ class AttendanceAccessTest extends TestCase
             'attendance.request',
         ]);
 
+        $this->grantDailyConsent($user);
+
         return $user;
     }
 
     private function managerUser(): User
     {
         $user = User::factory()->create([
-            'role' => 'department-manager',
+            'role' => 'employee',
         ]);
+
+        $user->assignRole('department-manager');
 
         $user->givePermissionTo([
             'attendance.view',
             'attendance.manage',
         ]);
+
+        $this->grantDailyConsent($user);
 
         return $user;
     }
@@ -89,7 +135,7 @@ class AttendanceAccessTest extends TestCase
             'employee_profile_id' => $otherEmployee->id,
         ]);
 
-        Sanctum::actingAs($user);
+        $this->authenticateEmployeePortal($user);
 
         $response = $this->getJson('/api/v1/attendances');
 
@@ -119,7 +165,7 @@ class AttendanceAccessTest extends TestCase
             'employee_profile_id' => $otherEmployee->id,
         ]);
 
-        Sanctum::actingAs($user);
+        $this->authenticateEmployeePortal($user);
 
         $response = $this->getJson(
             "/api/v1/attendances/{$attendance->id}"
@@ -140,7 +186,7 @@ class AttendanceAccessTest extends TestCase
             'employee_profile_id' => $employee->id,
         ]);
 
-        Sanctum::actingAs($user);
+        $this->authenticateEmployeePortal($user);
 
         $response = $this->getJson(
             "/api/v1/attendances/{$attendance->id}"
@@ -162,7 +208,7 @@ class AttendanceAccessTest extends TestCase
             'employee_profile_id' => $employee->id,
         ]);
 
-        Sanctum::actingAs($user);
+        $this->authenticateEmployeePortal($user);
 
         $response = $this->getJson(
             "/api/v1/employees/{$employee->id}/attendance"
@@ -182,7 +228,7 @@ class AttendanceAccessTest extends TestCase
 
         $otherEmployee = EmployeeProfile::factory()->create();
 
-        Sanctum::actingAs($user);
+        $this->authenticateEmployeePortal($user);
 
         $response = $this->getJson(
             "/api/v1/employees/{$otherEmployee->id}/attendance"
@@ -199,11 +245,12 @@ class AttendanceAccessTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        Sanctum::actingAs($user);
+        $this->authenticateEmployeePortal($user);
 
         $response = $this->postJson('/api/v1/attendances/check-in', [
             'employee_profile_id' => $employee->id,
         ]);
+
 
         $response->assertSuccessful();
     }
@@ -218,7 +265,7 @@ class AttendanceAccessTest extends TestCase
 
         $otherEmployee = EmployeeProfile::factory()->create();
 
-        Sanctum::actingAs($user);
+        $this->authenticateEmployeePortal($user);
 
         $response = $this->postJson('/api/v1/attendances/check-in', [
             'employee_profile_id' => $otherEmployee->id,
@@ -237,7 +284,7 @@ class AttendanceAccessTest extends TestCase
 
         $otherEmployee = EmployeeProfile::factory()->create();
 
-        Sanctum::actingAs($user);
+        $this->authenticateEmployeePortal($user);
 
         $response = $this->postJson('/api/v1/attendances/check-out', [
             'employee_profile_id' => $otherEmployee->id,
@@ -252,7 +299,7 @@ class AttendanceAccessTest extends TestCase
 
         $otherEmployee = EmployeeProfile::factory()->create();
 
-        Sanctum::actingAs($user);
+        $this->authenticateEmployeePortal($user);
 
         $response = $this->postJson('/api/v1/attendances/mark-status', [
             'employee_profile_id' => $otherEmployee->id,
@@ -269,7 +316,7 @@ class AttendanceAccessTest extends TestCase
 
         $employee = EmployeeProfile::factory()->create();
 
-        Sanctum::actingAs($user);
+        $this->authenticateEmployeePortal($user);
 
         $scope = app(EmployeeAccessScope::class)
             ->query($user)
@@ -283,7 +330,7 @@ class AttendanceAccessTest extends TestCase
     {
         $user = $this->adminUser();
 
-        Sanctum::actingAs($user);
+        $this->authenticateEmployeePortal($user);
 
         $this->assertTrue(
             $user->can('attendance.view')

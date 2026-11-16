@@ -38,14 +38,26 @@ export default function AdminHeader() {
   const { user, loading, logout } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const primaryRole = user?.spatie_roles?.[0] || user?.role || "user";
+  const roleValues = [
+    user?.role,
+    ...(user?.spatie_roles || []),
+  ].filter(Boolean);
+
+  const isSuperAdmin = roleValues.some((role) =>
+    typeof role === "string" &&
+    ["super_admin", "super-admin"].includes(role.toLowerCase())
+  );
+
+  const primaryRole = isSuperAdmin
+    ? "Super Admin"
+    : user?.spatie_roles?.[0] || user?.role || "user";
   const designation = user?.employee_profile?.designation?.name;
   const department = user?.employee_profile?.department?.name;
 
   const profileSubtitle = [
     designation,
     department,
-  ].filter(Boolean).join(" • ") || formatRole(primaryRole);
+  ].filter(Boolean).join(" Ã¢â‚¬Â¢ ") || formatRole(primaryRole);
 
   function handleLogout() {
     setProfileOpen(false);
@@ -62,7 +74,7 @@ export default function AdminHeader() {
           type="search"
           placeholder="Search leads, customers, services..."
         />
-        <kbd>⌘ K</kbd>
+        <kbd>Ã¢Å’Ëœ K</kbd>
       </div>
 
       <div className="headerRight">
@@ -141,7 +153,7 @@ export default function AdminHeader() {
                         Work information
                       </p>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        {[designation, department].filter(Boolean).join(" • ")}
+                        {[designation, department].filter(Boolean).join(" Ã¢â‚¬Â¢ ")}
                       </p>
                     </div>
                   </div>

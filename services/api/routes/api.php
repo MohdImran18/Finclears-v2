@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LeaveApplicationController;
@@ -12,6 +12,11 @@ use App\Http\Controllers\LeaveTypeController;
 */
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\EmployeeDailyConsentController;
+use App\Http\Controllers\Api\EmployeePresenceController;
+use App\Http\Controllers\Api\EmployeeMonitoringSessionController;
+use App\Http\Controllers\Api\EmployeeMonitoringSignalController;
+use App\Http\Controllers\Api\EmployeePermissionRevocationController;
 use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\BlogController;
 use App\Http\Controllers\Api\BlogAdminController;
@@ -91,8 +96,19 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('auth:sanctum')->group(function () {
 
-            Route::get('/me', [AuthController::class, 'me']);
+        Route::get('/me', [AuthController::class, 'me'])
+                      ->middleware('employee.consent');
             Route::post('/logout', [AuthController::class, 'logout']);
+
+            Route::prefix('employee-consent')
+                ->middleware('employee.consent.token')
+                ->group(function () {
+                    Route::get('/status', [EmployeeDailyConsentController::class, 'status']);
+                    Route::post('/accept', [EmployeeDailyConsentController::class, 'accept']);
+                    Route::post('/decline', [EmployeeDailyConsentController::class, 'decline']);
+                    Route::post('/withdraw', [EmployeeDailyConsentController::class, 'withdraw']);
+                    Route::post('/permission-revoked', [EmployeePermissionRevocationController::class, 'store'])->middleware('throttle:10,1');
+                });
 
         });
 
@@ -126,7 +142,31 @@ Route::prefix('v1')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'employee.consent'])->group(function () {
+        // Employee Presence
+        Route::post('/employee-presence/heartbeat', [EmployeePresenceController::class, 'heartbeat'])
+            ->middleware('throttle:120,1');
+
+        Route::get('/employee-presence', [EmployeePresenceController::class, 'index'])
+            ->middleware('require_permission:monitoring.view');
+        // Employee Monitoring Live Session lifecycle (no media streaming in this phase)
+        Route::prefix('employee-monitoring/sessions')->group(function () {
+            Route::post('/', [EmployeeMonitoringSessionController::class, 'requestSession'])
+                ->middleware('throttle:20,1');
+            Route::get('/active', [EmployeeMonitoringSessionController::class, 'active']);
+            Route::get('/pending', [EmployeeMonitoringSessionController::class, 'pending']);
+            Route::get('/', [EmployeeMonitoringSessionController::class, 'index']);
+            Route::post('/{id}/respond', [EmployeeMonitoringSessionController::class, 'respond'])
+                ->whereNumber('id')
+                ->middleware('throttle:30,1');
+            Route::post('/{id}/cancel', [EmployeeMonitoringSessionController::class, 'cancel'])
+                ->whereNumber('id');
+            Route::post('/{id}/end', [EmployeeMonitoringSessionController::class, 'end'])
+                ->whereNumber('id');
+            Route::post('/{id}/signal', [EmployeeMonitoringSignalController::class, 'store'])
+                ->whereNumber('id')
+                ->middleware('throttle:120,1');
+        });
 
         /*
         |--------------------------------------------------------------------------
@@ -395,18 +435,18 @@ Route::prefix('v1')->group(function () {
         });
         Route::prefix('payroll')->group(function () {
             Route::post('/generate', [PayrollController::class, 'generate'])
-                ->middleware('require_permission:employees.edit');
+                ->middleware('require_permission:payroll.generate');
             Route::post('/{id}/approve', [PayrollController::class, 'approve'])
-                ->middleware('require_permission:employees.edit');
+                ->middleware('require_permission:payroll.approve');
 
             Route::post('/{id}/pay', [PayrollController::class, 'pay'])
-                ->middleware('require_permission:employees.edit');
+                ->middleware('require_permission:payroll.pay');
 
             Route::get('/', [PayrollController::class, 'index'])
-                ->middleware('require_permission:employees.view');
+                ->middleware('require_permission:payroll.view');
 
             Route::get('/{id}', [PayrollController::class, 'show'])
-                ->middleware('require_permission:employees.view');
+                ->middleware('require_permission:payroll.view');
         });
         /*
         |--------------------------------------------------------------------------
@@ -1238,7 +1278,7 @@ Route::post(
 Route::get(
     'company-payments/cashfree/return',
     [CompanyPaymentController::class, 'cashfreeReturn']
-)->withoutMiddleware('auth:sanctum');
+)->withoutMiddleware('auth:sanctum')->withoutMiddleware('employee.consent');
 
 Route::get(
     'company-payments/{payment}',
@@ -1269,7 +1309,7 @@ Route::apiResource('settings', SettingController::class)
 
 
 
-        
+
         Route::get('users', [UserController::class, 'index'])
             ->middleware('require_permission:users.view');
 
@@ -1359,11 +1399,11 @@ Route::get(
     'itr-returns/{uuid}/download',
     [ItrReturnController::class, 'download']
 );
-     
+
 Route::get(
     'payments/cashfree/return',
     [PaymentController::class, 'cashfreeReturn']
-);
+)->withoutMiddleware('employee.consent');
 
 Route::post(
     'payments/verify',
@@ -1436,12 +1476,3 @@ Route::post(
             });
     });
 });
-
-
-
-
-
-
-
-
-

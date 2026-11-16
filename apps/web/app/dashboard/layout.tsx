@@ -1,3 +1,4 @@
+
 "use client";
 
 import { type ReactNode, useEffect } from "react";
@@ -10,32 +11,38 @@ import { useCurrentUser } from "@/hooks/useAuth";
 import { useAuthStore } from "@/store/auth";
 
 interface Props {
-	children: ReactNode;
+    children: ReactNode;
+}
+
+// Dashboard content will load only after AuthGuard allows access.
+function DashboardContent({ children }: Props) {
+    const { data } = useCurrentUser();
+
+    const setUser = useAuthStore((state) => state.setUser);
+
+    useEffect(() => {
+        if (data?.data) {
+            setUser(data.data);
+        }
+    }, [data, setUser]);
+
+    return (
+        <div className="flex min-h-screen bg-gray-50">
+            <Sidebar />
+
+            <div className="flex flex-1 flex-col">
+                <Header />
+
+                <main className="flex-1 p-6">{children}</main>
+            </div>
+        </div>
+    );
 }
 
 export default function DashboardLayout({ children }: Props) {
-	const { data } = useCurrentUser();
-
-	const setUser = useAuthStore((state) => state.setUser);
-
-	useEffect(() => {
-		if (data?.data) {
-			setUser(data.data);
-		}
-	}, [data, setUser]);
-
-	return (
-		<AuthGuard>
-			<div className="flex min-h-screen bg-gray-50">
-				<Sidebar />
-
-				<div className="flex flex-1 flex-col">
-					<Header />
-
-					<main className="flex-1 p-6">{children}</main>
-				</div>
-			</div>
-		</AuthGuard>
-	);
+    return (
+        <AuthGuard>
+            <DashboardContent>{children}</DashboardContent>
+        </AuthGuard>
+    );
 }
-

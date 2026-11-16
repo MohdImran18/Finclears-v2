@@ -7,6 +7,10 @@ const API = {
                 REGISTER: "/auth/register",
                 LOGOUT: "/auth/logout",
                 ME: "/auth/me",
+                EMPLOYEE_CONSENT_STATUS: "/auth/employee-consent/status",
+                EMPLOYEE_CONSENT_ACCEPT: "/auth/employee-consent/accept",
+                EMPLOYEE_CONSENT_DECLINE: "/auth/employee-consent/decline",
+                EMPLOYEE_CONSENT_WITHDRAW: "/auth/employee-consent/withdraw",
 
                 FORGOT_PASSWORD: "/auth/forgot-password",
                 RESET_PASSWORD: "/auth/reset-password",

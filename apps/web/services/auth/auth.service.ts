@@ -3,6 +3,9 @@ import { get, post } from "@/lib/request";
 
 import type {
 	CurrentUserResponse,
+	EmployeeConsentActionRequest,
+	EmployeeConsentActionResponse,
+	EmployeeConsentStatusResponse,
 	ForgotPasswordRequest,
 	ForgotPasswordResponse,
 	LoginRequest,
@@ -22,6 +25,44 @@ export const AuthService = {
 	login(data: LoginRequest) {
 		return post<LoginResponse>(API.AUTH.LOGIN, data);
 	},
+        /**
+         * Employee Daily Consent Status
+         */
+        employeeConsentStatus() {
+                return get<EmployeeConsentStatusResponse>(
+                        API.AUTH.EMPLOYEE_CONSENT_STATUS
+                );
+        },
+
+        /**
+         * Accept Employee Daily Consent
+         */
+        acceptEmployeeConsent(data: EmployeeConsentActionRequest) {
+                return post<EmployeeConsentActionResponse>(
+                        API.AUTH.EMPLOYEE_CONSENT_ACCEPT,
+                        data
+                );
+        },
+
+        /**
+         * Decline Employee Daily Consent
+         */
+        declineEmployeeConsent(data: EmployeeConsentActionRequest) {
+                return post<EmployeeConsentActionResponse>(
+                        API.AUTH.EMPLOYEE_CONSENT_DECLINE,
+                        data
+                );
+        },
+
+        /**
+         * Withdraw Employee Daily Consent
+         */
+        withdrawEmployeeConsent(data: EmployeeConsentActionRequest) {
+                return post<EmployeeConsentActionResponse>(
+                        API.AUTH.EMPLOYEE_CONSENT_WITHDRAW,
+                        data
+                );
+        },
 
 	/**
 	 * Register

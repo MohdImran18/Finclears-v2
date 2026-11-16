@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\EmployeeDailyConsent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -77,11 +78,41 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Delete previous tokens (optional)
+        // Invalidate previous API tokens.
         $user->tokens()->delete();
 
-        // Create new API token
-        $token = $user->createToken('web')->plainTextToken;
+        // Keep existing unrestricted access for non-employee roles.
+        $abilities = ['*'];
+
+        if ($user->role === User::ROLE_EMPLOYEE) {
+            // Employees initially receive consent-only access.
+            $abilities = ['employee-consent'];
+
+            $policyVersion = config('employee-monitoring.policy_version');
+            $policyApproved = (bool) config('employee-monitoring.policy_approved', false);
+
+            if (
+                $policyApproved &&
+                is_string($policyVersion) &&
+                $policyVersion !== ''
+            ) {
+                $timezone = config('employee-monitoring.timezone', 'Asia/Kolkata');
+                $workDate = now($timezone)->toDateString();
+
+                $hasAcceptedConsent = EmployeeDailyConsent::query()
+                    ->where('user_id', $user->id)
+                    ->where('work_date', $workDate)
+                    ->where('policy_version', $policyVersion)
+                    ->where('status', EmployeeDailyConsent::STATUS_ACCEPTED)
+                    ->exists();
+
+                if ($hasAcceptedConsent) {
+                    $abilities = ['employee-consent', 'employee-portal'];
+                }
+            }
+        }
+
+        $token = $user->createToken('web', $abilities)->plainTextToken;
 
         $user->update([
             'last_login_at' => now(),

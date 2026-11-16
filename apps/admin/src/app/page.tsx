@@ -45,6 +45,17 @@ import {
 
 import AdminShell from "@/components/layout/AdminShell";
 
+async function safeDashboardRequest<T>(
+  name: string,
+  request: Promise<T>
+): Promise<T | null> {
+  try {
+    return await request;
+  } catch (error) {
+    console.error(`Dashboard API failed [${name}]:`, error);
+    return null;
+  }
+}
 export default function HomePage() {
   const router = useRouter();
 
@@ -83,93 +94,81 @@ export default function HomePage() {
         departmentRes,
         designationRes,
       ] = await Promise.all([
-        getLeads({
-          page: 1,
-          per_page: 5,
-        }),
-
-        getCustomers({
-          page: 1,
-          per_page: 1,
-        }),
-
-        getServices({}),
-
-        getBlogs({}),
-
-        getOrders({
-          page: 1,
-          per_page: 1,
-        }),
-
-        getCompanyPayments({
-          page: 1,
-          per_page: 100,
-        }),
-
-        getEmployees({
-          page: 1,
-          per_page: 5,
-        }),
-
-        getEmployees({
-          page: 1,
-          per_page: 1,
-          status: "active",
-        }),
-
-        getEmployees({
-          page: 1,
-          per_page: 1,
-          status: "inactive",
-        }),
-
-        getDepartments(),
-
-        getDesignations(),
+        safeDashboardRequest("leads", getLeads({ page: 1, per_page: 5 })),
+        safeDashboardRequest("customers", getCustomers({ page: 1, per_page: 1 })),
+        safeDashboardRequest("services", getServices({ page: 1, per_page: 100 })),
+        safeDashboardRequest("blogs", getBlogs({ page: 1, per_page: 100 })),
+        safeDashboardRequest("orders", getOrders({ page: 1, per_page: 1 })),
+        safeDashboardRequest("payments", getCompanyPayments({ page: 1, per_page: 100 })),
+        safeDashboardRequest("employees", getEmployees({ page: 1, per_page: 5 })),
+        safeDashboardRequest("active employees", getEmployees({ page: 1, per_page: 1, status: "active" })),
+        safeDashboardRequest("inactive employees", getEmployees({ page: 1, per_page: 1, status: "inactive" })),
+        safeDashboardRequest("departments", getDepartments()),
+        safeDashboardRequest("designations", getDesignations()),
       ]);
 
-      const leadData = leadRes?.data;
-      const customerData = customerRes?.data;
-      const serviceData = serviceRes?.data;
-      const blogData = blogRes?.data;
-      const orderData = orderRes?.data;
-      const paymentData = paymentRes?.data;
+      if (leadRes?.data) {
+        setLeads(leadRes.data.total ?? 0);
+        setRecentLeads(leadRes.data.data ?? []);
+      }
 
-      const employeeData = employeeRes?.data;
-      const activeEmployeeData = activeEmployeeRes?.data;
-      const inactiveEmployeeData = inactiveEmployeeRes?.data;
+      if (customerRes?.data) {
+        setCustomers(customerRes.data.total ?? 0);
+      }
 
-      const departmentData = departmentRes?.data ?? [];
-      const designationData = designationRes?.data ?? [];
+      if (serviceRes?.success) {
+        setServices(serviceRes.meta?.total ?? serviceRes.data?.services?.length ?? 0);
+      }
 
-      setTotalEmployees(employeeData?.total ?? 0);
-      setActiveEmployees(activeEmployeeData?.total ?? 0);
-      setInactiveEmployees(inactiveEmployeeData?.total ?? 0);
+      if (blogRes?.success) {
+        setBlogs(blogRes.meta?.total ?? blogRes.data?.blogs?.length ?? 0);
+      }
 
-      setDepartmentCount(departmentData.length);
-      setDesignationCount(designationData.length);
+      if (orderRes?.success) {
+        setOrders(orderRes.meta?.total ?? 0);
+      }
 
-      setRecentEmployees(employeeData?.data ?? []);
+      if (paymentRes?.success) {
+        setPayments(paymentRes.meta?.total ?? paymentRes.data?.length ?? 0);
 
-      setLeads(leadData?.total ?? 0);
-      setCustomers(customerData?.total ?? 0);
-      setServices(serviceData?.services?.length ?? 0);
-      setBlogs(blogData?.blogs?.length ?? 0);
-      setOrders(orderRes?.meta?.total ?? 0);
-      setPayments(paymentData?.length ?? 0);
-      setRevenue(
-        (paymentData ?? []).reduce(
-          (sum, payment) =>
-            payment.payment_status === "success"
-              ? sum + Number(payment.amount || 0)
-              : sum,
-          0
-        )
-      );
-      setRecentLeads(leadData?.data ?? []);
-    } catch (error) {
-      console.error("Dashboard loading error:", error);
+        // Do not report a partial-page sum as total company revenue.
+        if ((paymentRes.meta?.total ?? 0) <= (paymentRes.data?.length ?? 0)) {
+          setRevenue(
+            (paymentRes.data ?? []).reduce(
+              (sum, payment) =>
+                payment.payment_status === "success"
+                  ? sum + Number(payment.amount || 0)
+                  : sum,
+              0
+            )
+          );
+        } else {
+          console.warn(
+            "Dashboard revenue is not calculated: payment API returned only a partial page."
+          );
+        }
+      }
+
+      if (employeeRes?.data) {
+        setTotalEmployees(employeeRes.data.total ?? 0);
+        setRecentEmployees(employeeRes.data.data ?? []);
+      }
+
+      if (activeEmployeeRes?.data) {
+        setActiveEmployees(activeEmployeeRes.data.total ?? 0);
+      }
+
+      if (inactiveEmployeeRes?.data) {
+        setInactiveEmployees(inactiveEmployeeRes.data.total ?? 0);
+      }
+
+      if (departmentRes?.success) {
+        setDepartmentCount(departmentRes.data?.length ?? 0);
+      }
+
+      if (designationRes?.success) {
+        setDesignationCount(designationRes.data?.length ?? 0);
+      }
     } finally {
       setLoading(false);
     }
@@ -1119,7 +1118,7 @@ export default function HomePage() {
 
             <KpiCard
               title="Total Leads"
-              value={loading ? "—" : leads}
+              value={loading ? "â€”" : leads}
               hint="CRM leads"
               icon={<Users size={18} />}
               onClick={() =>
@@ -1129,7 +1128,7 @@ export default function HomePage() {
 
             <KpiCard
               title="Customers"
-              value={loading ? "—" : customers}
+              value={loading ? "â€”" : customers}
               hint="CRM customers"
               icon={<UserRound size={18} />}
               onClick={() =>
@@ -1139,7 +1138,7 @@ export default function HomePage() {
 
             <KpiCard
               title="Services"
-              value={loading ? "—" : services}
+              value={loading ? "â€”" : services}
               hint="Website services"
               icon={<BriefcaseBusiness size={18} />}
               onClick={() =>
@@ -1149,7 +1148,7 @@ export default function HomePage() {
 
             <KpiCard
               title="Blogs"
-              value={loading ? "—" : blogs}
+              value={loading ? "â€”" : blogs}
               hint="Website content"
               icon={<FileText size={18} />}
               onClick={() =>
@@ -1159,7 +1158,7 @@ export default function HomePage() {
 
             <KpiCard
               title="Orders"
-              value={loading ? "—" : orders}
+              value={loading ? "â€”" : orders}
               hint="Total orders"
               icon={<ShoppingCart size={18} />}
               onClick={() =>
@@ -1169,7 +1168,7 @@ export default function HomePage() {
 
             <KpiCard
               title="Payments"
-              value={loading ? "—" : payments}
+              value={loading ? "â€”" : payments}
               hint="Payment transactions"
               icon={<CreditCard size={18} />}
               onClick={() =>
@@ -1181,8 +1180,8 @@ export default function HomePage() {
               title="Revenue"
               value={
                 loading
-                  ? "—"
-                  : `₹${revenue.toLocaleString("en-IN")}`
+                  ? "â€”"
+                  : `â‚¹${revenue.toLocaleString("en-IN")}`
               }
               hint="Successful payments"
               icon={<CreditCard size={18} />}
@@ -1670,12 +1669,12 @@ export default function HomePage() {
                         const department =
                           employee.department?.name ||
                           employee.department_name ||
-                          "—";
+                          "â€”";
 
                         const designation =
                           employee.designation?.name ||
                           employee.designation_name ||
-                          "—";
+                          "â€”";
 
                         const isActive =
                           employee.status === true ||
@@ -1908,7 +1907,7 @@ export default function HomePage() {
             </span>
 
             <span>
-              Finclears Admin • CRM & Operations
+              Finclears Admin â€¢ CRM & Operations
             </span>
 
           </div>
