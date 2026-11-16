@@ -18,6 +18,9 @@ return Application::configure(
         health: '/up',
     )
 
+    ->withBroadcasting(__DIR__.'/../routes/channels.php', [
+        'middleware' => ['api', 'auth:sanctum'],
+    ])
     ->withMiddleware(function (
         Middleware $middleware
     ): void {
@@ -36,6 +39,8 @@ return Application::configure(
 'require_permission' => \App\Http\Middleware\RequirePermission::class,
 'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'lead.ownership' => \App\Http\Middleware\EnsureLeadOwnership::class,
+            'employee.consent.token' => \App\Http\Middleware\RequireEmployeeConsentToken::class,
+            'employee.consent' => \App\Http\Middleware\RequireEmployeeDailyConsent::class,
         ]);
     })
 

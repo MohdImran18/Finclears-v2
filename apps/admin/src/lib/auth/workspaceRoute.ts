@@ -11,6 +11,8 @@ export function getWorkspaceRoute(user: AuthUser): string {
 
   if (
     user.role === "admin" ||
+    user.role === "super_admin" ||
+    user.role === "super-admin" ||
     roles.has("admin") ||
     roles.has("super-admin")
   ) {

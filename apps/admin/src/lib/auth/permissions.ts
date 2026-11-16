@@ -1,6 +1,20 @@
 import { AuthUser } from "@/lib/api/auth/authApi";
 
 /**
+ * Admin and Super Admin have unrestricted frontend workspace access.
+ */
+function isUnrestrictedAdmin(user: AuthUser): boolean {
+  const roles = [
+    user.role,
+    ...(user.spatie_roles ?? []),
+  ].filter((role): role is string => typeof role === "string");
+
+  return roles.some((role) =>
+    ["admin", "super_admin", "super-admin"].includes(role.toLowerCase())
+  );
+}
+
+/**
  * Check whether the current user has a permission.
  */
 export function hasPermission(
@@ -12,7 +26,7 @@ export function hasPermission(
   }
 
   // Admin has unrestricted access.
-  if (user.role === "admin") {
+  if (isUnrestrictedAdmin(user)) {
     return true;
   }
 
@@ -33,7 +47,7 @@ export function hasAnyPermission(
     return false;
   }
 
-  if (user.role === "admin") {
+  if (isUnrestrictedAdmin(user)) {
     return true;
   }
 
@@ -54,7 +68,7 @@ export function hasAllPermissions(
     return false;
   }
 
-  if (user.role === "admin") {
+  if (isUnrestrictedAdmin(user)) {
     return true;
   }
 
@@ -94,7 +108,7 @@ export function hasRole(
     return false;
   }
 
-  if (user.role === "admin") {
+  if (isUnrestrictedAdmin(user)) {
     return true;
   }
 

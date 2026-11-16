@@ -18,12 +18,13 @@ export const ROUTES = {
 	 * Authentication
 	 * ========================================================== */
 
-	LOGIN: "/auth/login",
-	REGISTER: "/auth/register",
-	FORGOT_PASSWORD: "/auth/forgot-password",
-	RESET_PASSWORD: "/auth/reset-password",
-	VERIFY_EMAIL: "/auth/verify-email",
-	OTP: "/auth/otp",
+LOGIN: "/auth/login",
+REGISTER: "/auth/register",
+FORGOT_PASSWORD: "/auth/forgot-password",
+RESET_PASSWORD: "/auth/reset-password",
+VERIFY_EMAIL: "/auth/verify-email",
+OTP: "/auth/otp",
+EMPLOYEE_CONSENT: "/employee-consent",
 
 	/* ==========================================================
 	 * Customer Dashboard

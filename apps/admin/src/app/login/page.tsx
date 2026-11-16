@@ -31,6 +31,12 @@ export default function LoginPage() {
         password,
       });
 
+      console.log("LOGIN RESPONSE CHECK:", {
+        success: response?.success,
+        hasToken: Boolean(response?.data?.token),
+        hasUser: Boolean(response?.data?.user),
+      });
+
       if (!response.success || !response.data?.token) {
         throw new Error(
           response.message || "Login failed."
@@ -41,6 +47,13 @@ export default function LoginPage() {
 
       if (!user) {
         throw new Error("User information was not returned.");
+      }
+
+      if (user.role === "employee") {
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("admin_user", JSON.stringify(user));
+        router.replace("/employee-consent");
+        return;
       }
 
       if (user.status !== "active") {

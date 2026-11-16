@@ -154,7 +154,12 @@ export default function AdminSidebar() {
       permission: "leave.view",
     },
     {
-      label: "Attendance",
+      label: "Monitoring",
+      href: "/hrm/monitoring",
+      icon: CalendarDays,
+      permission: "monitoring.view",
+    },
+    {      label: "Attendance",
       href: "/hrm/attendance",
       icon: CalendarDays,
       permission: "attendance.view",

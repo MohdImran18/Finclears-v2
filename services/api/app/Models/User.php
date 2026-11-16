@@ -90,8 +90,12 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->role === self::ROLE_ADMIN;
-    }
+          return in_array($this->role, [
+        self::ROLE_ADMIN,
+        self::ROLE_SUPER_ADMIN,
+    ], true);
+}
+
 
     public function isEmployee(): bool
     {
@@ -133,6 +137,10 @@ class User extends Authenticatable
         return asset('storage/' . $this->avatar);
     }
 
+    public function presence(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\App\Models\EmployeePresence::class);
+    }
     public function employeeProfile(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(EmployeeProfile::class);
@@ -142,6 +150,3 @@ class User extends Authenticatable
         return $this->hasMany(\App\Models\Lead::class, 'assigned_to');
     }
 }
-
-
-

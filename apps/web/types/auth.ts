@@ -36,6 +36,47 @@ export interface LoginResponse
 	}> {}
 
 /* ===========================
+   Employee Consent
+=========================== */
+
+export type EmployeeConsentStatus =
+        | "pending"
+        | "accepted"
+        | "declined"
+        | "withdrawn";
+
+export interface EmployeeConsentStatusResponse {
+        success: boolean;
+        data: {
+                work_date: string;
+                policy_version: string;
+                policy_available: boolean;
+                policy_text: string | null;
+                retention_period: string | number | null;
+                support_contact: string | null;
+                status: EmployeeConsentStatus;
+                accepted_at: string | null;
+                withdrawn_at: string | null;
+        };
+}
+
+export interface EmployeeConsentActionRequest {
+        policy_version: string;
+}
+
+export interface EmployeeConsentActionResponse {
+        success: boolean;
+        message: string;
+        data: {
+                status: EmployeeConsentStatus;
+                work_date?: string;
+                policy_version?: string;
+                withdrawn_at?: string | null;
+                token: string;
+                token_type: string;
+        };
+}
+/* ===========================
    Register
 =========================== */
 

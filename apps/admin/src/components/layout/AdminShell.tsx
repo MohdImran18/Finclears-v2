@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
+import EmployeePresenceProvider from "@/components/monitoring/EmployeePresenceProvider";
 
 export default function AdminShell({
   children,
@@ -12,6 +13,8 @@ export default function AdminShell({
 }) {
   return (
     <AuthProvider>
+      <EmployeePresenceProvider />
+
       <div className="adminShell">
         <AdminSidebar />
 

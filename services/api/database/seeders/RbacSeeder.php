@@ -89,6 +89,14 @@ class RbacSeeder extends Seeder
             }
         }
 
+        // Dedicated payroll permissions.
+        foreach (['view', 'generate', 'approve', 'pay'] as $action) {
+            Permission::firstOrCreate([
+                'name' => "payroll.{$action}",
+                'guard_name' => $guard,
+            ]);
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Roles
@@ -183,7 +191,7 @@ class RbacSeeder extends Seeder
             'letters.download',
 
             'payroll.view',
-            'payroll.manage',
+            'payroll.generate',
 
             'performance.view',
             'performance.manage',
@@ -205,6 +213,7 @@ class RbacSeeder extends Seeder
         */
 
         $hrExecutive = [
+            'payroll.view',
             'employees.view',
             'employees.create',
             'employees.edit',
@@ -234,6 +243,8 @@ class RbacSeeder extends Seeder
 
             'performance.view',
             'reports.view',
+            'monitoring.view',
+            'monitoring.audit',
         ];
 
         Role::findByName('hr-executive', $guard)
@@ -246,6 +257,11 @@ class RbacSeeder extends Seeder
         */
 
         $financeManager = [
+            'payroll.view',
+            'payroll.generate',
+            'payroll.approve',
+            'payroll.pay',
+
             'customers.view',
             'orders.view',
 
@@ -293,6 +309,8 @@ class RbacSeeder extends Seeder
 
             'reports.view',
             'reports.export',
+            'monitoring.view',
+            'monitoring.audit',
         ];
 
         Role::findByName('finance-manager', $guard)
@@ -359,6 +377,7 @@ class RbacSeeder extends Seeder
         */
 
         $departmentManager = [
+            'payroll.view',
             'dashboard.view',
 
             'employees.view',
@@ -401,6 +420,7 @@ class RbacSeeder extends Seeder
         */
 
         $teamLead = [
+            'payroll.view',
             'dashboard.view',
 
             'employees.view',
