@@ -17,6 +17,7 @@ import {
 
 import LeadList from "@/components/leads/LeadList";
 import LeadAssignmentDialog from "@/components/leads/LeadAssignmentDialog";
+import LeadCommunicationPanel from "@/components/leads/LeadCommunicationPanel";
 import { deleteLead, getLeadPool, getLeads } from "@/lib/api/leads/leadApi";
 import type { Lead } from "@/types/lead/lead";
 
@@ -29,6 +30,7 @@ export default function LeadsPage() {
   const [priority, setPriority] = useState("");
   const [poolMode, setPoolMode] = useState(false);
   const [assignmentLead, setAssignmentLead] = useState<Lead | null>(null);
+  const [commentLead, setCommentLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -320,7 +322,11 @@ export default function LeadsPage() {
               router.push(`/crm/leads/${lead.id}/edit`)
             }
             onDelete={handleDelete}
-            onAssign={(lead) => setAssignmentLead(lead)}
+            onComment={(lead) => setCommentLead(lead)}
+            onAssign={(lead) => {
+              console.log("ASSIGN CLICKED:", lead.id);
+              setAssignmentLead(lead);
+            }}
           />
 
         </section>
@@ -751,6 +757,59 @@ export default function LeadsPage() {
           onClose={() => setAssignmentLead(null)}
           onSuccess={handleAssignmentSuccess}
         />
+
+        {commentLead && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 1000,
+              background: "rgba(15, 35, 55, 0.55)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-start",
+              padding: "30px 16px",
+              overflowY: "auto"
+            }}
+          >
+            <div
+              style={{
+                width: "100%",
+                maxWidth: 1000,
+                background: "#ffffff",
+                borderRadius: 14,
+                padding: 20,
+                boxShadow: "0 20px 60px rgba(0,0,0,.2)"
+              }}
+            >
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 18
+              }}>
+                <strong>
+                  Comments & Activity — {commentLead.name}
+                </strong>
+                <button
+                  type="button"
+                  onClick={() => setCommentLead(null)}
+                  style={{
+                    border: "1px solid #d6e3ee",
+                    background: "#fff",
+                    borderRadius: 7,
+                    padding: "7px 12px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+
+              <LeadCommunicationPanel leadId={commentLead.id} />
+            </div>
+          </div>
+        )}
 
     </main>
   );

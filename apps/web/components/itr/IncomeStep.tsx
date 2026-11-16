@@ -52,7 +52,8 @@ const schema = z.object({
     other_income: z.coerce.number().min(0),
 });
 
-type FormData = z.infer<typeof schema>;
+type FormInput = z.input<typeof schema>;
+type FormData = z.output<typeof schema>;
 
 export default function IncomeStep() {
     const uuid = useItrStore((state) => state.uuid);
@@ -77,7 +78,7 @@ export default function IncomeStep() {
         watch,
         handleSubmit,
         formState: { errors },
-    } = useForm<FormData>({
+    } = useForm<FormInput, any, FormData>({
         resolver: zodResolver(schema),
 
         defaultValues: {

@@ -83,12 +83,12 @@ export default function DeductionStep() {
     const totalDeduction = useMemo(() => {
 
         return (
-            values.section80c +
-            values.section80d +
-            values.section80ccd1b +
-            values.section80g +
-            values.section80tta +
-            values.section80eea
+            Number(values.section80c ?? 0) +
+            Number(values.section80d ?? 0) +
+            Number(values.section80ccd1b ?? 0) +
+            Number(values.section80g ?? 0) +
+            Number(values.section80tta ?? 0) +
+            Number(values.section80eea ?? 0)
         );
 
     }, [values]);

@@ -18,8 +18,11 @@ Broadcast::channel('employee-monitoring.session.{sessionId}', function ($user, $
     $session = EmployeeMonitoringSession::query()->find($sessionId);
 
     if (
-        !$session ||
-        $session->status !== EmployeeMonitoringSession::STATUS_ACCEPTED
+        !$session
+        || $session->status !== EmployeeMonitoringSession::STATUS_ACCEPTED
+        || !$session->expires_at
+        || !$session->expires_at->isFuture()
+        || $session->ended_at !== null
     ) {
         return false;
     }
