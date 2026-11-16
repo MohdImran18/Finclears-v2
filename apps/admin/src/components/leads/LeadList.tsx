@@ -8,6 +8,7 @@ import {
   CalendarDays,
   IndianRupee,
   UserCheck,
+  MessageSquare,
 } from "lucide-react";
 
 import type { Lead } from "@/types/lead/lead";
@@ -18,6 +19,7 @@ interface LeadListProps {
   onEdit: (lead: Lead) => void;
   onDelete: (lead: Lead) => void;
   onAssign: (lead: Lead) => void;
+  onComment: (lead: Lead) => void;
 }
 
 export default function LeadList({
@@ -26,6 +28,7 @@ export default function LeadList({
   onEdit,
   onDelete,
   onAssign,
+  onComment,
 }: LeadListProps) {
 
   if (loading) {
@@ -120,10 +123,12 @@ export default function LeadList({
             <th>Lead</th>
             <th>Contact</th>
             <th>Source</th>
+            <th>Lead Owner</th>
             <th>Status</th>
             <th>Priority</th>
             <th>Value</th>
             <th>Follow-up</th>
+            <th>Latest Comment</th>
             <th className="actionHeader">Action</th>
           </tr>
         </thead>
@@ -182,6 +187,22 @@ export default function LeadList({
               </td>
 
               <td>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 125 }}>
+                  <span style={{
+                    width: 26, height: 26, borderRadius: "50%",
+                    display: "grid", placeItems: "center",
+                    background: "#e8f2fb", color: "#1769aa",
+                    fontWeight: 800, flexShrink: 0
+                  }}>
+                    {(lead.assignedUser?.name || lead.assigned_user?.name || "U").charAt(0).toUpperCase()}
+                  </span>
+                  <span style={{ color: "#334e68", fontWeight: 650 }}>
+                    {lead.assignedUser?.name || lead.assigned_user?.name || "Unassigned"}
+                  </span>
+                </div>
+              </td>
+
+              <td>
                 <StatusBadge status={lead.status} />
               </td>
 
@@ -217,7 +238,42 @@ export default function LeadList({
               </td>
 
               <td>
+                <div style={{
+                  display: "flex", flexDirection: "column", gap: 4,
+                  maxWidth: 190, whiteSpace: "normal"
+                }}>
+                  <span title={lead.comments?.[0]?.comment || ""}
+                    style={{
+                      color: "#334e68", fontSize: 12,
+                      overflow: "hidden", display: "-webkit-box",
+                      WebkitLineClamp: 2, WebkitBoxOrient: "vertical"
+                    }}>
+                    {lead.comments?.[0]?.comment || "No comments"}
+                  </span>
+                  {lead.comments?.[0]?.user?.name && (
+                    <small style={{ color: "#829ab1", fontSize: 10 }}>
+                      By {lead.comments[0].user.name}
+                    </small>
+                  )}
+                </div>
+              </td>
+
+              <td>
                 <div className="actions">
+
+                  <button
+                    type="button"
+                    onClick={() => onComment(lead)}
+                    title="View comments and activity"
+                    style={{
+                      width: 30, height: 30, display: "grid",
+                      placeItems: "center", border: "1px solid #d6e3ee",
+                      borderRadius: 7, background: "#fff",
+                      color: "#1769aa", cursor: "pointer"
+                    }}
+                  >
+                    <MessageSquare size={14} />
+                  </button>
 
                   <button
                     type="button"
@@ -262,7 +318,7 @@ export default function LeadList({
 
         table {
           width: 100%;
-          min-width: 1100px;
+          min-width: 1450px;
           border-collapse: collapse;
         }
 

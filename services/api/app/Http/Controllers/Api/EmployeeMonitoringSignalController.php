@@ -51,8 +51,13 @@ class EmployeeMonitoringSignalController extends Controller
 
         $session = EmployeeMonitoringSession::query()->findOrFail($id);
 
-        if ($session->status !== EmployeeMonitoringSession::STATUS_ACCEPTED) {
-            abort(409, 'The monitoring session is not active.');
+        if (
+            $session->status !== EmployeeMonitoringSession::STATUS_ACCEPTED
+            || !$session->expires_at
+            || !$session->expires_at->isFuture()
+            || $session->ended_at !== null
+        ) {
+            abort(409, 'The monitoring session is not active or has expired.');
         }
 
         $employeeId = (int) $session->employee_user_id;

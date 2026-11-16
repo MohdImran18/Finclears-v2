@@ -17,13 +17,13 @@ export const companySchema = z.object({
 
 	authorized_capital: z
 		.number({
-			required_error: "Authorized capital is required",
+			error: "Authorized capital is required",
 		})
 		.min(1),
 
 	paid_up_capital: z
 		.number({
-			required_error: "Paid up capital is required",
+			error: "Paid up capital is required",
 		})
 		.min(1),
 

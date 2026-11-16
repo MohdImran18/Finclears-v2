@@ -38,6 +38,17 @@ export interface Lead {
   service?: LeadService | null;
   source?: LeadSource | null;
   assignedUser?: AssignedUser | null;
+  assigned_user?: AssignedUser | null;
+  comments?: Array<{
+    id: number;
+    comment: string;
+    created_at?: string;
+    user?: {
+      id: number;
+      name: string;
+      email?: string | null;
+    } | null;
+  }>;
   ownership_started_at?: string | null;
   ownership_expires_at?: string | null;
   ownership_status?: "unassigned" | "active" | "expired" | string | null;

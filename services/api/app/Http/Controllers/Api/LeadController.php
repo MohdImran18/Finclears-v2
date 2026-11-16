@@ -29,6 +29,11 @@ class LeadController extends Controller
             'service:id,title',
             'source:id,name',
             'assignedUser:id,name,email',
+            'comments' => function ($comments) {
+                $comments->with('user:id,name,email')
+                    ->latest()
+                    ->limit(1);
+            },
         ]);
 
         if ($request->user()?->role === 'employee') {
@@ -78,6 +83,11 @@ class LeadController extends Controller
             'service:id,title',
             'source:id,name',
             'assignedUser:id,name,email',
+            'comments' => function ($comments) {
+                $comments->with('user:id,name,email')
+                    ->latest()
+                    ->limit(1);
+            },
         ])
             ->whereNull('deleted_at')
             ->whereNull('assigned_to');

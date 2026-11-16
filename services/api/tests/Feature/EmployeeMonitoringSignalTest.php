@@ -238,4 +238,142 @@ class EmployeeMonitoringSignalTest extends TestCase
 
         Event::assertNotDispatched(EmployeeMonitoringSignal::class);
     }
+
+
+    private function configureTestBroadcaster(): void
+    {
+        config([
+            'broadcasting.default' => 'reverb',
+            'broadcasting.connections.reverb' => [
+                'driver' => 'reverb',
+                'key' => 'test-key',
+                'secret' => 'test-secret',
+                'app_id' => 'test-app',
+                'options' => [
+                    'host' => '127.0.0.1',
+                    'port' => 8080,
+                    'scheme' => 'http',
+                    'useTLS' => false,
+                ],
+                'client_options' => [],
+            ],
+        ]);
+
+        \Illuminate\Support\Facades\Broadcast::purge('reverb');
+        \Illuminate\Support\Facades\Broadcast::setDefaultDriver('reverb');
+
+        require base_path('routes/channels.php');
+    }
+
+    private function authorizeMonitoringChannel(
+        string $token,
+        int $sessionId
+    ) {
+        return $this->withToken($token)->postJson('/broadcasting/auth', [
+            'socket_id' => '1234.5678',
+            'channel_name' => "private-employee-monitoring.session.{$sessionId}",
+        ]);
+    }
+
+    public function test_expired_session_cannot_send_signal(): void
+    {
+        [$manager] = $this->manager();
+        $employee = $this->employee();
+        $token = $this->employeeToken($employee);
+        $session = $this->acceptedSession($employee, $manager);
+
+        $session->update(['expires_at' => now()->subSecond()]);
+
+        Event::fake([EmployeeMonitoringSignal::class]);
+
+        $this->withToken($token)->postJson(
+            "/api/v1/employee-monitoring/sessions/{$session->id}/signal",
+            [
+                'signal_type' => 'offer',
+                'payload' => ['sdp' => 'test-sdp'],
+            ]
+        )->assertStatus(409);
+
+        Event::assertNotDispatched(EmployeeMonitoringSignal::class);
+    }
+
+    public function test_ended_session_cannot_send_signal(): void
+    {
+        [$manager] = $this->manager();
+        $employee = $this->employee();
+        $token = $this->employeeToken($employee);
+        $session = $this->acceptedSession($employee, $manager);
+
+        $session->update(['ended_at' => now()]);
+
+        Event::fake([EmployeeMonitoringSignal::class]);
+
+        $this->withToken($token)->postJson(
+            "/api/v1/employee-monitoring/sessions/{$session->id}/signal",
+            [
+                'signal_type' => 'offer',
+                'payload' => ['sdp' => 'test-sdp'],
+            ]
+        )->assertStatus(409);
+
+        Event::assertNotDispatched(EmployeeMonitoringSignal::class);
+    }
+
+    public function test_employee_can_authorize_own_valid_monitoring_channel(): void
+    {
+        $this->configureTestBroadcaster();
+
+        [$manager] = $this->manager();
+        $employee = $this->employee();
+        $session = $this->acceptedSession($employee, $manager);
+        $token = $this->employeeToken($employee);
+
+        $this->authorizeMonitoringChannel($token, $session->id)
+            ->assertOk()
+            ->assertJsonStructure(['auth']);
+    }
+
+    public function test_original_requester_can_authorize_valid_monitoring_channel(): void
+    {
+        $this->configureTestBroadcaster();
+
+        [$manager, $managerToken] = $this->manager();
+        $employee = $this->employee();
+        $session = $this->acceptedSession($employee, $manager);
+
+        $this->authorizeMonitoringChannel($managerToken, $session->id)
+            ->assertOk()
+            ->assertJsonStructure(['auth']);
+    }
+
+    public function test_expired_session_channel_authorization_is_denied(): void
+    {
+        $this->configureTestBroadcaster();
+
+        [$manager] = $this->manager();
+        $employee = $this->employee();
+        $session = $this->acceptedSession($employee, $manager);
+        $token = $this->employeeToken($employee);
+
+        $session->update(['expires_at' => now()->subSecond()]);
+
+        $this->authorizeMonitoringChannel($token, $session->id)
+            ->assertForbidden();
+    }
+
+    public function test_ended_session_channel_authorization_is_denied(): void
+    {
+        $this->configureTestBroadcaster();
+
+        [$manager] = $this->manager();
+        $employee = $this->employee();
+        $session = $this->acceptedSession($employee, $manager);
+        $token = $this->employeeToken($employee);
+
+        $session->update(['ended_at' => now()]);
+
+        $this->authorizeMonitoringChannel($token, $session->id)
+            ->assertForbidden();
+    }
+
 }

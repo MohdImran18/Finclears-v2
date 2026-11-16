@@ -42,10 +42,9 @@ export default function LeadAssignmentDialog({
 
         const response = await getLeadAssignees();
 
-        const users =
-          response.data?.users ||
-          response.data?.data ||
-          [];
+        const users = Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
 
         setEmployees(users);
       } catch (err: any) {
@@ -103,7 +102,18 @@ export default function LeadAssignmentDialog({
   }
 
   return (
-    <div className="overlay">
+    <div
+      className="overlay"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        display: "grid",
+        placeItems: "center",
+        padding: 20,
+        background: "rgba(15, 23, 42, 0.42)",
+      }}
+    >
       <div className="dialog">
         <div className="header">
           <div>
